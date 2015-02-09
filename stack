@@ -1,0 +1,103 @@
+#!/bin/bash
+
+UNAME=$USER
+WD=$(pwd)
+
+_workon() {
+  service=$1
+  branch=${2:-master}
+
+  if [ ! -d "services/${service}" ]; then
+    git clone -b $branch ssh://$UNAME@cis-gerrit.cisco.com:29418/service-$service services/$service
+    _link $service
+  else
+    cd service; git pull --ff-only origin $branch; cd $WD
+  fi
+
+  if [ ! -d ".stack/ccs-data/.git" ]; then
+    git clone ssh://$UNAME@cis-gerrit.cisco.com:29418/ccs-data .stack/ccs-data
+  else
+    cd .stack/ccs-data; git pull --ff-only origin; cd $WD
+  fi
+  cd .stack/ccs-data; ./lightfuse.py --site ccs-dev-1; cd $WD
+
+  if [ ! -d ".stack/heighliner/.git" ]; then
+    git clone ssh://$UNAME@cis-gerrit.cisco.com:29418/heighliner .stack/heighliner
+  else
+    cd .stack/heighliner; git pull --ff-only origin; cd $WD
+  fi
+}
+
+_link() {
+  service=$1
+    echo "${service}" > .stack/current
+    if [ ! -h service ]; then
+      ln -s services/$service service
+    fi
+    cat > .stack/hosts <<EOF
+[$service]
+vm-001
+vm-002
+vm-003
+EOF
+}
+
+_pull() {
+  if [ -d "service/.git" ]; then
+    cd service; git pull --ff-only; cd $WD
+  else
+    echo "No service configured.  Run './stack workon [service]'"
+  fi
+}
+
+_clean() {
+  vagrant destroy -f
+  rm -rf services
+  rm -rf service
+  rm -rf .stack/current
+}
+
+_up() {
+  vagrant up
+  vagrant hostmanager
+}
+
+_usage() {
+  echo "Usage: $0 [options] <command>"
+  echo "Commands:"
+  echo -e "\tworkon [service]   Configure dev environment to work on [service]"
+  echo -e "\tup                 Bring up vagrant hosts"
+  echo -e "\tpull               Perform a pull --ff-only on the current working [service]"
+  echo -e "\tclean              Resets the dev environment, deleting all cloned repos and vms"
+  echo -e "\thelp               This help screen"
+  echo "Options"
+  echo -e "\t--user [username]      Username to clone as"
+}
+
+if [ $# == 0 ]; then
+  _usage
+  exit 1
+fi
+
+while [[ $1 != '' ]]; do
+  case $1 in
+    --ha)        ENABLE_HA=1;;
+    --user)      shift; UNAME=$1; USER=$1;;
+    help)        _usage; exit 0;;
+    workon)      ACTION='workon'; shift; SERVICE=$1;;
+    link)        ACTION='link'; shift; SERVICE=$1;;
+    pull)        ACTION='pull';;
+    up)          ACTION='up';;
+    clean)       ACTION='clean';;
+    *)           _usage; exit 0;;
+  esac
+  shift
+done
+
+case $ACTION in
+  workon)        _workon $SERVICE;;
+  link)          _link $SERVICE;;
+  up)            _up;;
+  pull)          _pull;;
+  clean)         _clean;;
+esac
