@@ -17,6 +17,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     node.vm.network :private_network, :ip => '192.168.78.10'
     node.vm.provision :hosts
     node.vm.provision "shell", path: ".stack/provision/infra.sh"
+    node.vm.provision :file, source: ".stack/provision/ssh-config", destination: "/home/vagrant/.ssh/config"
     node.vm.provision :file, source: ".stack/id_rsa", destination: "/home/vagrant/.ssh/id_rsa"
     node.vm.provision :file, source: ".stack/hosts", destination: "/etc/ansible/hosts"
     node.vm.synced_folder "services", "/opt/ccs/services"

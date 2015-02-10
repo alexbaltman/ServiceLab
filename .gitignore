@@ -1,4 +1,5 @@
 .vagrant
-.stack
+.stack/*
+!.stack/provision/
 /service
 services/
