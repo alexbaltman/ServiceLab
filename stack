@@ -40,6 +40,9 @@ vm-001
 vm-002
 vm-003
 EOF
+    if [ ! -f .stack/id_rsa ]; then
+      ssh-keygen -q -t rsa -N "" -f .stack/id_rsa
+    fi
 }
 
 _pull() {
