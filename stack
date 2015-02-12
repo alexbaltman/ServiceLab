@@ -65,6 +65,11 @@ _up() {
   vagrant hostmanager
 }
 
+_deploy() {
+  service=`cat .stack/current`
+  vagrant ssh infra-001 -c "cd /opt/ccs/services/${service}; sudo heighliner --debug deploy"
+}
+
 _usage() {
   echo "Usage: $0 [options] <command>"
   echo "Commands:"
@@ -91,6 +96,7 @@ while [[ $1 != '' ]]; do
     link)        ACTION='link'; shift; SERVICE=$1;;
     pull)        ACTION='pull';;
     up)          ACTION='up';;
+    deploy)      ACTION='deploy';;
     clean)       ACTION='clean';;
     *)           _usage; exit 0;;
   esac
@@ -101,6 +107,7 @@ case $ACTION in
   workon)        _workon $SERVICE;;
   link)          _link $SERVICE;;
   up)            _up;;
+  deploy)        _deploy;;
   pull)          _pull;;
   clean)         _clean;;
 esac
