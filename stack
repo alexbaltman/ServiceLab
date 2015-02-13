@@ -1,30 +1,38 @@
 #!/bin/bash
 
 UNAME=$USER
+GERRIT_HOST=cis-gerrit.cisco.com
 WD=$(pwd)
 
 _workon() {
   service=$1
   branch=${2:-master}
 
-  if [ ! -d "services/${service}" ]; then
-    git clone -b $branch ssh://$UNAME@cis-gerrit.cisco.com:29418/service-$service services/$service
-    _link $service
-  else
-    cd service; git pull --ff-only origin $branch; cd $WD
-  fi
+  _sync_service $1 $2
 
   if [ ! -d ".stack/ccs-data/.git" ]; then
-    git clone ssh://$UNAME@cis-gerrit.cisco.com:29418/ccs-data .stack/ccs-data
+    git clone ssh://$UNAME@$GERRIT_HOST:29418/ccs-data .stack/ccs-data
   else
     cd .stack/ccs-data; git pull --ff-only origin; cd $WD
   fi
   cd .stack/ccs-data; ./lightfuse.py --site ccs-dev-1; cd $WD
 
   if [ ! -d ".stack/heighliner/.git" ]; then
-    git clone ssh://$UNAME@cis-gerrit.cisco.com:29418/heighliner .stack/heighliner
+    git clone ssh://$UNAME@$GERRIT_HOST:29418/heighliner .stack/heighliner
   else
     cd .stack/heighliner; git pull --ff-only origin; cd $WD
+  fi
+}
+
+_sync_service() {
+  service=$1
+  branch=${2:-master}
+
+  if [ ! -d "services/${service}" ]; then
+    git clone -b $branch ssh://$UNAME@$GERRIT_HOST:29418/service-$service services/$service
+    _link $service
+  else
+    cd service; git pull --ff-only origin $branch; cd $WD
   fi
 }
 
@@ -55,7 +63,6 @@ _pull() {
 
 _clean() {
   vagrant destroy -f
-  rm -rf services
   rm -rf service
   rm -rf .stack/current
 }
@@ -92,7 +99,7 @@ while [[ $1 != '' ]]; do
     --ha)        ENABLE_HA=1;;
     --user)      shift; UNAME=$1; USER=$1;;
     help)        _usage; exit 0;;
-    workon)      ACTION='workon'; shift; SERVICE=$1;;
+    workon)      ACTION='workon'; shift; SERVICE=$1; shift; BRANCH=$1;;
     link)        ACTION='link'; shift; SERVICE=$1;;
     pull)        ACTION='pull';;
     up)          ACTION='up';;
@@ -104,7 +111,7 @@ while [[ $1 != '' ]]; do
 done
 
 case $ACTION in
-  workon)        _workon $SERVICE;;
+  workon)        _workon $SERVICE $BRANCH;;
   link)          _link $SERVICE;;
   up)            _up;;
   deploy)        _deploy;;
