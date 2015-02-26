@@ -7,21 +7,39 @@ WD=$(pwd)
 _workon() {
   service=$1
   branch=${2:-master}
-
-  _sync_service "$1" "$2"
-
-  if [ ! -d ".stack/ccs-data/.git" ]; then
-    git clone "ssh://$UNAME@$GERRIT_HOST:29418/ccs-data" .stack/ccs-data
-  else
-    cd .stack/ccs-data; git pull --ff-only origin; cd "$WD"
+  current=""
+  if [ -f ".stack/current" ]; then
+    current=$(cat .stack/current)
   fi
-  cd .stack/ccs-data; ./lightfuse.rb --site ccs-dev-1; cd "$WD"
 
-  if [ ! -d ".stack/heighliner/.git" ]; then
-    git clone "ssh://$UNAME@$GERRIT_HOST:29418/heighliner" .stack/heighliner
-  else
-    cd .stack/heighliner; git pull --ff-only origin; cd "$WD"
+  if [[ $service == "" ]]; then
+    if [[ $current == "" ]]; then
+      echo "Missing service name: ./stack workon [service]"
+      _usage
+    else
+      echo "Syncing service: ${current}"
+      _sync_service "$current"
+      _link "$service"
+    fi
+  elif [[ $service == $current ]]; then
+    echo "Already working on $service.  Syncing..."
+    _sync_service "$current"
+  elif [[ $service != $current ]]; then
+    echo "Switching from ${current} to ${service}"
+    rm service
+    _link "$service"
+    _sync_service "$service" "$2"
+    vagrant hostmanager
   fi
+
+  _prep
+}
+
+_prep() {
+  if [ ! -f .stack/id_rsa ]; then
+    ssh-keygen -q -t rsa -N "" -f .stack/id_rsa
+  fi
+  _sync_data
 }
 
 _sync_service() {
@@ -30,27 +48,32 @@ _sync_service() {
 
   if [ ! -d "services/${service}" ]; then
     git clone -b "$branch" "ssh://$UNAME@$GERRIT_HOST:29418/service-$service" "services/$service"
-    _link "$service"
   else
     cd service; git pull --ff-only origin "$branch"; cd "$WD"
   fi
 }
 
+_sync_data() {
+  if [ ! -d ".stack/ccs-data/.git" ]; then
+    git clone "ssh://$UNAME@$GERRIT_HOST:29418/ccs-data" .stack/ccs-data
+  else
+    cd .stack/ccs-data; git pull --ff-only origin; cd "$WD"
+  fi
+  cd .stack/ccs-data; ./lightfuse.rb --site ccs-dev-1; cd "$WD"
+}
+
 _link() {
   service=$1
-    echo "${service}" > .stack/current
-    if [ ! -h service ]; then
-      ln -s "services/$service" service
-    fi
-    cat > .stack/hosts <<EOF
+  echo "${service}" > .stack/current
+  if [ ! -h service ]; then
+    ln -s "services/$service" service
+  fi
+  cat > .stack/hosts <<EOF
 [$service]
 vm-001
 vm-002
 vm-003
 EOF
-    if [ ! -f .stack/id_rsa ]; then
-      ssh-keygen -q -t rsa -N "" -f .stack/id_rsa
-    fi
 }
 
 _pull() {
@@ -81,7 +104,7 @@ _up() {
 
 _deploy() {
   service=$(cat .stack/current)
-  vagrant ssh infra-001 -c "cd /opt/ccs/services/${service}; sudo heighliner --debug deploy"
+  vagrant ssh infra-001 -c "cp /vagrant/.stack/hosts /etc/ansible; cd /opt/ccs/services/${service}; sudo heighliner --debug deploy"
 }
 
 _usage() {
