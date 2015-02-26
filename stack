@@ -15,7 +15,7 @@ _workon() {
   else
     cd .stack/ccs-data; git pull --ff-only origin; cd "$WD"
   fi
-  cd .stack/ccs-data; ./lightfuse.py --site ccs-dev-1; cd "$WD"
+  cd .stack/ccs-data; ./lightfuse.rb --site ccs-dev-1; cd "$WD"
 
   if [ ! -d ".stack/heighliner/.git" ]; then
     git clone "ssh://$UNAME@$GERRIT_HOST:29418/heighliner" .stack/heighliner
@@ -61,9 +61,16 @@ _pull() {
   fi
 }
 
+_status() {
+  echo "Working on: $(cat .stack/current)"
+  echo ""
+  echo "Services: "
+  ls services
+}
+
 _clean() {
   vagrant destroy -f
-  rm -rf service
+  rm -f service
   rm -rf .stack/current
 }
 
@@ -80,6 +87,7 @@ _deploy() {
 _usage() {
   echo "Usage: $0 [options] <command>"
   echo "Commands:"
+  echo -e "\tstatus             Print status of current environment"
   echo -e "\tworkon [service]   Configure dev environment to work on [service]"
   echo -e "\tup                 Bring up vagrant hosts"
   echo -e "\tpull               Perform a pull --ff-only on the current working [service]"
@@ -98,6 +106,7 @@ while [[ $1 != '' ]]; do
   case $1 in
     --user)      shift; UNAME=$1; USER=$1;;
     help)        _usage; exit 0;;
+    status)      ACTION='status';;
     workon)      ACTION='workon'; shift; SERVICE=$1; shift; BRANCH=$1;;
     link)        ACTION='link'; shift; SERVICE=$1;;
     pull)        ACTION='pull';;
@@ -110,6 +119,7 @@ while [[ $1 != '' ]]; do
 done
 
 case $ACTION in
+  status)        _status;;
   workon)        _workon "$SERVICE" "$BRANCH";;
   link)          _link "$SERVICE";;
   up)            _up;;
