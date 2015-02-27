@@ -21,10 +21,10 @@ _workon() {
       _sync_service "$current"
       _link "$service"
     fi
-  elif [[ $service == $current ]]; then
+  elif [[ $service == "$current" ]]; then
     echo "Already working on $service.  Syncing..."
     _sync_service "$current"
-  elif [[ $service != $current ]]; then
+  elif [[ $service != "$current" ]]; then
     echo "Switching from ${current} to ${service}"
     rm service
     _link "$service"
@@ -33,6 +33,26 @@ _workon() {
   fi
 
   _prep
+}
+
+_init() {
+  service0=${1#service-}
+  service=${service0//\ /\-}
+
+  if [[ $service != "" ]]; then
+    echo "Creating new service: $service"
+    ssh -p 29418 "$GERRIT_HOST" gerrit create-project --empty-commit "service-$service"
+    if [ $? -eq 0 ]; then
+      echo "Cloning service: $service"
+      _sync_service "$service"
+      cp .stack/init/.gitreview "services/$service"
+      echo "project=service-$service" >> "services/$service/.gitreview"
+      echo "service: $service" > "services/$service/.nimbus.yml"
+      echo "version: 0.1.0" >> "services/$service/.nimbus.yml"
+    fi
+  else
+    echo "Missing service name: ./stack init [service]"
+  fi
 }
 
 _prep() {
@@ -112,6 +132,7 @@ _usage() {
   echo "Commands:"
   echo -e "\tstatus             Print status of current environment"
   echo -e "\tworkon [service]   Configure dev environment to work on [service]"
+  echo -e "\tinit [service]     Create a new service project in gerrit, named service-[service]"
   echo -e "\tup                 Bring up vagrant hosts"
   echo -e "\tpull               Perform a pull --ff-only on the current working [service]"
   echo -e "\tclean              Resets the dev environment, deleting all cloned repos and vms"
@@ -132,6 +153,7 @@ while [[ $1 != '' ]]; do
     status)      ACTION='status';;
     workon)      ACTION='workon'; shift; SERVICE=$1; shift; BRANCH=$1;;
     link)        ACTION='link'; shift; SERVICE=$1;;
+    init)        ACTION='init'; shift; SERVICE=$1;;
     pull)        ACTION='pull';;
     up)          ACTION='up';;
     deploy)      ACTION='deploy';;
@@ -145,6 +167,7 @@ case $ACTION in
   status)        _status;;
   workon)        _workon "$SERVICE" "$BRANCH";;
   link)          _link "$SERVICE";;
+  init)          _init "$SERVICE";;
   up)            _up;;
   deploy)        _deploy;;
   pull)          _pull;;
