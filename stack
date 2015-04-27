@@ -79,7 +79,7 @@ _sync_data() {
   else
     cd .stack/ccs-data; git pull --ff-only origin; cd "$WD"
   fi
-  cd .stack/ccs-data; ./lightfuse.rb --site ccs-dev-1; cd "$WD"
+  cd .stack/ccs-data; ./lightfuse.rb -c hiera-bom-unenc.yaml --site ccs-dev-1; cd "$WD"
 }
 
 _link() {
@@ -124,7 +124,7 @@ _up() {
 
 _deploy() {
   service=$(cat .stack/current)
-  vagrant ssh infra-001 -c "cp /vagrant/.stack/hosts /etc/ansible; cd /opt/ccs/services/${service}; sudo heighliner --debug deploy"
+  vagrant ssh infra-001 -c "cp /vagrant/.stack/hosts /etc/ansible; cd /opt/ccs/services/${service}; sudo heighliner --dev --debug deploy"
 }
 
 _usage() {
