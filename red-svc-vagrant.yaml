@@ -1,0 +1,41 @@
+hosts:
+  aio-001:
+    role: aio
+    domain: 1
+    profile: aio
+    ip: 192.168.100.21
+    mac: "000027000021"
+    memory: 1024
+    box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
+  aio-002:
+    role: aio
+    domain: 1
+    profile: aio
+    ip: 192.168.100.22
+    mac: "000027000022"
+    memory: 1024
+    box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
+  aio-003:
+    role: aio
+    domain: 1
+    profile: aio
+    ip: 192.168.100.23
+    mac: "000027000023"
+    memory: 1024
+    box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
+  nova-001:
+    role: compute_local
+    domain: 1
+    profile: aio
+    ip: 192.168.100.50
+    mac: "000027000050"
+    memory: 1024
+    box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
+  nova-002:
+    role: compute_local
+    domain: 1
+    profile: aio
+    ip: 192.168.100.51
+    mac: "000027000051"
+    memory: 1024
+    box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
