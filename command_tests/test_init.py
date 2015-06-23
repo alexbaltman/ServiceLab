@@ -1,9 +1,16 @@
 import unittest
+import socket
+import sys
 
-Class TestInitCmds(unittest.TestCase):
+gerrit_host = 'cis-gerrit.cisco.com'
 
-    def setUp():
-        pass
+class TestInitCmds(unittest.TestCase):
+
+    def setUp(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if not s.connect((gerrit_host, 29418)):
+            print "Cannot access %s on port 29418" % (gerrit_host,)
+            sys.exit(1)
 
     def test_init_servicetype_service(self):
         pass
@@ -23,7 +30,8 @@ Class TestInitCmds(unittest.TestCase):
     def test_init_debug(self):
         pass
 
-    def tearDown():
+    @classmethod
+    def tearDownClass():
         pass
 
 if __name__ == '__main__':
