@@ -32,12 +32,12 @@ class Context(object):
 
     def vvlog(self, msg, *args):
         """Logs a message to stderr only if double verbose is enabled."""
-        if self.verbose:
+        if self.vverbose:
             self.log(msg, *args)
 
     def debug(self, msg, *args):
         """Logs a message to stderr only if debug is enabled."""
-        if self.verbose:
+        if self.debug:
             self.log(msg, *args)
 
 pass_context = click.make_pass_decorator(Context, ensure=True)
@@ -47,7 +47,7 @@ cmd_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),
 
 class ComplexCLI(click.MultiCommand):
 
-    def list_commands(self, ctx):
+    def list_commands(self, context):
         rv = []
         for filename in os.listdir(cmd_folder):
             if filename.endswith('.py') and \
@@ -56,7 +56,7 @@ class ComplexCLI(click.MultiCommand):
         rv.sort()
         return rv
 
-    def get_command(self, ctx, name):
+    def get_command(self, context, name):
         try:
             if sys.version_info[0] == 2:
                 name = name.encode('ascii', 'replace')
@@ -79,8 +79,8 @@ class ComplexCLI(click.MultiCommand):
 @click.option('--debug', '-vvv', is_flag=True,
               help='Enables verbose mode.')
 @pass_context
-def cli(ctx, verbose, home):
+def cli(context, verbose, home):
     """A CLI for Cisco Cloud Services."""
-    ctx.verbose = verbose
+    context.verbose = verbose
     if home is not None:
-        ctx.home = home
+        context.home = home
