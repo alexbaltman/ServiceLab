@@ -47,7 +47,7 @@ cmd_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),
 
 class ComplexCLI(click.MultiCommand):
 
-    def list_commands(self, context):
+    def list_commands(self, ctx):
         rv = []
         for filename in os.listdir(cmd_folder):
             if filename.endswith('.py') and \
@@ -56,11 +56,11 @@ class ComplexCLI(click.MultiCommand):
         rv.sort()
         return rv
 
-    def get_command(self, context, name):
+    def get_command(self, ctx, name):
         try:
             if sys.version_info[0] == 2:
                 name = name.encode('ascii', 'replace')
-            mod = __import__('complex.commands.cmd_' + name,
+            mod = __import__('servicelab.commands.cmd_' + name,
                              None, None, ['cli'])
         except ImportError:
             return
@@ -79,7 +79,7 @@ class ComplexCLI(click.MultiCommand):
 @click.option('--debug', '-vvv', is_flag=True,
               help='Enables verbose mode.')
 @pass_context
-def cli(context, verbose, home):
+def cli(ctx, verbose, home):
     """A CLI for Cisco Cloud Services."""
     context.verbose = verbose
     if home is not None:

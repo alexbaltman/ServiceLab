@@ -9,5 +9,5 @@ develop_servicelab.egg-info/top_level.txt
 servicelab/__init__.py
 servicelab/stack.py
 servicelab/commands/__init__.py
-servicelab/commands/cmd_init.py
+servicelab/commands/cmd_create.py
 servicelab/commands/cmd_status.py

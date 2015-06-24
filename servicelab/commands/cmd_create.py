@@ -1,11 +1,11 @@
 import click
-from stack.cli import pass_context
+from servicelab.stack import pass_context
 
 
 @click.group('create', short_help='Creates a pipeline resources to work with.',
              invoke_without_command=True, add_help_option=True)
 @click.pass_context
-def create(context):
+def create(ctx):
     click.echo('hello')
 
 
@@ -13,7 +13,7 @@ def create(context):
 @create.argument('name')
 @create.option('-i', '--interactive',)
 @pass_context
-def repo_new(context, name):
+def repo_new(ctx, name):
     """
     Creates a repository in gerrit
     production, does 1st commit, sets up

@@ -13,7 +13,7 @@ Usage:
   $ virtualenv venv
   $ . venv/bin/activate
   $ pip install --editable .
-  $ complex --help
+  $ stack --help
 
 
 Afterwards, your command should be available:
