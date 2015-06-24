@@ -1,7 +1,6 @@
 import click
 from stack.cli import pass_context
 
-
 @click.command('status', short_help='Shows file changes.')
 @pass_context
 def cli(ctx):

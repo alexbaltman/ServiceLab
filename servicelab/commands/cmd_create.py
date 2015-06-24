@@ -15,7 +15,7 @@ def create(context):
 @pass_context
 def repo_new(context, name):
     """
-    Currently creates repository in gerrit
+    Creates a repository in gerrit
     production, does 1st commit, sets up
     directory structure, and creates .nimbus.yml
     """
