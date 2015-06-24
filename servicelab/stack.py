@@ -5,7 +5,8 @@ import os
 import sys
 
 # TODO: "This is a stub so we can grep out all TODO items in the code
-# RFI:  "This is a stub where we need to make a coordinated decision about something. Request for input/information.
+# RFI:  "This is a stub where we need to make a coordinated decision about
+# something. Request for input/information.
 # --> no stub regular comment. More of the why less of the what or how.
 
 
@@ -17,7 +18,7 @@ class Context(object):
 
     def __init__(self):
         self.verbose = False
-        self.home = os.getcwd()
+        self.path = os.getcwd()
 
     def log(self, msg, *args):
         """Logs a message to stderr."""
@@ -69,7 +70,7 @@ class ComplexCLI(click.MultiCommand):
 
 @click.command(cls=ComplexCLI, context_settings=CONTEXT_SETTINGS)
 # RFI: Do we need the below option?
-@click.option('--home', type=click.Path(exists=True, file_okay=False,
+@click.option('--path', type=click.Path(exists=True, file_okay=False,
                                         resolve_path=True),
               help='Changes the folder to operate on.')
 @click.option('--verbose', '-v', is_flag=True,
@@ -79,8 +80,10 @@ class ComplexCLI(click.MultiCommand):
 @click.option('--debug', '-vvv', is_flag=True,
               help='Enables verbose mode.')
 @pass_context
-def cli(ctx, verbose, home):
+def cli(ctx, verbose, vverbose, debug, path):
     """A CLI for Cisco Cloud Services."""
     ctx.verbose = verbose
-    if home is not None:
-        ctx.home = home
+    ctx.vverbose = vverbose
+    ctx.debug = debug
+    if path is not None:
+        ctx.path = path

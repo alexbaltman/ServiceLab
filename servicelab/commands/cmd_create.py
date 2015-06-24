@@ -12,7 +12,8 @@ def create(ctx):
 @create.command('repo')
 @create.argument('name')
 @create.option('-i', '--interactive',)
-@create.option('-t', '--type',)
+# Other option is "source" repository
+@create.option('-t', '--type', default="service")
 @pass_context
 def repo_new(ctx, name):
     """
@@ -21,4 +22,3 @@ def repo_new(ctx, name):
     directory structure, and creates .nimbus.yml
     """
     click.echo('creating git repository %s ...' % name)
-
