@@ -81,6 +81,6 @@ class ComplexCLI(click.MultiCommand):
 @pass_context
 def cli(ctx, verbose, home):
     """A CLI for Cisco Cloud Services."""
-    context.verbose = verbose
+    ctx.verbose = verbose
     if home is not None:
-        context.home = home
+        ctx.home = home
