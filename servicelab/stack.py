@@ -70,7 +70,7 @@ class ComplexCLI(click.MultiCommand):
 
 @click.command(cls=ComplexCLI, context_settings=CONTEXT_SETTINGS)
 # RFI: Do we need the below option?
-@click.option('--path', type=click.Path(exists=True, file_okay=False,
+@click.option('--path','-p', type=click.Path(exists=True, file_okay=False,
                                         resolve_path=True),
               help='Changes the folder to operate on.')
 @click.option('--verbose', '-v', is_flag=True,
