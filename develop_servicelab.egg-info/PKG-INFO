@@ -1,0 +1,54 @@
+Metadata-Version: 1.1
+Name: develop-servicelab
+Version: 0.1
+Summary: The CLI for Cisco Cloud Services
+Home-page: UNKNOWN
+Author: Alex Altmann, Nick Foster
+Author-email: aaltman@cisco.com, nickfost@cisco.com
+License: UNKNOWN
+Description: servicelab
+        ==========
+        
+        servicelab is a virtual environment for testing service deployments.
+        
+        ## Quickstart
+        
+        ```
+        ./stack workon [servicename]
+        ./stack up
+        ./stack deploy
+        ```
+        
+        ## ./stack Command Reference
+        
+        ```
+        ./stack workon [servicename]
+        ```
+        Sets up the environment for working on a particular service.  Expects a repo for the form "service-[servicename]" in gerrit.
+        Services get installed into `services/`.  The target service is symlinked to `service/` for ease of use.
+        
+        ```
+        ./stack up
+        ```
+        Runs vagrant up
+        
+        ```
+        ./stack deploy
+        ```
+        Runs heighliner deploy on the target service
+        
+        ```
+        ./stack clean
+        ```
+        Destroys existing vagrant vms and unlinks the target service.  Start work again with `./stack workon`. Services cloned to `services/` remain intact.
+        
+Platform: any
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: License :: Cisco Systems
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: Unix
+Classifier: Programming Language :: Python :: 2.7

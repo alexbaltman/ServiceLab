@@ -3,3 +3,6 @@
 !.stack/provision/
 /service
 services/
+venv
+env
+*.pyc
