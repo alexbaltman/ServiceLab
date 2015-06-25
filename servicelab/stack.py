@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import click
 import os
 import sys
@@ -11,7 +9,7 @@ import sys
 
 
 # Load Plugins
-CONTEXT_SETTINGS = dict(auto_envvar_prefix='COMPLEX')
+CONTEXT_SETTINGS = dict(auto_envvar_prefix='STACK')
 
 
 class Context(object):

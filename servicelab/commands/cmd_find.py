@@ -2,19 +2,19 @@ import click
 from servicelab.stack import pass_context
 
 
-@click.group('find', short_help='Helps you search
+@click.group('find', short_help='Helps you search \
              pipeline resources.', invoke_without_command=True,
              add_help_option=True)
 @pass_context
-def find(ctx):
+def cli(ctx):
     """
     Helps you search for resources in the SDLC pipeline.
     """
     pass
 
 
-@find.command('repo', short_help='Find a repo in Gerrit.')
-@find.argument('search_term')
+@cli.command('repo', short_help='Find a repo in Gerrit.')
+@click.argument('search_term')
 @pass_context
 # RFI: how do we take fancy input like grep? aka grep -ie "this|that"
 #      see pipe in search term.
@@ -28,8 +28,8 @@ def find_repo(ctx, search_term):
 # RFI: What would we use as search_term here. It's not clear if we
 #      need this or not - it's being add for completeness and reducing
 #      user confusion.
-@find.command('review', short_help='Find a repo in Gerrit.')
-@find.argument('search_term')
+@cli.command('review', short_help='Find a repo in Gerrit.')
+@click.argument('search_term')
 @pass_context
 # RFI: How do we take fancy input like grep? aka grep -ie "this|that"
 #      see pipe in search term.
@@ -39,8 +39,8 @@ def find_repo(ctx, search_term):
     """
     pass
 
-@find.command('build', short_help='Find a Jenkins build.')
-@find.argument('search_term')
+@cli.command('build', short_help='Find a Jenkins build.')
+@click.argument('search_term')
 @pass_context
 # RFI: how do we take fancy input like grep? aka grep -ie "this|that"
 #      see pipe in search term.
@@ -51,8 +51,8 @@ def find_build(ctx, search_term):
     pass
 
 
-@find.command('artifact', short_help='Find an artifact in artifactory')
-@find.argument('search_term')
+@cli.command('artifact', short_help='Find an artifact in artifactory')
+@click.argument('search_term')
 @pass_context
 # RFI: how do we take fancy input like grep? aka grep -ie "this|that"
 #      see pipe in search term.
@@ -63,8 +63,8 @@ def find_artifact(ctx, search_term):
     pass
 
 
-@find.command('pipe', short_help='Find a Go deploy pipeline')
-@find.argument('search_term')
+@cli.command('pipe', short_help='Find a Go deploy pipeline')
+@click.argument('search_term')
 @pass_context
 # RFI: how do we take fancy input like grep? aka grep -ie "this|that"
 #      see pipe in search term.
