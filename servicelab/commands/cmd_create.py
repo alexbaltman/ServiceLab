@@ -41,6 +41,10 @@ def host_new(ctx, name):
 
 @create.command('site')
 @create.argument('name')
+@create.option('--continue', short_help="If you didn't finish
+               creating your site and paused mid-way you can continue it')
+@create.option('--abort', short_help="If you didn't finish
+               creating your site and paused mid-way you can abort it')
 def site_new(ctx, name):
     """
     Create a whole site in ccs-data.
@@ -50,6 +54,10 @@ def site_new(ctx, name):
 
 @create.command('env')
 @create.argument('name')
+@create.option('--continue', short_help="If you didn't finish
+               creating your site and paused mid-way you can continue it')
+@create.option('--abort', short_help="If you didn't finish
+               creating your site and paused mid-way you can abort it')
 def env_new(ctx, name):
     """
     Create a new environment in a site in ccs-data.

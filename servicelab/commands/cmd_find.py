@@ -2,11 +2,35 @@ import click
 from servicelab.stack import pass_context
 
 
-@click.command('status', short_help='Shows status of your environment.')
+@click.group('find', short_help='Helps you search
+             pipeline resources.', invoke_without_command=True,
+             add_help_option=True)
 @pass_context
-def cli(ctx):
+def find(ctx):
     """
-    Shows status of your working environment.
+    Helps you search for resources in the SDLC pipeline.
     """
-    ctx.log('Changed files: none')
-    ctx.vlog('debug info')
+    pass
+
+
+@create.command('pipe', short_help='Find a Go deploy pipeline')
+@create.argument('search_term')
+@create.option('-i', '--interactive', help='Helps you search for go deploy
+               pipelines interactively')
+@pass_context
+def find_pipe(ctx, search_term):
+    """
+    Searches through GO's API for pipelines using your search term.
+    """
+    pass
+
+
+@create.command('pipe', short_help='Find a Go deploy pipeline')
+@create.argument('search_term')
+@create.option('-i', '--interactive', help='Helps you search for go deploy
+               pipelines interactively')
+@pass_context
+def find_pipe(ctx, search_term):
+    """
+    Searches through GO's API for pipelines using your search term.
+    """
