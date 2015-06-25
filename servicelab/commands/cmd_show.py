@@ -2,55 +2,64 @@ import click
 from servicelab.stack import pass_context
 
 
-@click.group('find', short_help='Helps you search
-             pipeline resources.', invoke_without_command=True,
-             add_help_option=True)
+@click.group('show', short_help='Helps you show the details of a
+             pipeline resource.')
 @pass_context
-def find(ctx):
+def show(ctx):
     """
-    Helps you search for resources in the SDLC pipeline.
+    Helps you show the details of resources in the SDLC pipeline.
     """
     pass
 
 
-@create.command('repo', short_help='Find a repo in Gerrit')
-@create.argument('search_term')
+@show.command('repo', short_help='Show the details of a repo in Gerrit.')
+# item is generic right now until we can figure out exactly what that\'s
+# going to look like.
+@show.argument('item')
 @pass_context
-def find_pipe(ctx, search_term):
+def show_repo(ctx, item):
     """
-    Searches through Gerrit's API for pipelines using your search term.
+    Shows the details of git repos using Gerrit's API.
     """
     pass
 
 
-@create.command('pipe', short_help='Find a Go deploy pipeline')
-@create.argument('search_term')
-@create.option('-i', '--interactive', help='Helps you search for go deploy
-               pipelines interactively')
+@show.command('review', short_help='Show the details of a review in Gerrit.')
+@show.argument('item')
 @pass_context
-def find_pipe(ctx, search_term):
+def show_review(ctx, item):
     """
-    Searches through GO's API for pipelines using your search term.
+    Shows the details ofa review using Gerrit's API.
     """
+    pass
 
-@create.command('pipe', short_help='Find a Go deploy pipeline')
-@create.argument('search_term')
-@create.option('-i', '--interactive', help='Helps you search for go deploy
-               pipelines interactively')
+
+@show.command('build', short_help='Show the details of a build in Jenkins.')
+@show.argument('item')
 @pass_context
-def find_pipe(ctx, search_term):
+def show_build(ctx, item):
     """
-    Searches through GO's API for pipelines using your search term.
+    Shows the details of a build in Jekins.
     """
+    pass
 
-@create.command('pipe', short_help='Find a Go deploy pipeline')
-@create.argument('search_term')
-@create.option('-i', '--interactive', help='Helps you search for go deploy
-               pipelines interactively')
+
+@show.command('artifact', short_help='Show the details of an artifact
+              in artifactory')
+@show.argument('item')
 @pass_context
-def find_pipe(ctx, search_term):
+def show_artifact(ctx, item):
     """
-    Searches through GO's API for pipelines using your search term.
+    Show the details of an artifact using Artifactory's API.
     """
+    pass
 
 
+@show.command('pipe', short_help='Show the details of a GO deploy pipeline')
+@show.argument('item')
+@pass_context
+def show_pipe(ctx, item):
+    """
+    Show the details of a deployment pipline using GO's API.
+    """
+    pass

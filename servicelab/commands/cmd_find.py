@@ -13,11 +13,11 @@ def find(ctx):
     pass
 
 
-@create.command('repo', short_help='Find a repo in Gerrit.')
-@create.argument('search_term')
+@find.command('repo', short_help='Find a repo in Gerrit.')
+@find.argument('search_term')
 @pass_context
 # RFI: how do we take fancy input like grep? aka grep -ie "this|that"
-# see pipe in search term
+#      see pipe in search term.
 def find_repo(ctx, search_term):
     """
     Searches through Gerrit's API for a repo using your search term.
@@ -25,9 +25,25 @@ def find_repo(ctx, search_term):
     pass
 
 
-@create.command('build', short_help='Find a Jenkins build.')
-@create.argument('search_term')
+# RFI: What would we use as search_term here. It's not clear if we
+#      need this or not - it's being add for completeness and reducing
+#      user confusion.
+@find.command('review', short_help='Find a repo in Gerrit.')
+@find.argument('search_term')
 @pass_context
+# RFI: How do we take fancy input like grep? aka grep -ie "this|that"
+#      see pipe in search term.
+def find_repo(ctx, search_term):
+    """
+    Searches through Gerrit's API for a repo using your search term.
+    """
+    pass
+
+@find.command('build', short_help='Find a Jenkins build.')
+@find.argument('search_term')
+@pass_context
+# RFI: how do we take fancy input like grep? aka grep -ie "this|that"
+#      see pipe in search term.
 def find_build(ctx, search_term):
     """
     Searches through Jenkins API for pipelines using your search term.
@@ -35,9 +51,11 @@ def find_build(ctx, search_term):
     pass
 
 
-@create.command('artifact', short_help='Find an artifact in artifactory')
-@create.argument('search_term')
+@find.command('artifact', short_help='Find an artifact in artifactory')
+@find.argument('search_term')
 @pass_context
+# RFI: how do we take fancy input like grep? aka grep -ie "this|that"
+#      see pipe in search term.
 def find_artifact(ctx, search_term):
     """
     Searches through Artifactory's API for artifacts using your search term.
@@ -45,9 +63,11 @@ def find_artifact(ctx, search_term):
     pass
 
 
-@create.command('pipe', short_help='Find a Go deploy pipeline')
-@create.argument('search_term')
+@find.command('pipe', short_help='Find a Go deploy pipeline')
+@find.argument('search_term')
 @pass_context
+# RFI: how do we take fancy input like grep? aka grep -ie "this|that"
+#      see pipe in search term.
 def find_pipe(ctx, search_term):
     """
     Searches through GO's API for pipelines using your search term.
