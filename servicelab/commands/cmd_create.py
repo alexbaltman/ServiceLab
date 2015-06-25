@@ -64,6 +64,7 @@ def env_new(ctx, name):
     """
     pass
 
+
 # RFI: is this the right place for this integration w/ haproxy?
 @create.command('vip')
 # It probably won't take in name
