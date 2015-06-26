@@ -13,7 +13,7 @@ def cli(ctx):
 
 
 # RFI: should there be more intelligence here than a blankey list?
-@cli.command('repo', short_help='List repos in Gerrit.')
+@cli.command('repos', short_help='List repos in Gerrit.')
 @pass_context
 def list_repo(ctx):
     """
@@ -37,7 +37,7 @@ def list_repo(ctx):
 
 
 # RFI: should there be more intelligence here than a blankey list?
-@cli.command('build', short_help='List a Jenkins\' builds.')
+@cli.command('builds', short_help='List a Jenkins\' builds.')
 @pass_context
 def list_build(ctx):
     """
@@ -47,7 +47,7 @@ def list_build(ctx):
 
 
 # RFI: should there be more intelligence here than a blankey list?
-@cli.command('artifact', short_help='List artifacts in artifactory')
+@cli.command('artifacts', short_help='List artifacts in artifactory')
 @pass_context
 def list_artifact(ctx):
     """
@@ -57,7 +57,7 @@ def list_artifact(ctx):
 
 
 # RFI: should there be more intelligence here than a blankey list?
-@cli.command('pipe', short_help='List Go deployment pipelines')
+@cli.command('pipes', short_help='List Go deployment pipelines')
 @pass_context
 def list_pipe(ctx, search_term):
     """

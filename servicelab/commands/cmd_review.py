@@ -11,47 +11,55 @@ def cli(ctx):
     pass
 
 
-@cli.command('inc', short_help='Find a repo in Gerrit.')
-@click.argument('search_term')
+@cli.command('inc', short_help='Find incoming reviews Gerrit.')
+# RFI: Do we need search term? Should it be username or is that coming
+#      coming from the config file / env var.s?
+# @click.argument('search_term')
 @pass_context
-def review_(ctx, search_term):
+def review_inc(ctx):
     """
-    Searches through Gerrit's API for a repo using your search term.
+    Searches through Gerrit's API for incoming reviews for your username.
     """
     pass
 
 
-@cli.command('build', short_help='Find a Jenkins build.')
-@click.argument('search_term')
+@cli.command('out', short_help='Find outgoing reviews in Gerrit.')
 @pass_context
-# RFI: how do we take fancy input like grep? aka grep -ie "this|that"
-# see pipe in search term
-def find_build(ctx, search_term):
+def review_out(ctx):
     """
-    Searches through Jenkins API for pipelines using your search term.
+    Searches through Gerrit's API for outgoing reviews for your username.
     """
     pass
 
 
-@cli.command('artifact', short_help='Find an artifact in artifactory')
-@click.argument('search_term')
+# RFI: Can we do +2 w/ the plus?
+@cli.command('plustwo', short_help='Plus two gerrit change set.')
+@click.argument('item')
 @pass_context
-# RFI: how do we take fancy input like grep? aka grep -ie "this|that"
-# see pipe in search term
-def find_artifact(ctx, search_term):
+def review_plustwo(ctx, item):
     """
-    Searches through Artifactory's API for artifacts using your search term.
+    Approves and merges a gerrit change set.
     """
     pass
 
 
-@cli.command('pipe', short_help='Find a Go deploy pipeline')
-@click.argument('search_term')
+# RFI: Can we do +1 w/ the plus?
+@cli.command('plusone', short_help='Plus one gerrit change set.')
+@click.argument('item')
 @pass_context
-# RFI: how do we take fancy input like grep? aka grep -ie "this|that"
-# see pipe in search term
-def find_pipe(ctx, search_term):
+def find_pipe(ctx, item):
     """
-    Searches through GO's API for pipelines using your search term.
+    Approves, but does not merge a gerrit change set, which means change set
+    requires another approver.
+    """
+    pass
+
+
+@cli.command('ab', '--abandon', short_help='Abandon gerrit change set.')
+@click.argument('item')
+@pass_context
+def find_pipe(ctx, item):
+    """
+    Abandon a gerrit change set.
     """
     pass

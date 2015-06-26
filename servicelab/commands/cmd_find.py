@@ -28,16 +28,17 @@ def find_repo(ctx, search_term):
 # RFI: What would we use as search_term here. It's not clear if we
 #      need this or not - it's being add for completeness and reducing
 #      user confusion.
-@cli.command('review', short_help='Find a repo in Gerrit.')
+@cli.command('review', short_help='Find a review in Gerrit.')
 @click.argument('search_term')
 @pass_context
 # RFI: How do we take fancy input like grep? aka grep -ie "this|that"
 #      see pipe in search term.
-def find_repo(ctx, search_term):
+def find_review(ctx, search_term):
     """
     Searches through Gerrit's API for a repo using your search term.
     """
     pass
+
 
 @cli.command('build', short_help='Find a Jenkins build.')
 @click.argument('search_term')
