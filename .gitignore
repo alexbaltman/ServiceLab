@@ -3,9 +3,15 @@
 !.stack/provision/
 /service
 services/
-venv
-env
+venv/
+env/
 *.pyc
 *.swp
 .ruby-gemset
 .ruby-version
+.Python
+develop-servicelab.egg-info/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
