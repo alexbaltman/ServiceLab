@@ -47,7 +47,7 @@ def review_plustwo(ctx, item):
 @cli.command('plusone', short_help='Plus one gerrit change set.')
 @click.argument('item')
 @pass_context
-def find_pipe(ctx, item):
+def review_plusone(ctx, item):
     """
     Approves, but does not merge a gerrit change set, which means change set
     requires another approver.
@@ -55,10 +55,10 @@ def find_pipe(ctx, item):
     pass
 
 
-@cli.command('ab', '--abandon', short_help='Abandon gerrit change set.')
+@cli.command('--abandon', short_help='Abandon gerrit change set.')
 @click.argument('item')
 @pass_context
-def find_pipe(ctx, item):
+def review_ab(ctx, item):
     """
     Abandon a gerrit change set.
     """
