@@ -22,7 +22,7 @@ def find_repo(ctx, search_term):
     """
     Searches through Gerrit's API for a repo using your search term.
     """
-    pass
+    click.echo('Searching for %s in Gerrit' % search_term)
 
 
 # RFI: What would we use as search_term here. It's not clear if we
@@ -37,7 +37,7 @@ def find_review(ctx, search_term):
     """
     Searches through Gerrit's API for a repo using your search term.
     """
-    pass
+    click.echo('Searching for %s review in Gerrit' % search_term)
 
 
 @cli.command('build', short_help='Find a Jenkins build.')
@@ -49,7 +49,7 @@ def find_build(ctx, search_term):
     """
     Searches through Jenkins API for pipelines using your search term.
     """
-    pass
+    click.echo('Searching for %s build in Jenkins' % search_term)
 
 
 @cli.command('artifact', short_help='Find an artifact in artifactory')
@@ -61,7 +61,7 @@ def find_artifact(ctx, search_term):
     """
     Searches through Artifactory's API for artifacts using your search term.
     """
-    pass
+    click.echo('Searching for %s artifact in Artifactory' % search_term)
 
 
 @cli.command('pipe', short_help='Find a Go deploy pipeline')
@@ -73,4 +73,4 @@ def find_pipe(ctx, search_term):
     """
     Searches through GO's API for pipelines using your search term.
     """
-    pass
+    click.echo('Searching for %s pipeline in GO' % search_term)

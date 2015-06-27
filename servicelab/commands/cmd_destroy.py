@@ -10,32 +10,31 @@ def cli(ctx):
     """
     pass
 
-
 @cli.command('vm', short_help='')
-@click.argument('name')
+@click.argument('vm_name')
 @pass_context
-def destroy_vm(ctx, name):
+def destroy_vm(ctx, vm_name):
     """
 
     """
-    pass
+    click.echo('Destroying vm %s in ccs-data only' % vm_name)
 
 
 @cli.command('repo', short_help='Destroy a repo in Gerrit.')
-@click.argument('name')
+@click.argument('repo_name')
 @pass_context
-def destory_repo(ctx, name):
+def destory_repo(ctx, repo_name):
     """
     Destroys a repo in Gerrit.
     """
-    pass
+    click.echo('Destroying repo %s in Artifactory' % repo_name)
 
 
 @cli.command('artifact', short_help='Destroy an artifact in artifactory.')
-@click.argument('name')
+@click.argument('artifact_name')
 @pass_context
-def destory_artifact(ctx, name):
+def destory_artifact(ctx, artifact_name):
     """
     Destroys an artifact in Artifactory.
     """
-    pass
+    click.echo('Destroying artifact %s in Artifactory' % artifact_name)

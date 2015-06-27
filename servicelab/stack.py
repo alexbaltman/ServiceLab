@@ -71,12 +71,12 @@ class ComplexCLI(click.MultiCommand):
 @click.option('--path','-p', type=click.Path(exists=True, file_okay=False,
                                         resolve_path=True),
               help='Changes the folder to operate on.')
-@click.option('--verbose', '-v', is_flag=True,
+@click.option('--verbose', '-v', is_flag=True, default=False,
               help='Enables verbose mode.')
-@click.option('--vverbose', '-vv', is_flag=True,
-              help='Enables verbose mode.')
-@click.option('--debug', '-vvv', is_flag=True,
-              help='Enables verbose mode.')
+@click.option('--vverbose', '-vv', is_flag=True, default=False,
+              help='Enables extra verbose mode.')
+@click.option('--debug', '-vvv', is_flag=True, default=False,
+              help='Enables debug mode.')
 @pass_context
 def cli(ctx, verbose, vverbose, debug, path):
     """A CLI for Cisco Cloud Services."""

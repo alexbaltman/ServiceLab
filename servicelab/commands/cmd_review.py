@@ -11,6 +11,8 @@ def cli(ctx):
     pass
 
 
+# RFI: Aren't the inc and out basically the same as list out review list inc review? Do
+       we need both?
 @cli.command('inc', short_help='Find incoming reviews Gerrit.')
 # RFI: Do we need search term? Should it be username or is that coming
 #      coming from the config file / env var.s?
@@ -20,7 +22,7 @@ def review_inc(ctx):
     """
     Searches through Gerrit's API for incoming reviews for your username.
     """
-    pass
+    click.echo('Grabbing incoming reviews from Gerrit')
 
 
 @cli.command('out', short_help='Find outgoing reviews in Gerrit.')
@@ -29,7 +31,7 @@ def review_out(ctx):
     """
     Searches through Gerrit's API for outgoing reviews for your username.
     """
-    pass
+    click.echo('Grabbing outgoing reviews from Gerrit')
 
 
 # RFI: Can we do +2 w/ the plus?
@@ -40,7 +42,7 @@ def review_plustwo(ctx, item):
     """
     Approves and merges a gerrit change set.
     """
-    pass
+    click.echo('Action plus two against review in Gerrit')
 
 
 # RFI: Can we do +1 w/ the plus?
@@ -52,14 +54,14 @@ def review_plusone(ctx, item):
     Approves, but does not merge a gerrit change set, which means change set
     requires another approver.
     """
-    pass
+    click.echo('Action plus one against review in Gerrit')
 
 
-@cli.command('--abandon', short_help='Abandon gerrit change set.')
-@click.argument('item')
+@cli.command('abandon', short_help='Abandon gerrit change set.')
+@click.argument('review_name')
 @pass_context
-def review_ab(ctx, item):
+def review_abandon(ctx, review_name):
     """
     Abandon a gerrit change set.
     """
-    pass
+    click.echo('Action abandon review %s in Gerrit' % review_name)

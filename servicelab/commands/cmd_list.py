@@ -13,27 +13,27 @@ def cli(ctx):
 
 
 # RFI: should there be more intelligence here than a blankey list?
-@cli.command('repos', short_help='List repos in Gerrit.')
-@pass_context
-def list_repo(ctx):
-    """
-    Lists repos using Gerrit's API.
-    """
-    pass
-
-
-# RFI: should there be more intelligence here than a blankey list?
 @cli.command('reviews', short_help='List reviews in Gerrit.')
 # RFI: Is using an option here 100% the right way to go or nest
 #      the command set again (?)
-@click.option('--out', help='List the outgoing reviews I have.')
-@click.option('--inc', help='List the incoming reviews I have.')
+@click.option('ino', '--out', help='List the outgoing reviews I have.')
+@click.option('ino', '--inc', help='List the incoming reviews I have.')
 @pass_context
-def list_repo(ctx):
+def list_repo(ctx, ino):
     """
     Lists repos using Gerrit's API.
     """
-    pass
+    click.echo('Listing reviews in Gerrit.')
+
+
+# RFI: should there be more intelligence here than a blankey list?
+@cli.command('repos', short_help='List repos in Gerrit.')
+@pass_context
+def list_repos(ctx):
+    """
+    Lists repos using Gerrit's API.
+    """
+    click.echo('Listing repos in Gerrit.')
 
 
 # RFI: should there be more intelligence here than a blankey list?
@@ -43,7 +43,7 @@ def list_build(ctx):
     """
     Searches through Jenkins API for pipelines using your search term.
     """
-    pass
+    click.echo('Listing builds in Jenkins.')
 
 
 # RFI: should there be more intelligence here than a blankey list?
@@ -53,14 +53,14 @@ def list_artifact(ctx):
     """
     Lists artifacts using Artifactory's API.
     """
-    pass
+    click.echo('Listing artifacts in Artifactory.')
 
 
 # RFI: should there be more intelligence here than a blankey list?
 @cli.command('pipes', short_help='List Go deployment pipelines')
 @pass_context
-def list_pipe(ctx, search_term):
+def list_pipe(ctx):
     """
     Lists piplines using GO's API.
     """
-    pass
+    click.echo('Listing pipeliness in GO.')

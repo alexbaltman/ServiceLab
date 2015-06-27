@@ -2,7 +2,7 @@ import click
 from servicelab.stack import pass_context
 
 
-@click.option('--ha', is_flag=True, help='Enables HA for core OpenStack components \
+@click.option('--ha', is_flag=True, default=False, help='Enables HA for core OpenStack components \
               by booting the necessary extra VMs.')
 @click.option('--full', help='Boot complete openstack stack without ha, \
               unless --ha flag is set.')
@@ -10,14 +10,14 @@ from servicelab.stack import pass_context
               OpenStack Platform on one VM. Note: This is not the same as \
               the AIO node deployed in the service cloud.')
 @click.option('-i', '--interactive', help='Walk through booting VMs')
-@click.option('--username', help='Enter the password for the username')
+@click.option('-b', '--branch', help='Choose a branch to run against for ccs-data.')
+#@click.option('-u', '--username', help='Enter the password for the username')
 @click.password_option(help='Enter the gerrit username or \
                         CEC you want to use.')
 @click.group('up', invoke_without_command=True, short_help="Boots VM(s).")
 @click.pass_context
 def cli(ctx):
     pass
-
 
 @cli.command(short_help='Boots VM(s).')
 @pass_context
@@ -28,8 +28,21 @@ def up(ctx):
     """
 
     """
-    pass
+    ctx.log('Reg. Log bro')
+    ctx.vlog('verbose info')
+    ctx.vvlog('vverbose info')
+    ctx.debug('debug info')
+
 
 
 # vagrant status --> stack up status --> is that confusing
 # should prob use the stack status cmd
+
+
+def get_branch(ctx):
+	branch = 'master'
+	#Check config file here to override settings. Should be just a quick function call.
+	branch = ctx.obj['BRANCH']
+	click.echo("This is your %s." % ctx.obj['BRANCH'])
+	
+	
