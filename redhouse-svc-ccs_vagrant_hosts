@@ -1,0 +1,9 @@
+192.168.100.6 dev-int dev-int.cis.local
+192.168.100.5 dev dev.cis.local
+192.168.100.4 dev-storage dev-storage.cis.local
+192.168.100.20 dev-aio.cis.local
+192.168.100.21 aio-001 aio-001.cis.local
+192.168.100.22 aio-002 aio-002.cis.local
+192.168.100.23 aio-003 aio-003.cis.local
+192.168.100.50 nova-001 nova-001.cis.local
+192.168.100.51 nova-002 nova-002.cis.local

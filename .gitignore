@@ -6,3 +6,6 @@ services/
 venv
 env
 *.pyc
+*.swp
+.ruby-gemset
+.ruby-version
