@@ -1,5 +1,6 @@
 import click
 from servicelab.stack import pass_context
+from pprint import pprint
 
 
 @click.command('status', short_help='Shows status of your \
@@ -11,3 +12,5 @@ def cli(ctx):
     """
     ctx.log('Changed files: none')
     ctx.vlog('debug info')
+    l = dir(ctx)
+    pprint(l)

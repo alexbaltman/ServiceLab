@@ -12,7 +12,7 @@ def cli(ctx):
 
 
 # RFI: Aren't the inc and out basically the same as list out review list inc review? Do
-       we need both?
+#      we need both?
 @cli.command('inc', short_help='Find incoming reviews Gerrit.')
 # RFI: Do we need search term? Should it be username or is that coming
 #      coming from the config file / env var.s?
