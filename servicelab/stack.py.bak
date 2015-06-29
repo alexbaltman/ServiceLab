@@ -41,7 +41,7 @@ class Context(object):
 
     def vlog(self, msg, llevel, *args):
         """Logs a message to stderr depending on the loglevel"""
-        if llevel <= self.loglevel:
+        if self.loglevel <= llevel:
             self.log(msg, *args)
 
 

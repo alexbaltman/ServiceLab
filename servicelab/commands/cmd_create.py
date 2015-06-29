@@ -11,9 +11,10 @@ def cli(ctx):
 
 @cli.command('repo', short_help='Create a repository in Gerrit')
 @click.argument('repo_name')
-# Note: If you want a -<single_letter> to appear in your cmd and your help pages
-#       then you have to take the full name into your command's functions. The other
-#	option is to not put the - and take in just the letter into the function.
+# Note: If you want a -<single_letter> to appear in your cmd and your help
+#       pages then you have to take the full name into your command's
+#       functions. The other option is to not put the - and take in
+#       just the letter into the function.
 @click.option('-i', '--interactive', default=False, help='Create repo interactively \
                with extra details.')
 @click.option('-t', '--type', default="service", help='Choose a repo \
@@ -32,7 +33,7 @@ def repo_new(ctx, repo_name, interactive, type):
 @click.argument('host_name')
 @click.option('-e', '--env', help='Choose an environment to put your host \
                into - use the list command to see what environments are \
-               available.') 
+               available.')
 @pass_context
 def host_new(ctx, host_name, env):
     """
