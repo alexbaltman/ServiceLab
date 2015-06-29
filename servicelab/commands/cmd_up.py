@@ -22,12 +22,13 @@ from pprint import pprint
 # RFI: Also we need to think about if we're running latest data
 #      or not as well as git status.
 def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username):
-    print "inside da grp"
-    ctx.log('Reg. Log bro')
-    ctx.vlog('verbose info')
-    ctx.vvlog('vverbose info')
-    ctx.vvvlog('vvverbose info')
-    pprint(dir(ctx))
+    ##Dev testing Block for aaltman
+    #ctx.log('Reg. Log bro')
+    #ctx.vlog('verbose info', 2)
+    #ctx.vlog('vverbose info', 3)
+    #ctx.vlog('vvverbose info', 4)
+    #attrs = vars(ctx)
+    #print ', '.join("%s: %s" % item for item in attrs.items())
 
 
 # vagrant status --> stack up status --> is that confusing

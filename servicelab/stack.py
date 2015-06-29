@@ -26,12 +26,6 @@ class Context(object):
         self.debug = False
         self.path = os.getcwd()
         self.loglevel = 1
-        if self.verbose:
-            self.loglevel = 2
-        if self.vverbose:
-            self.loglevel = 3
-        if self.debug:
-            self.loglevel = 4
 
     def log(self, msg, *args):
         """Logs a message to stderr."""
@@ -41,6 +35,12 @@ class Context(object):
 
     def vlog(self, msg, llevel, *args):
         """Logs a message to stderr depending on the loglevel"""
+        if self.verbose:
+            self.loglevel = 2
+        if self.vverbose:
+            self.loglevel = 3
+        if self.debug:
+            self.loglevel = 4
         if llevel <= self.loglevel:
             self.log(msg, *args)
 
