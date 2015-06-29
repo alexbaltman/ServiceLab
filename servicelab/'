@@ -12,6 +12,7 @@ import sys
 # auto envvar prefix will take in any env vars that are prefixed with STK short for stack.
 CONTEXT_SETTINGS = dict(auto_envvar_prefix='STK')
 
+
 # Setup class context object to pass to all commands that opt in to
 # context. You can access through ctx attribute. E.G. ctx.verbose.
 class Context(object):

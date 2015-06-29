@@ -23,12 +23,14 @@ from pprint import pprint
 #      or not as well as git status.
 def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username):
     ##Dev testing Block for aaltman
-    #ctx.log('Reg. Log bro')
+    ctx.log('Reg. Log bro')
+    print "username: " + str(username)
     #ctx.vlog('verbose info', 2)
     #ctx.vlog('vverbose info', 3)
     #ctx.vlog('vvverbose info', 4)
-    #attrs = vars(ctx)
-    #print ', '.join("%s: %s" % item for item in attrs.items())
+    attrs = vars(ctx)
+    print ', '.join("%s: %s" % item for item in attrs.items())
+    pprint(dir(ctx))
 
 
 # vagrant status --> stack up status --> is that confusing
@@ -40,5 +42,3 @@ def get_branch(ctx):
 	#Check config file here to override settings. Should be just a quick function call.
 	branch = ctx.obj['BRANCH']
 	click.echo("This is your %s." % ctx.obj['BRANCH'])
-	
-	
