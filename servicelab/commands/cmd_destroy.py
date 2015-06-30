@@ -10,6 +10,7 @@ def cli(ctx):
     """
     pass
 
+
 @cli.command('vm', short_help='')
 @click.argument('vm_name')
 @pass_context

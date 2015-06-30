@@ -59,7 +59,7 @@ def site_new(ctx, site_name, cont):
 
 @cli.command('env')
 @click.argument('env_name')
-#What site to put your named environment under.
+# What site to put your named environment under.
 @click.argument('site')
 @click.option('cont', '--continue', help='If you did not finish \
                creating your site and paused midway you can continue it.')
@@ -71,6 +71,7 @@ def env_new(ctx, env_name, site, cont):
     Create a new environment in a site in ccs-data.
     """
     click.echo('Creating new env yamls in %s for %s' % (site, env_name))
+
 
 # RFI: is this the right place for this integration w/ haproxy?
 @cli.command('vip')

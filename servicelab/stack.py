@@ -9,21 +9,25 @@ import sys
 
 
 # Global Variables
-# auto envvar prefix will take in any env vars that are prefixed with STK short for stack.
+# auto envvar prefix will take in any env vars that are prefixed with STK
+# short for stack.
 CONTEXT_SETTINGS = dict(auto_envvar_prefix='STK')
+
 
 # Setup class context object to pass to all commands that opt in to
 # context. You can access through ctx attribute. E.G. ctx.verbose.
 class Context(object):
 
     def __init__(self):
+        self.path = os.path.join(os.path.dirname(__file__), '.stack')
+        self.config = os.path.join(os.path.dirname(__file__), '.stack/sta
+                                   ck.conf')
+        self.branch = "master"
         self.verbose = False
         self.vverbose = False
         self.debug = False
-        self.path = os.getcwd()
-	self.config = os.path.join(os.path.dirname(__file__), 'stack.conf')
-	# Log Level clarified --> 0 = none, 1 = regular, 2 = verbose, 3 =
-	# extra verbose, 4 = debug. Default is 1.
+    # Log Level clarified --> 0 = none, 1 = regular, 2 = verbose, 3 =
+    # extra verbose, 4 = debug. Default is 1.
         self.loglevel = 1
 
     def log(self, msg, *args):
@@ -83,7 +87,7 @@ class ComplexCLI(click.MultiCommand):
 @click.option('--debug', '-vvv', is_flag=True, default=False,
               help='Enables debug mode.')
 @click.option('--config', '-c', help='You can specify a config file for \
-	      stack to pull information from.') 
+              stack to pull information from.')
 @pass_context
 def cli(ctx, verbose, vverbose, debug, path, config):
     """A CLI for Cisco Cloud Services."""
@@ -93,4 +97,4 @@ def cli(ctx, verbose, vverbose, debug, path, config):
     if path is not None:
         ctx.path = path
     if config is not None:
-	ctx.config = config
+        ctx.config = config

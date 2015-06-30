@@ -11,8 +11,9 @@ def cli(ctx):
     """
     pass
 
+
 @cli.command('repo', short_help='Show the details of a repo in Gerrit.')
-# item is generic right now until we can figure out exactly what that\'s
+# item is generic right now until we can figure out exactly what that's
 # going to look like.
 @click.argument('item')
 @pass_context

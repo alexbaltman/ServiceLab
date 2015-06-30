@@ -6,8 +6,8 @@ from servicelab.stack import pass_context
                encrypted value for you to put into your ccs-data file.')
 @click.argument('value')
 @pass_context
-# Note: For some reason the -v -vv -vvv etc. are positional. They have to be called right 
-#	after stack.
+# Note: For some reason the -v -vv -vvv etc. are positional. They have to be
+# called right after stack.
 # RFI: Are we able to change the above so they can be taken wherever?
 def cli(ctx, value):
     """
