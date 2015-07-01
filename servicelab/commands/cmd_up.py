@@ -16,7 +16,7 @@ from pprint import pprint
 @click.option('--rhel7', help='Boot a rhel7 vm.')
 @click.option('-u', '--username', help='Enter the password for the username')
 # @click.password_option(help='Enter the gerrit username or \
-                        # CEC you want to use.')
+# CEC you want to use.')
 @click.group('up', invoke_without_command=True, short_help="Boots VM(s).")
 @pass_context
 # RFI: Do we want a explicit prep stage like they do in redhouse-svc
