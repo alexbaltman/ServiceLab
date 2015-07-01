@@ -20,8 +20,7 @@ class Context(object):
 
     def __init__(self):
         self.path = os.path.join(os.path.dirname(__file__), '.stack')
-        self.config = os.path.join(os.path.dirname(__file__), '.stack/sta
-                                   ck.conf')
+        self.config = os.path.join(os.path.dirname(__file__), '.stack/stack.conf')
         self.branch = "master"
         self.verbose = False
         self.vverbose = False
