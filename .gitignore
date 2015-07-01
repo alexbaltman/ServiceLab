@@ -15,4 +15,12 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+
+
+
+
 servicelab/.stack/*
+!servicelab/.stack/services/
+
+servicelab/.stack/services/*
+!servicelab/.stack/services/ccs-data
