@@ -4,6 +4,11 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+required_plugins = %w( vagrant-hostmanager )
+required_plugins.each do |plugin|
+  system "vagrant plugin install #{plugin}" unless Vagrant.has_plugin? plugin
+end
+
 service = 'dev'
 if File.exist?('.stack/current')
   service = IO.read('.stack/current').strip
