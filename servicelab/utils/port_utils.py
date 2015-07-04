@@ -126,5 +126,24 @@ def _check_for_git():
     else:
         pass
 
-sync_data('/Users/aaltman/Git/servicelab/servicelab/.stack', "aaltman", "master")
-#sync_data('/Users/aaltman/Git/servicelab/servicelab/.stack', getpass.getuser())
+def _link(path, service_name):
+    
+    f = open(os.path.join(path, "current"), 'w+')
+    #text = f.read()
+    #text = re.sub('foobar', 'bar', text)
+    f.seek(0)
+    f.write(service_name)
+    f.truncate()
+    f.close()
+
+    if not os.path.islink(os.path.join(path, "service")):
+        # Note: What to link is first arg, where to link is second aka src dest
+        os.symlink(os.path.join(path, "services", service_name), os.path.join(path, "current_service"))
+
+    f = open(os.path.join(path, "hosts"), 'w+')
+    f.seek(0)
+    f.write("[%s]\nvm-001\nvm-002\nvm-003\n" % (service_name))
+
+
+
+_link('/Users/aaltman/Git/servicelab/servicelab/.stack', "service-sonarqube")
