@@ -1,6 +1,7 @@
 import subprocess32 as subprocess
 import fileinput
 import getpass
+import pprint
 import os
 
 
@@ -69,6 +70,24 @@ def sync_data(path, username, branch):
     else:
         _git_pull_ff(path, branch, data_reponame)
         
+
+def _build_data(path):
+    data_reponame = "ccs-data"
+    print os.path.join(path, "services", data_reponame)
+    output = subprocess.Popen(
+        './lightfuse.rb -c hiera-bom-unenc.yaml --site ccs-dev-1 && cd ..',
+        stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
+        stdin=subprocess.PIPE, shell=True, close_fds=True,
+        cwd=os.path.join(path, "services", data_reponame)
+        )
+    myinfo = output.communicate()[0].strip()
+
+    #attrs = vars(myinfo)
+    #print ', '.join("%s: %s" % item for item in attrs.items())
+    print(myinfo)
+
+    return(output.returncode, myinfo)
+
 
 def _git_clone(path, branch, username, service_name):
     # Note: Branch defaults to master in the click application"""
@@ -146,4 +165,4 @@ def _link(path, service_name):
 
 
 
-_link('/Users/aaltman/Git/servicelab/servicelab/.stack', "service-sonarqube")
+_build_data('/Users/aaltman/Git/servicelab/servicelab/.stack')
