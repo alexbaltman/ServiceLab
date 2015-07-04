@@ -1,4 +1,6 @@
 import subprocess32 as subprocess
+import fileinput
+import getpass
 import os
 
 
@@ -35,12 +37,38 @@ def sync_service(path, branch, username, service_name):
                 raise RuntimeError("Git failed to clone service_name.")
     else:
         print "Could not find git executable based off of: type git"
-        return 1
 
 
-def sync_data():
-        pass
+def sync_data(path, username, branch):
+#def sync_data(path, data_reponame):
+    data_reponame = "ccs-data" 
+    # Note: These two lines are a bit tricky, here's what it does:
+    #       The original file is moved to a backup file
+    #       The standard output is redirected to the original file 
+    #       within the loop. Thus print statements write back into the orig
+    path_to_reporoot =  os.path.split(path)
+    path_to_reporoot = os.path.split(path_to_reporoot[0])
+    path_to_reporoot = path_to_reporoot[0]
+    for line in fileinput.input(os.path.join(path_to_reporoot, ".gitmodules"), inplace=True):
+        # TODO: replace aaltman --> can prob be more specific w/ the text to find and replace
+        # Note: first string after var is search text and username is the replacement text
+        #       current username can be found on win and linux using getpass.getuser()
+        print line.replace("aaltman", username),
 
+    if os.listdir(os.path.join(path, "services/%s" % (data_reponame))) == []: 
+        output = subprocess.Popen(
+            'git submodule init && git submodule update',
+            stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE, shell=True, close_fds=True,
+            cwd=path_to_reporoot)
+        myinfo = output.communicate()[0].strip()
+        # Note: Want to checkout the right branch before returning anything.
+        service_path = os.path.join(path, "services", data_reponame)
+        subprocess.call('git checkout %s' % (branch), cwd=service_path, shell=True)
+        return(output.returncode, myinfo)
+    else:
+        _git_pull_ff(path, branch, data_reponame)
+        
 
 def _git_clone(path, branch, username, service_name):
     # Note: Branch defaults to master in the click application"""
@@ -97,3 +125,6 @@ def _check_for_git():
         pass
     else:
         pass
+
+sync_data('/Users/aaltman/Git/servicelab/servicelab/.stack', "aaltman", "master")
+#sync_data('/Users/aaltman/Git/servicelab/servicelab/.stack', getpass.getuser())
