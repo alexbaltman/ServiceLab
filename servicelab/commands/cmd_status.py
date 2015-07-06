@@ -10,5 +10,5 @@ def cli(ctx):
     """
     Shows status of your working servicelab environment.
     """
-    ctx.log('Changed files: none')
-    ctx.vlog('###DEBUG###', "4")
+    ctx.logging.info('Changed files: none')
+    ctx.logging.debug('###DEBUG###')

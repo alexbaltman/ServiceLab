@@ -24,11 +24,10 @@ from pprint import pprint
 #      or not as well as git status.
 def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username):
     # #Dev testing Block for aaltman
-    ctx.log('Reg. Log bro')
+    ctx.logging.info('Info Log bro')
     print "username: " + str(username)
-    # ctx.vlog('verbose info', 2)
-    # ctx.vlog('vverbose info', 3)
-    # ctx.vlog('vvverbose info', 4)
+    ctx.logging.warning('warning info')
+    ctx.logging.debug('debug info')
     attrs = vars(ctx)
     print ', '.join("%s: %s" % item for item in attrs.items())
     pprint(dir(ctx))

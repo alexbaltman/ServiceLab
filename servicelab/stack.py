@@ -1,3 +1,4 @@
+import logging
 import click
 import os
 import sys
@@ -22,24 +23,26 @@ class Context(object):
         self.path = os.path.join(os.path.dirname(__file__), '.stack')
         self.config = os.path.join(os.path.dirname(__file__),
                                    '.stack/stack.conf')
+        # Setup Logging
         self.branch = "master"
         self.verbose = False
         self.vverbose = False
         self.debug = False
-    # Log Level clarified --> 0 = none, 1 = regular, 2 = verbose, 3 =
-    # extra verbose, 4 = debug. Default is 1.
-        self.loglevel = 1
-
-    def log(self, msg, *args):
-        """Logs a message to stderr."""
-        if args:
-            msg %= args
-        click.echo(msg, file=sys.stderr)
-
-    def vlog(self, msg, llevel, *args):
-        """Logs a message to stderr depending on the loglevel"""
-        if llevel <= self.loglevel:
-            self.log(msg, *args)
+        self.logger = logging.getLogger('click_application')
+        self.setLevel(logging.INFO)
+        # Create filehandler that logs everything.
+        self.file_handler = logging.FileHandler('stack.log')
+        self.file_handler.setLevel(logging.DEBUG)
+        # Create console handler that logs up to error msg.s.
+        self.console_handler = logging.StreamHandler()
+        self.console_handler.setLevel(logging.INFO)
+        # Create formatter and add it to the handlers
+        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(Levelname)s - %(message)s')
+        self.file_handler.setFormatter(self.formatter)
+        self.console_handler.setFormatter(self.formatter)
+        # Add handlers to the logger
+        self.logger.addHandler(self.file_handler)
+        self.logger.addHandler(self.console_handler)
 
 
 pass_context = click.make_pass_decorator(Context, ensure=True)
@@ -89,11 +92,11 @@ def cli(ctx, verbose, vverbose, debug, path, config):
     ctx.vverbose = vverbose
     ctx.debug = debug
     if ctx.verbose:
-        ctx.loglevel = 2
+        ctx.console_handler.setLevel(logging.WARNING)
     if ctx.vverbose:
-        ctx.loglevel = 3
+        ctx.console_handler.setLevel(logging.ERROR)
     if ctx.debug:
-        ctx.loglevel = 4
+        ctx.console_handler.setLevel(logging.DEBUG)
     if path is not None:
         ctx.path = path
     if config is not None:

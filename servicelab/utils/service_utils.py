@@ -4,6 +4,8 @@ import getpass
 import sys
 import os
 
+# create logger
+service_utils_logger = logging.getLogger('click_application')
 
 def sync_service(path, branch, username, service_name):
     """Synchronize a service with servicelab.
@@ -205,28 +207,4 @@ def _run_this(command_to_run, cwd=os.getcwd()):
         print myinfo
     return(output.returncode, myinfo)
 
-
-def log(msg, *args):
-    """Logs a message to stderr."""
-    if args:
-        msg %= args
-        msg, file = sys.stderr
-
-
-def vlog(msg, llevel, *args):
-    """Logs a message to stderr depending on the loglevel.
-
-    Log Level clarified --> 0 = none, 1 = regular, 2 = verbose, 3 =
-    extra verbose, 4 = debug. Default is 1.
-    """
-
-    if verbose:
-        loglevel = 2
-    if vverbose:
-        loglevel = 3
-    if debug:
-        loglevel = 4
-    if llevel <= loglevel:
-        log(msg, *args)
-
-log("test, testing")
+service_utils_logger.info("TESTTTTINGGGGG")
