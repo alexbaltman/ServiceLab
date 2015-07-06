@@ -38,12 +38,6 @@ class Context(object):
 
     def vlog(self, msg, llevel, *args):
         """Logs a message to stderr depending on the loglevel"""
-        if self.verbose:
-            self.loglevel = 2
-        if self.vverbose:
-            self.loglevel = 3
-        if self.debug:
-            self.loglevel = 4
         if llevel <= self.loglevel:
             self.log(msg, *args)
 
@@ -94,6 +88,12 @@ def cli(ctx, verbose, vverbose, debug, path, config):
     ctx.verbose = verbose
     ctx.vverbose = vverbose
     ctx.debug = debug
+    if ctx.verbose:
+        ctx.loglevel = 2
+    if ctx.vverbose:
+        ctx.loglevel = 3
+    if ctx.debug:
+        ctx.loglevel = 4
     if path is not None:
         ctx.path = path
     if config is not None:
