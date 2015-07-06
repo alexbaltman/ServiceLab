@@ -18,7 +18,7 @@ def setup_vagrant_sshkeys(path):
         return (output)
 
 
-def sync_service(path, branch, username, service_name):
+def sync_service(path, branch, username=getpass.getuser(), service_name):
     """Synchronize a service with servicelab.
 
     Do a git clone or fast forward pull to bring a given
@@ -48,7 +48,7 @@ def sync_service(path, branch, username, service_name):
         print "Could not find git executable based off of: type git"
 
 
-def sync_data(path, username, branch):
+def sync_data(path, username=getpass.getuser(), branch):
     """Synchronize ccs-data with servicelab.
 
     Do a git clone or fast forward pull to bring ccs-data
@@ -90,7 +90,7 @@ def _build_data(path):
     return(returncode, myinfo)
 
 
-def _git_clone(path, branch, username, service_name):
+def _git_clone(path, branch, username=getpass.getuser(), service_name):
     """Clone the repository of the passed service."""
 
     # Note: Branch defaults to master in the click application"""
@@ -122,6 +122,8 @@ def _git_pull_ff(path, branch, service_name):
 
 
 def _submodule_pull_ff(path, branch):
+    """Fast forward pull of a ccs-data submodule."""
+
     # Note: Branch defaults to master in the click application
     # TODO: Do more error checking here --> after debugging, definitely
     # TODO: checkout a branch ifexists in origin only--> not replacing git
@@ -137,7 +139,6 @@ def _submodule_pull_ff(path, branch):
 def _check_for_git():
     """Check if git is available on the current system."""
 
-    if os.name == "posix":
         # Note: Using type git here to establish if posix system has a binary
         #       called git instead of which git b/c which often doesn't return
         #       proper 0 or 1 exit status' and type does. Which blah on many
@@ -167,8 +168,12 @@ def _link(path, service_name):
     f.write("[%s]\nvm-001\nvm-002\nvm-003\n" % (service_name))
 
 
-def _clean():
-    pass
+def _clean(path):
+   """Clean up services and symlinks created from working on services."
+
+    returncode, myinfo = _run_this('vagrant destroy -f')
+    os.remove(os.path.join(path, "current"))      
+    os.unlink(os.path.join(path, "current_service"))
 
 
 def _run_this(command_to_run, cwd=os.getcwd()):
