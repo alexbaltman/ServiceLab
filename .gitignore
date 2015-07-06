@@ -17,10 +17,9 @@ var/
 *.egg
 
 
-
-
 servicelab/.stack/*
 !servicelab/.stack/services/
+!servicelab/.stack/provision/
 
 servicelab/.stack/services/*
 !servicelab/.stack/services/ccs-data
