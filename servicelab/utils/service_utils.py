@@ -4,20 +4,6 @@ import getpass
 import os
 
 
-# Note: This is completely separate from ssh keys involved w/ gerrit actions.
-#       It's for Vagrant.
-# TODO: Check for ssh commands
-def setup_vagrant_sshkeys(path):
-    """Ensure ssh keys are present."""
-
-    if not os.path.isfile(os.path.join(path, "id_rsa")):
-        output = subprocess.call(
-            'ssh-keygen -q -t rsa -N "" -f %s/id_rsa' % (path),
-            stderr=subprocess.STDOUT, shell=True
-                                )
-        return (output)
-
-
 def sync_service(path, branch, username=getpass.getuser(), service_name):
     """Synchronize a service with servicelab.
 
@@ -150,6 +136,20 @@ def _check_for_git():
         pass
 
 
+# Note: This is completely separate from ssh keys involved w/ gerrit actions.
+#       It's for Vagrant.
+# TODO: Check for ssh commands
+def _setup_vagrant_sshkeys(path):
+    """Ensure ssh keys are present."""
+
+    if not os.path.isfile(os.path.join(path, "id_rsa")):
+        output = subprocess.call(
+            'ssh-keygen -q -t rsa -N "" -f %s/id_rsa' % (path),
+            stderr=subprocess.STDOUT, shell=True
+                                )
+        return (output)
+
+
 def _link(path, service_name):
     """Set the current service.""" 
     
@@ -158,7 +158,6 @@ def _link(path, service_name):
     f.write(service_name)
     f.truncate()
     f.close()
-
     if not os.path.islink(os.path.join(path, "service")):
         # Note: What to link is first arg, where to link is second aka src dest
         os.symlink(os.path.join(path, "services", service_name), os.path.join(path, "current_service"))
