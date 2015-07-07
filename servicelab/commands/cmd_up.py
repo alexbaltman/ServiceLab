@@ -24,8 +24,8 @@ from pprint import pprint
 #      or not as well as git status.
 def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username):
     # #Dev testing Block for aaltman
-    #attrs = vars(ctx)
-    #print ', '.join("%s: %s" % item for item in attrs.items())
+    # attrs = vars(ctx)
+    # print ', '.join("%s: %s" % item for item in attrs.items())
     pass
 
 

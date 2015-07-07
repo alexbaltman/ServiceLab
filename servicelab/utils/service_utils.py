@@ -11,6 +11,7 @@ import os
 service_utils_logger = logging.getLogger('click_application')
 logging.basicConfig()
 
+
 def sync_service(path, branch, username, service_name):
     """Synchronize a service with servicelab.
 
@@ -26,17 +27,20 @@ def sync_service(path, branch, username, service_name):
         #       we'll want to rm the dir if it's there but empty b/c this
         #       isn't handling that.
         if os.path.isdir(os.path.join(path, "services/%s" % (service_name))):
-            print "fast forward pull"
+            print "Sync'ing service."
+            print "Fast forward pull."
             returncode, myinfo = _git_pull_ff(path, branch, service_name)
             if returncode > 0:
                 service_utils_logger.error(myinfo)
             else:
                 print "Service has been sync'ed."
         else:
-            print "trying clone"
+            print "Trying clone"
             returncode, myinfo = _git_clone(path, branch, username, service_name)
             if returncode > 0:
                 service_utils_logger.error(myinfo)
+            else:
+                print "Clone successfull."
     else:
         print "Could not find git executable."
 
@@ -164,7 +168,7 @@ def _check_for_git():
 # Note: This is completely separate from ssh keys involved w/ gerrit actions.
 #       It's for Vagrant.
 # TODO: Check for ssh commands
-def _setup_vagrant_sshkeys(path):
+def setup_vagrant_sshkeys(path):
     """Ensure ssh keys are present."""
 
     if not os.path.isfile(os.path.join(path, "id_rsa")):
@@ -172,7 +176,7 @@ def _setup_vagrant_sshkeys(path):
         return (returncode, myinfo)
 
 
-def _link(path, service_name):
+def link(path, service_name):
     """Set the current service."""
 
     f = open(os.path.join(path, "current"), 'w+')
@@ -189,7 +193,7 @@ def _link(path, service_name):
     f.write("[%s]\nvm-001\nvm-002\nvm-003\n" % (service_name))
 
 
-def _clean(path):
+def clean(path):
     """Clean up services and symlinks created from working on services."""
 
     returncode, myinfo = _run_this('vagrant destroy -f')
