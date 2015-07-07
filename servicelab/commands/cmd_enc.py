@@ -13,5 +13,5 @@ def cli(ctx, value):
     """
     Encrypt a value to be put into ccs-data.
     """
-    ctx.logging.info('Changed files: none')
-    ctx.logging.debug('debug info')
+    ctx.logger.info('Changed files: none')
+    ctx.logger.debug('debug info')

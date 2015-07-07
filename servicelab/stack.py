@@ -29,15 +29,15 @@ class Context(object):
         self.vverbose = False
         self.debug = False
         self.logger = logging.getLogger('click_application')
-        self.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
         # Create filehandler that logs everything.
-        self.file_handler = logging.FileHandler('stack.log')
+        self.file_handler = logging.FileHandler(os.path.join(self.path, 'stack.log'))
         self.file_handler.setLevel(logging.DEBUG)
         # Create console handler that logs up to error msg.s.
         self.console_handler = logging.StreamHandler()
-        self.console_handler.setLevel(logging.INFO)
+        self.console_handler.setLevel(logging.DEBUG)
         # Create formatter and add it to the handlers
-        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(Levelname)s - %(message)s')
+        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.file_handler.setFormatter(self.formatter)
         self.console_handler.setFormatter(self.formatter)
         # Add handlers to the logger
@@ -91,10 +91,11 @@ def cli(ctx, verbose, vverbose, debug, path, config):
     ctx.verbose = verbose
     ctx.vverbose = vverbose
     ctx.debug = debug
+    ctx.console_handler.setLevel(logging.CRITICAL)
     if ctx.verbose:
-        ctx.console_handler.setLevel(logging.WARNING)
-    if ctx.vverbose:
         ctx.console_handler.setLevel(logging.ERROR)
+    if ctx.vverbose:
+        ctx.console_handler.setLevel(logging.WARNING)
     if ctx.debug:
         ctx.console_handler.setLevel(logging.DEBUG)
     if path is not None:

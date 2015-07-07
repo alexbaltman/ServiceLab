@@ -1,11 +1,15 @@
 import subprocess32 as subprocess
 import fileinput
+import logging
 import getpass
 import sys
 import os
 
 # create logger
+# TODO: For now warning and error print. Got to figure out how
+#       to import the one in stack.py properly.
 service_utils_logger = logging.getLogger('click_application')
+logging.basicConfig()
 
 def sync_service(path, branch, username, service_name):
     """Synchronize a service with servicelab.
@@ -25,14 +29,14 @@ def sync_service(path, branch, username, service_name):
             print "fast forward pull"
             returncode, myinfo = _git_pull_ff(path, branch, service_name)
             if returncode > 0:
-                print "Error: " + myinfo
+                service_utils_logger.error(myinfo)
             else:
                 print "Service has been sync'ed."
         else:
             print "trying clone"
             returncode, myinfo = _git_clone(path, branch, username, service_name)
             if returncode > 0:
-                print "Error: " + myinfo
+                service_utils_logger.error(myinfo)
     else:
         print "Could not find git executable."
 
@@ -63,7 +67,7 @@ def sync_data(path, username, branch):
         returncode, myinfo = _run_this('git submodule init && git submodule update',
                                        path_to_reporoot)
         if returncode > 0:
-            print "Error: " + myinfo
+            service_utils_logger.error(myinfo)
         else:
             print "Init and update done, now checking out %s" % (branch)
         # Note: Want to checkout the right branch before returning anything.
@@ -71,14 +75,14 @@ def sync_data(path, username, branch):
         returncode, myinfo = _run_this('git checkout %s' % (branch),
                                        service_path)
         if returncode > 0:
-            print "Error: " + myinfo
+            service_utils_logger.error(myinfo)
         else:
             print "Checkout of %s done." % (branch)
     else:
         print "Pulling latest data (fast forward only)."
         returncode, myinfo = _submodule_pull_ff(path, branch)
         if returncode > 0:
-            print "Error: " + myinfo
+            service_utils_logger.error(myinfo)
         else:
             print "Pulled data successfully."
 
@@ -204,7 +208,5 @@ def _run_this(command_to_run, cwd=os.getcwd()):
                               )
     myinfo = output.communicate()[0].strip()
     if output.returncode > 0:
-        print myinfo
+        service_utils_logger.error(myinfo)
     return(output.returncode, myinfo)
-
-service_utils_logger.info("TESTTTTINGGGGG")

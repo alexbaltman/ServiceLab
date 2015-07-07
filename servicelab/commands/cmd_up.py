@@ -24,13 +24,9 @@ from pprint import pprint
 #      or not as well as git status.
 def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username):
     # #Dev testing Block for aaltman
-    ctx.logging.info('Info Log bro')
-    print "username: " + str(username)
-    ctx.logging.warning('warning info')
-    ctx.logging.debug('debug info')
-    attrs = vars(ctx)
-    print ', '.join("%s: %s" % item for item in attrs.items())
-    pprint(dir(ctx))
+    #attrs = vars(ctx)
+    #print ', '.join("%s: %s" % item for item in attrs.items())
+    pass
 
 
 # vagrant status --> stack up status --> is that confusing

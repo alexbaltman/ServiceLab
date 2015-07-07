@@ -15,10 +15,10 @@ import os
 @pass_context
 def cli(ctx, interactive, branch, username, service_name):
     if not os.path.exists(os.path.join(ctx.path, "services")):
-        ctx.logging.info("Making services directory: %s" % (ctx.path))
+        ctx.logger.info("Making services directory: %s" % (ctx.path))
         os.makedirs(os.path.join(ctx.path, "services"))
     if branch is not None:
-        ctx.logging.info("Setting branch to %s" % (branch))
+        ctx.logger.info("Setting branch to %s" % (branch))
         ctx.branch = branch
 
     local_services = []
@@ -27,10 +27,10 @@ def cli(ctx, interactive, branch, username, service_name):
         # Execute Git pull branch into .stack,
         # git checkout branch, or git checkout -b branch
         # --> got to be on the right branch
-        ctx.logging.info('Running: git pull --ff-only origin %s in %s/services/%s' %
+        ctx.logger.info('Running: git pull --ff-only origin %s in %s/services/%s' %
                          ctx.branch, ctx.path, service_name)
     else:
         # Git clone service
-        ctx.logging.info("Running: git clone -b %s ssh://%s@cis-gerrit.cisco.com:29418/service-%s\
+        ctx.logger.info("Running: git clone -b %s ssh://%s@cis-gerrit.cisco.com:29418/service-%s\
  %s/services/%s" % (ctx.branch,
                     username, service_name, ctx.path, service_name))
