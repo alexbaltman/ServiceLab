@@ -22,7 +22,7 @@ def cli(ctx, interactive, branch, username, service_name):
         username = getpass.getuser()
     current = ""
     if os.path.isfile(os.path.join(ctx.path, "current")):
-        current_file = os.path.isfile(os.path.join(ctx.path, "current"))
+        current_file = os.path.join(ctx.path, "current")
         f = open(current_file, 'r')
         # TODO: verify that current is set to something sane.
         current = f.readline()
