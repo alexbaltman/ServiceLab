@@ -1,6 +1,9 @@
-import click
+from servicelab.utils import service_utils
 from servicelab.stack import pass_context
-from pprint import pprint
+import getpass
+import click
+import sys
+import os
 
 
 @click.option('--ha', is_flag=True, default=False, help='Enables HA for core OpenStack components \
@@ -15,6 +18,7 @@ from pprint import pprint
               for ccs-data.')
 @click.option('--rhel7', help='Boot a rhel7 vm.')
 @click.option('-u', '--username', help='Enter the password for the username')
+@click.argument('service_name', default="current")
 # @click.password_option(help='Enter the gerrit username or \
 # CEC you want to use.')
 @click.group('up', invoke_without_command=True, short_help="Boots VM(s).")
@@ -22,12 +26,23 @@ from pprint import pprint
 # RFI: Do we want a explicit prep stage like they do in redhouse-svc
 # RFI: Also we need to think about if we're running latest data
 #      or not as well as git status.
-def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username):
+def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username, service_name):
+    if username is None or "":
+        username = getpass.getuser()
+    # TODO: Refactor this b/c duplicated in cmd_workon
+    if os.path.isfile(os.path.join(ctx.path, "current")):
+        current_file = os.path.join(ctx.path, "current")
+        f = open(current_file, 'r')
+        # TODO: verify that current is set to something sane.
+        current = f.readline()
+        if current == "" or None:
+            ctx.logger.error("No service set.")
+            sys.exit
+        else:
+            ctx.logger.debug("Working on %s" % (current))
+
     # #Dev testing Block for aaltman
     # attrs = vars(ctx)
     # print ', '.join("%s: %s" % item for item in attrs.items())
-    pass
-
-
-# vagrant status --> stack up status --> is that confusing
-# should prob use the stack status cmd
+    service_utils._run_this('vagrant up', os.path.join(ctx.path, "services", service_name))
+    service_utils._run_this('vagrant hostmanager', os.path.join(ctx.path, "services", service_name))
