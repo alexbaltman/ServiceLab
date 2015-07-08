@@ -31,13 +31,15 @@ class Context(object):
         self.logger = logging.getLogger('click_application')
         self.logger.setLevel(logging.DEBUG)
         # Create filehandler that logs everything.
-        self.file_handler = logging.FileHandler(os.path.join(self.path, 'stack.log'))
+        self.file_handler = logging.FileHandler(os.path.join(self.path,
+                                                'stack.log'))
         self.file_handler.setLevel(logging.DEBUG)
         # Create console handler that logs up to error msg.s.
         self.console_handler = logging.StreamHandler()
         self.console_handler.setLevel(logging.DEBUG)
         # Create formatter and add it to the handlers
-        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        self.formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.file_handler.setFormatter(self.formatter)
         self.console_handler.setFormatter(self.formatter)
         # Add handlers to the logger
