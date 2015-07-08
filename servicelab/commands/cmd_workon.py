@@ -29,17 +29,20 @@ def cli(ctx, interactive, branch, username, service_name):
         current = f.readline()
         print service_name
         if (current == "" or None) and (service_name == "current"):
-            ctx.logger.error("No service set on command line nor the current(literally) file.")
+            ctx.logger.error("No service set on command line nor the\
+                              current(literally) file.")
             sys.exit
         elif current == "" or None and service_name != "current":
-            service_utils.sync_service(ctx.path, branch, username, service_name)
+            service_utils.sync_service(ctx.path, branch, username,
+                                       service_name)
             service_utils.link(ctx.path, service_name)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_data(ctx.path, username, branch)
         # Note: variable current and string current
         elif service_name != current and service_name != "current":
             service_utils.clean(ctx.path)
-            service_utils.sync_service(ctx.path, branch, username, service_name)
+            service_utils.sync_service(ctx.path, branch, username,
+                                       service_name)
             service_utils.link(ctx.path, service_name)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_data(ctx.path, username, branch)

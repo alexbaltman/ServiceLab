@@ -1,5 +1,9 @@
+import os
+import re
 import click
+import logging
 from servicelab.stack import pass_context
+from servicelab.utils import ccsdata_utils
 
 
 @click.group('list', short_help='You can list available pipeline objects',
@@ -7,12 +11,33 @@ from servicelab.stack import pass_context
 @pass_context
 def cli(ctx):
     """
-    Helps you list resources in the SDLC pipeline.
+    Listing sites and services of ccs-data
     """
     pass
 
 
-# RFI: should there be more intelligence here than a blankey list?
+@cli.command('sites', short_help="List sites")
+@pass_context
+def list_sites(ctx):
+    '''
+    Here we list all the sites using the git submodule ccs-data.
+    '''
+    ctx.logger.debug("Gathered sites from ccs-data submodule.")
+    for item in ccsdata_utils.list_envs_or_sites(ctx.path, "sites"):
+        click.echo(item)
+
+
+@cli.command('envs', short_help="List environments")
+@pass_context
+def list_envs(ctx):
+    '''
+    Here we list all the environments using the git submodule ccs-data.
+    '''
+    ctx.logger.debug("Gathered environments from ccs-data submodule.")
+    for item in ccsdata_utils.list_envs_or_sites(ctx.path, "envs"):
+        click.echo(item)
+
+
 @cli.command('reviews', short_help='List reviews in Gerrit.')
 # RFI: Is using an option here 100% the right way to go or nest
 #      the command set again (?)

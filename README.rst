@@ -12,7 +12,7 @@ $ stack_
 Usage:
   $ virtualenv venv
   $ . venv/bin/activate
-  $ pip install --editable .
+  $ pip install -e .
   $ stack --help
 
 
