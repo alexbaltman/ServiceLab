@@ -13,7 +13,7 @@ service = 'dev'
 if File.exist?('.stack/current')
   service = IO.read('.stack/current').strip
 else
-  raise 'No service configured. Run `./stack workon [service]`'
+  raise 'Vagrantfile: No service configured. Run `stack workon [service]`'
 end
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|

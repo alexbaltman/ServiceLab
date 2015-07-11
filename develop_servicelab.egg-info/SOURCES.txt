@@ -10,4 +10,16 @@ servicelab/__init__.py
 servicelab/stack.py
 servicelab/commands/__init__.py
 servicelab/commands/cmd_create.py
+servicelab/commands/cmd_destroy.py
+servicelab/commands/cmd_enc.py
+servicelab/commands/cmd_find.py
+servicelab/commands/cmd_list.py
+servicelab/commands/cmd_nuclear.py
+servicelab/commands/cmd_review.py
+servicelab/commands/cmd_show.py
 servicelab/commands/cmd_status.py
+servicelab/commands/cmd_up.py
+servicelab/commands/cmd_workon.py
+servicelab/utils/__init__.py
+servicelab/utils/engine.py
+servicelab/utils/service_utils.py
