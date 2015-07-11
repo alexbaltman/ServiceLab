@@ -4,6 +4,7 @@ import logging
 import getpass
 import sys
 import os
+import re
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -53,18 +54,21 @@ def sync_data(path, username, branch):
 
     """
     data_reponame = "ccs-data"
+    path_to_reporoot = os.path.split(path)
+    path_to_reporoot = os.path.split(path_to_reporoot[0])
+    path_to_reporoot = path_to_reporoot[0]
     # Note: The fileinput lines are a bit tricky, here's what it does:
     #       The original file is moved to a backup file
     #       The standard output is redirected to the original file
     #       within the loop. Thus print statements write back into the orig
-    path_to_reporoot = os.path.split(path)
-    path_to_reporoot = os.path.split(path_to_reporoot[0])
-    path_to_reporoot = path_to_reporoot[0]
     for line in fileinput.input(os.path.join(path_to_reporoot, ".gitmodules"), inplace=True):
         # TODO: replace aaltman --> can prob be more specific w/ the text to find and replace
         # Note: first string after var is search text and username is the replacement text
         #       current username can be found on win and linux using getpass.getuser()
         print line.replace("aaltman", username),
+
+    if not os.path.isdir(os.path.join(path, "services/%s" % (data_reponame))):
+       os.makedirs(os.path.join(path, "services/%s" % (data_reponame))) 
 
     if os.listdir(os.path.join(path, "services/%s" % (data_reponame))) == []:
         print "Initializing ccs-data as submodule and updating it."
@@ -179,14 +183,33 @@ def setup_vagrant_sshkeys(path):
 def link(path, service_name):
     """Set the current service."""
 
+    if service_name == "current":
+        if os.path.isfile(os.path.join(path, "current")):
+            f = open(os.path.join(path, "current"), 'r')
+            f.seek(0)
+            service_name = f.readline()
+        else:
+            service_utils_logger.error("Current file doesn't exist\
+                                        and service set to current\
+                                        . Please enter a service to\
+                                        work on.")
+            sys.exit(1)
+       
     f = open(os.path.join(path, "current"), 'w+')
     f.seek(0)
     f.write(service_name)
     f.truncate()
     f.close()
-    if not os.path.islink(os.path.join(path, "service")):
+      
+    if not os.path.islink(os.path.join(path, "current_service")):
         # Note: What to link is first arg, where to link is second aka src dest
-        os.symlink(os.path.join(path, "services", service_name), os.path.join(path, "current_service"))
+        if os.path.isdir(os.path.join(path, "services", service_name)):
+            os.symlink(os.path.join(path, "services", service_name), os.path.join(path, "current_service"))
+        else:
+            service_utils_logger.error("Failed to find source for symlink: " + os.path.join(path, "services", service_name))
+            sys.exit(1)
+    else:
+        service_utils_logger.debug("Link already exists.")
 
     f = open(os.path.join(path, "hosts"), 'w+')
     f.seek(0)
@@ -199,6 +222,61 @@ def clean(path):
     returncode, myinfo = _run_this('vagrant destroy -f')
     os.remove(os.path.join(path, "current"))
     os.unlink(os.path.join(path, "current_service"))
+
+def check_service(path, service_name):
+    """Checks gerrit for a repo matching service_name."""
+
+    if service_name == "current":
+        if os.path.isfile(os.path.join(path, "current")):
+            f = open(os.path.join(path, "current"), 'r')
+            f.seek(0)
+            service_name = f.readline()
+        else:
+            service_utils_logger.error("Current file doesn't exist\
+                                        and service set to current\
+                                        . Please enter a service to\
+                                        work on.")
+            sys.exit(1)
+     
+    if os.path.exists(os.path.join(path, "cache")):
+        if os.path.isfile(os.path.join(path, "cache", "projects")):    
+            for line in open(os.path.join(path, "cache", "projects"), 'r'):
+                # Note: re.search takes a search term as 1st arg and what to search
+                #       as second arg.
+                if re.search(service_name, line):
+                    returncode = 0
+                    return(returncode)
+
+            _run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
+                      % (os.path.join(path, "cache", "projects"))
+                     )
+            for line in open(os.path.join(path, "cache", "projects"), 'r'):
+                if re.search(service_name, line):
+                    returncode = 0
+                    return(returncode)
+
+            # Note: We didn't succeed in finding a match.
+            returncode = 1
+            service_utils_logger.error("Could not find repo in ccs-gerrit.")
+            return(returncode)
+    else:
+        os.makedirs(os.path.join(path, "cache"))
+        f = open(os.path.join(path, "cache", "projects"), 'w+')
+        # Note: We close right away b/c we're just trying to
+        #       create the file.
+        f.close()
+        _run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
+                  % (os.path.join(path, "cache", "projects"))
+                 )
+        for line in open(os.path.join(path, "cache", "projects"), 'r'):
+            if re.search(service_name, line):
+                returncode = 0
+                return(returncode)
+
+        # Note: We didn't succeed in finding a match.
+        returncode = 1
+        service_utils_logger.error("Could not find repo in ccs-gerrit.")
+        return(returncode)
 
 
 def _run_this(command_to_run, cwd=os.getcwd()):

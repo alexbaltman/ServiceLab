@@ -19,32 +19,45 @@ import os
              work on.")
 @pass_context
 def cli(ctx, interactive, branch, username, service_name):
+    current = ""
     if username is None or "":
         username = getpass.getuser()
-    current = ""
+    print "##ALMOST"
     if os.path.isfile(os.path.join(ctx.path, "current")):
+        print "##ONE"
         current_file = os.path.join(ctx.path, "current")
         f = open(current_file, 'r')
         # TODO: verify that current is set to something sane.
         current = f.readline()
-        print service_name
         if (current == "" or None) and (service_name == "current"):
             ctx.logger.error("No service set on command line nor the current(literally) file.")
-            sys.exit
-        elif current == "" or None and service_name != "current":
+            print "##TWO"
+            sys.exit(1)
+        elif (current == "" or None) and (service_name != "current"):
+            print "##THREE"
             service_utils.sync_service(ctx.path, branch, username, service_name)
             service_utils.link(ctx.path, service_name)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_data(ctx.path, username, branch)
         # Note: variable current and string current
         elif service_name != current and service_name != "current":
+            print "##FOUR"
             service_utils.clean(ctx.path)
             service_utils.sync_service(ctx.path, branch, username, service_name)
             service_utils.link(ctx.path, service_name)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_data(ctx.path, username, branch)
         else:
+            print "##FIVE"
             # Note: notice we're passing the variable current not service_name.
             service_utils.sync_service(ctx.path, branch, username, current)
+            service_utils.link(ctx.path, service_name)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_data(ctx.path, username, branch)
+    else:
+        print "##TOO FAR"
+        service_utils.check_service(ctx.path, service_name)
+        service_utils.sync_service(ctx.path, branch, username, service_name)
+        service_utils.sync_data(ctx.path, username, branch)
+        service_utils.link(ctx.path, service_name)
+        service_utils.setup_vagrant_sshkeys(ctx.path)
