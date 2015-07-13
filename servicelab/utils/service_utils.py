@@ -221,7 +221,8 @@ def clean(path):
 
     returncode, myinfo = _run_this('vagrant destroy -f')
     os.remove(os.path.join(path, "current"))
-    os.unlink(os.path.join(path, "current_service"))
+    if os.islink(os.path.join(path, "current_service")):
+        os.unlink(os.path.join(path, "current_service"))
 
 def check_service(path, service_name):
     """Checks gerrit for a repo matching service_name."""

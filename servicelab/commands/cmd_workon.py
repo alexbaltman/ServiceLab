@@ -51,13 +51,20 @@ def cli(ctx, interactive, branch, username, service_name):
         else:
             print "##FIVE"
             # Note: notice we're passing the variable current not service_name.
+            returncode = service_utils.check_service(ctx.path, service_name)
+            if returncode > 0:
+                ctx.logger.debug("Repo does not exist")
+                sys.exit(1)
             service_utils.sync_service(ctx.path, branch, username, current)
             service_utils.link(ctx.path, service_name)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_data(ctx.path, username, branch)
     else:
         print "##TOO FAR"
-        service_utils.check_service(ctx.path, service_name)
+        returncode = service_utils.check_service(ctx.path, service_name)
+        if returncode > 0:
+            ctx.logger.debug("Repo does not exist")
+            sys.exit(1)
         service_utils.sync_service(ctx.path, branch, username, service_name)
         service_utils.sync_data(ctx.path, username, branch)
         service_utils.link(ctx.path, service_name)
