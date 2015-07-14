@@ -29,11 +29,11 @@ def cli(ctx, interactive, branch, username, service_name):
         f = open(current_file, 'r')
         # TODO: verify that current is set to something sane.
         current = f.readline()
-        if (current == "" or None) and (service_name == "current"):
+        if current == any([None, ""]) and (service_name == "current"):
             ctx.logger.error("No service set on command line nor the current(literally) file.")
             print "##TWO"
             sys.exit(1)
-        elif (current == "" or None) and (service_name != "current"):
+        elif current == any([None, ""]) and (service_name != "current"):
             print "##THREE"
             service_utils.sync_service(ctx.path, branch, username, service_name)
             service_utils.link(ctx.path, service_name)

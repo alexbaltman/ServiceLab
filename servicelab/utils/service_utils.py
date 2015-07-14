@@ -72,7 +72,7 @@ def sync_data(path, username, branch):
 
     if os.listdir(os.path.join(path, "services/%s" % (data_reponame))) == []:
         print "Initializing ccs-data as submodule and updating it."
-        returncode, myinfo = _run_this('git submodule init && git submodule update',
+        returncode, myinfo = run_this('git submodule init && git submodule update',
                                        path_to_reporoot)
         if returncode > 0:
             service_utils_logger.error(myinfo)
@@ -80,7 +80,7 @@ def sync_data(path, username, branch):
             print "Init and update done, now checking out %s" % (branch)
         # Note: Want to checkout the right branch before returning anything.
         service_path = os.path.join(path, "services", data_reponame)
-        returncode, myinfo = _run_this('git checkout %s' % (branch),
+        returncode, myinfo = run_this('git checkout %s' % (branch),
                                        service_path)
         if returncode > 0:
             service_utils_logger.error(myinfo)
@@ -100,7 +100,7 @@ def _build_data(path):
 
     data_reponame = "ccs-data"
     print "Building the data."
-    returncode, myinfo = _run_this('./lightfuse.rb -c hiera-bom-unenc.yaml --site ccs-dev-1 && cd ..',
+    returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml --site ccs-dev-1 && cd ..',
                                    cwd=os.path.join(path, "services",
                                                     data_reponame)
                                    )
@@ -118,7 +118,7 @@ def _git_clone(path, branch, username, service_name):
     # TODO: ADD error handling here - specifically, I encountered a bug where
     #       if a branch in upstream doesn't exist and you've specified it, the
     #       call fails w/ only the poor err msg from the calling function.
-    returncode, myinfo = _run_this('git clone -b %s ssh://%s@cis-gerrit.cisco.com:29418/%s %s/services/%s'
+    returncode, myinfo = run_this('git clone -b %s ssh://%s@cis-gerrit.cisco.com:29418/%s %s/services/%s'
                                    % (branch, username, service_name, path,
                                       service_name))
     # DEBUG: print "clone returncode: " + str(output.returncode)
@@ -134,7 +134,7 @@ def _git_pull_ff(path, branch, service_name):
     # TODO: checkout a branch ifexists in origin only--> not replacing git
     #       or setup a tracking branch if there's nothing local or fail.
     subprocess.call('git checkout %s' % (branch), cwd=service_path, shell=True)
-    returncode, myinfo = _run_this('git -C %s pull --ff-only origin %s' %
+    returncode, myinfo = run_this('git -C %s pull --ff-only origin %s' %
                                    (service_path, branch))
     return(returncode, myinfo)
 
@@ -149,7 +149,7 @@ def _submodule_pull_ff(path, branch):
     path_to_reporoot = os.path.split(path)
     path_to_reporoot = os.path.split(path_to_reporoot[0])
     path_to_reporoot = path_to_reporoot[0]
-    returncode, myinfo = _run_this('git submodule foreach git pull --ff-only origin %s' %
+    returncode, myinfo = run_this('git submodule foreach git pull --ff-only origin %s' %
                                    (branch), path_to_reporoot)
     return(returncode, myinfo)
 
@@ -162,7 +162,7 @@ def _check_for_git():
     #       proper 0 or 1 exit status' and type does. Which blah on many
     #       systems returns 0, which is bad.
     if os.name == "posix":
-        returncode, myinfo = _run_this('type git')
+        returncode, myinfo = run_this('type git')
         return(returncode, myinfo)
     elif os.name == "nt":
         # test windows for git
@@ -176,7 +176,7 @@ def setup_vagrant_sshkeys(path):
     """Ensure ssh keys are present."""
 
     if not os.path.isfile(os.path.join(path, "id_rsa")):
-        returncode, myinfo = _run_this('ssh-keygen -q -t rsa -N "" -f %s/id_rsa' % (path))
+        returncode, myinfo = run_this('ssh-keygen -q -t rsa -N "" -f %s/id_rsa' % (path))
         return (returncode, myinfo)
 
 
@@ -219,7 +219,7 @@ def link(path, service_name):
 def clean(path):
     """Clean up services and symlinks created from working on services."""
 
-    returncode, myinfo = _run_this('vagrant destroy -f')
+    returncode, myinfo = run_this('vagrant destroy -f')
     os.remove(os.path.join(path, "current"))
     if os.islink(os.path.join(path, "current_service")):
         os.unlink(os.path.join(path, "current_service"))
@@ -248,7 +248,7 @@ def check_service(path, service_name):
                     returncode = 0
                     return(returncode)
 
-            _run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
+            run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
                       % (os.path.join(path, "cache", "projects"))
                      )
             for line in open(os.path.join(path, "cache", "projects"), 'r'):
@@ -266,7 +266,7 @@ def check_service(path, service_name):
         # Note: We close right away b/c we're just trying to
         #       create the file.
         f.close()
-        _run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
+        run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
                   % (os.path.join(path, "cache", "projects"))
                  )
         for line in open(os.path.join(path, "cache", "projects"), 'r'):
@@ -280,7 +280,7 @@ def check_service(path, service_name):
         return(returncode)
 
 
-def _run_this(command_to_run, cwd=os.getcwd()):
+def run_this(command_to_run, cwd=os.getcwd()):
     """Run a command via the shell and subprocess."""
 
     output = subprocess.Popen(command_to_run, shell=True,

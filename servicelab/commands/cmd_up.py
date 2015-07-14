@@ -44,6 +44,6 @@ def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username, service_na
     # #Dev testing Block for aaltman
     # attrs = vars(ctx)
     # print ', '.join("%s: %s" % item for item in attrs.items())
-    service_utils._run_this('vagrant up', os.path.join(ctx.path, "services", service_name))
-    service_utils._run_this('vagrant hostmanager', os.path.join(ctx.path, "services", service_name))
-    service_utils._run_this('vagrant ssh infra-001 -c cp os.path.join(%s, "hosts") "/etc/ansible"; cd "/opt/ccs/services/%s; sudo heighliner --dev --debug deploy"' % (ctx.path, service_name))
+    service_utils.run_this('vagrant up', os.path.join(ctx.path, "services", service_name))
+    service_utils.run_this('vagrant hostmanager', os.path.join(ctx.path, "services", service_name))
+    service_utils.run_this('vagrant ssh infra-001 -c cp os.path.join(%s, "hosts") "/etc/ansible"; cd "/opt/ccs/services/%s; sudo heighliner --dev --debug deploy"' % (ctx.path, service_name))
