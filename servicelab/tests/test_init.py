@@ -4,6 +4,7 @@ import sys
 
 gerrit_host = 'cis-gerrit.cisco.com'
 
+
 class TestInitCmds(unittest.TestCase):
 
     def setUp(self):
