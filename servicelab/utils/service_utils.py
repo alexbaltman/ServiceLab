@@ -68,7 +68,7 @@ def sync_data(path, username, branch):
         print line.replace("aaltman", username),
 
     if not os.path.isdir(os.path.join(path, "services/%s" % (data_reponame))):
-       os.makedirs(os.path.join(path, "services/%s" % (data_reponame))) 
+       os.makedirs(os.path.join(path, "services/%s" % (data_reponame)))
 
     if os.listdir(os.path.join(path, "services/%s" % (data_reponame))) == []:
         print "Initializing ccs-data as submodule and updating it."
@@ -150,7 +150,7 @@ def _submodule_pull_ff(path, branch):
     path_to_reporoot = os.path.split(path_to_reporoot[0])
     path_to_reporoot = path_to_reporoot[0]
     returncode, myinfo = run_this('git submodule foreach git pull --ff-only origin %s' %
-                                   (branch), path_to_reporoot)
+                                  (branch), path_to_reporoot)
     return(returncode, myinfo)
 
 
@@ -193,21 +193,21 @@ def link(path, service_name):
                                         and service set to current\
                                         . Please enter a service to\
                                         work on.")
-            sys.exit(1)
-       
+            return(1)
+
     f = open(os.path.join(path, "current"), 'w+')
     f.seek(0)
     f.write(service_name)
     f.truncate()
     f.close()
-      
+
     if not os.path.islink(os.path.join(path, "current_service")):
         # Note: What to link is first arg, where to link is second aka src dest
         if os.path.isdir(os.path.join(path, "services", service_name)):
             os.symlink(os.path.join(path, "services", service_name), os.path.join(path, "current_service"))
         else:
             service_utils_logger.error("Failed to find source for symlink: " + os.path.join(path, "services", service_name))
-            sys.exit(1)
+            return(1)
     else:
         service_utils_logger.debug("Link already exists.")
 
@@ -224,6 +224,7 @@ def clean(path):
     if os.islink(os.path.join(path, "current_service")):
         os.unlink(os.path.join(path, "current_service"))
 
+
 def check_service(path, service_name):
     """Checks gerrit for a repo matching service_name."""
 
@@ -237,19 +238,19 @@ def check_service(path, service_name):
                                         and service set to current\
                                         . Please enter a service to\
                                         work on.")
-            sys.exit(1)
-     
+            return(1)
+
     if os.path.exists(os.path.join(path, "cache")):
-        if os.path.isfile(os.path.join(path, "cache", "projects")):    
+        if os.path.isfile(os.path.join(path, "cache", "projects")):
             for line in open(os.path.join(path, "cache", "projects"), 'r'):
-                # Note: re.search takes a search term as 1st arg and what to search
-                #       as second arg.
+                # Note: re.search takes a search term as 1st arg and what to
+                #       search as second arg.
                 if re.search(service_name, line):
                     returncode = 0
                     return(returncode)
 
-            run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
-                      % (os.path.join(path, "cache", "projects"))
+            run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects">\
+                     %s' % (os.path.join(path, "cache", "projects"))
                      )
             for line in open(os.path.join(path, "cache", "projects"), 'r'):
                 if re.search(service_name, line):
@@ -267,7 +268,7 @@ def check_service(path, service_name):
         #       create the file.
         f.close()
         run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
-                  % (os.path.join(path, "cache", "projects"))
+                 % (os.path.join(path, "cache", "projects"))
                  )
         for line in open(os.path.join(path, "cache", "projects"), 'r'):
             if re.search(service_name, line):

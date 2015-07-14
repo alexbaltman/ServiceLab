@@ -26,7 +26,8 @@ import os
 # RFI: Do we want a explicit prep stage like they do in redhouse-svc
 # RFI: Also we need to think about if we're running latest data
 #      or not as well as git status.
-def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username, service_name):
+def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username,
+        service_name):
     if username is None or "":
         username = getpass.getuser()
     # TODO: Refactor this b/c duplicated in cmd_workon
@@ -44,6 +45,13 @@ def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username, service_na
     # #Dev testing Block for aaltman
     # attrs = vars(ctx)
     # print ', '.join("%s: %s" % item for item in attrs.items())
-    service_utils.run_this('vagrant up', os.path.join(ctx.path, "services", service_name))
-    service_utils.run_this('vagrant hostmanager', os.path.join(ctx.path, "services", service_name))
-    service_utils.run_this('vagrant ssh infra-001 -c cp os.path.join(%s, "hosts") "/etc/ansible"; cd "/opt/ccs/services/%s; sudo heighliner --dev --debug deploy"' % (ctx.path, service_name))
+    service_utils.run_this('vagrant up', os.path.join(ctx.path, "services",
+                                                      service_name))
+    service_utils.run_this('vagrant hostmanager', os.path.join(ctx.path,
+                                                               "services",
+                                                               service_name))
+    service_utils.run_this('vagrant ssh infra-001 -c cp "/etc/ansible"; \
+                           cd "/opt/ccs/services/%s; sudo heighliner \
+                           --dev --debug deploy"' % (os.path.join(ctx.path,
+                                                                  "hosts"),
+                                                     service_name))
