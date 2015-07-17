@@ -101,9 +101,9 @@ def _build_data(path):
     data_reponame = "ccs-data"
     print "Building the data."
     returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml --site ccs-dev-1 && cd ..',
-                                   cwd=os.path.join(path, "services",
-                                                    data_reponame)
-                                   )
+                                  cwd=os.path.join(path, "services",
+                                                   data_reponame)
+                                 )
     return(returncode, myinfo)
 
 
@@ -284,13 +284,17 @@ def check_service(path, service_name):
 def run_this(command_to_run, cwd=os.getcwd()):
     """Run a command via the shell and subprocess."""
 
-    output = subprocess.Popen(command_to_run, shell=True,
-                              stdin=subprocess.PIPE,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT, close_fds=True,
-                              cwd=cwd
-                              )
-    myinfo = output.communicate()[0].strip()
-    if output.returncode > 0:
-        service_utils_logger.error(myinfo)
-    return(output.returncode, myinfo)
+    try:
+        output = subprocess.Popen(command_to_run, shell=True,
+                                  stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, close_fds=True,
+                                  cwd=cwd
+                                  )
+
+        myinfo = output.communicate()[0]
+        myinfo.strip()
+        return(output.returncode, myinfo)
+    except OSError, e:
+        service_utils_logger.error(e)
+        return (1, str(e))
