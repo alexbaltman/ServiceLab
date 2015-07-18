@@ -16,6 +16,9 @@ def cli(ctx):
     pass
 
 
+# TODO: the command sites, envs, and hosts should be able to take
+#       an option to display the env item belongs to and/or site,
+#       as well as print a lot prettier.
 @cli.command('sites', short_help="List sites")
 @pass_context
 def list_sites(ctx):
@@ -23,8 +26,9 @@ def list_sites(ctx):
     Here we list all the sites using the git submodule ccs-data.
     '''
     ctx.logger.debug("Gathered sites from ccs-data submodule.")
-    for item in ccsdata_utils.list_envs_or_sites(ctx.path, "sites"):
-        click.echo(item)
+
+    for keys in ccsdata_utils.list_envs_or_sites(ctx.path):
+        click.echo(keys)
 
 
 @cli.command('envs', short_help="List environments")
@@ -34,8 +38,23 @@ def list_envs(ctx):
     Here we list all the environments using the git submodule ccs-data.
     '''
     ctx.logger.debug("Gathered environments from ccs-data submodule.")
-    for item in ccsdata_utils.list_envs_or_sites(ctx.path, "envs"):
-        click.echo(item)
+    d = ccsdata_utils.list_envs_or_sites(ctx.path)
+    for keys, values in d.iteritems():
+        for k2 in values:
+            click.echo(k2)
+
+
+@cli.command('hosts', short_help="List hosts")
+@pass_context
+def list_hosts(ctx):
+    '''
+    Here we list all the hosts using the git submodule ccs-data.
+    '''
+    ctx.logger.debug("Gathered hosts from ccs-data submodule.")
+    d = ccsdata_utils.list_envs_or_sites(ctx.path)
+    for keys, values in d.iteritems():
+        for k2, v2 in values.iteritems():
+            click.echo(v2)
 
 
 @cli.command('reviews', short_help='List reviews in Gerrit.')

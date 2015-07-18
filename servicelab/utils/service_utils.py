@@ -68,12 +68,12 @@ def sync_data(path, username, branch):
         print line.replace("aaltman", username),
 
     if not os.path.isdir(os.path.join(path, "services/%s" % (data_reponame))):
-       os.makedirs(os.path.join(path, "services/%s" % (data_reponame)))
+        os.makedirs(os.path.join(path, "services/%s" % (data_reponame)))
 
     if os.listdir(os.path.join(path, "services/%s" % (data_reponame))) == []:
         print "Initializing ccs-data as submodule and updating it."
         returncode, myinfo = run_this('git submodule init && git submodule update',
-                                       path_to_reporoot)
+                                      path_to_reporoot)
         if returncode > 0:
             service_utils_logger.error(myinfo)
         else:
@@ -81,7 +81,7 @@ def sync_data(path, username, branch):
         # Note: Want to checkout the right branch before returning anything.
         service_path = os.path.join(path, "services", data_reponame)
         returncode, myinfo = run_this('git checkout %s' % (branch),
-                                       service_path)
+                                      service_path)
         if returncode > 0:
             service_utils_logger.error(myinfo)
         else:
@@ -100,10 +100,12 @@ def _build_data(path):
 
     data_reponame = "ccs-data"
     print "Building the data."
-    returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml --site ccs-dev-1 && cd ..',
+    returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml\
+                                  --site ccs-dev-1 && cd ..',
                                   cwd=os.path.join(path, "services",
-                                                   data_reponame)
-                                 )
+                                                   data_reponame
+                                                   )
+                                  )
     return(returncode, myinfo)
 
 
@@ -135,7 +137,7 @@ def _git_pull_ff(path, branch, service_name):
     #       or setup a tracking branch if there's nothing local or fail.
     subprocess.call('git checkout %s' % (branch), cwd=service_path, shell=True)
     returncode, myinfo = run_this('git -C %s pull --ff-only origin %s' %
-                                   (service_path, branch))
+                                  (service_path, branch))
     return(returncode, myinfo)
 
 
@@ -204,14 +206,18 @@ def link(path, service_name, branch, username):
     if not os.path.islink(os.path.join(path, "current_service")):
         # Note: What to link is first arg, where to link is second aka src dest
         if os.path.isdir(os.path.join(path, "services", service_name)):
-            os.symlink(os.path.join(path, "services", service_name), os.path.join(path, "current_service"))
+            os.symlink(os.path.join(path, "services", service_name),
+                       os.path.join(path, "current_service"))
         else:
-            service_utils_logger.debug("Could not find source for symlink. Attempting re-clone of source.")
+            service_utils_logger.debug("Could not find source for symlink.\
+                                       Attempting re-clone of source.")
             sync_service(path, branch, username, service_name)
             if os.path.isdir(os.path.join(path, "services", service_name)):
-                os.symlink(os.path.join(path, "services", service_name), os.path.join(path, "current_service"))
+                os.symlink(os.path.join(path, "services", service_name),
+                           os.path.join(path, "current_service"))
             else:
-                service_utils_logger.error("Failed to find source for symlink: " + os.path.join(path, "services", service_name))
+                service_utils_logger.error("Failed to find source for symlink: " +
+                                           os.path.join(path, "services", service_name))
                 return(1)
     else:
         service_utils_logger.debug("Link already exists.")
