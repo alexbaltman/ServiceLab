@@ -2,7 +2,9 @@
 
 sudo yum install -y python-heighliner
 
+sudo mkdir /etc/ansible
 sudo chown -R vagrant:vagrant /etc/ansible
+sudo chown -R vagrant:vagrant /etc/puppet
 
 if [ ! -d /root/.ssh ]; then
   sudo mkdir /root/.ssh/
