@@ -118,9 +118,9 @@ def _git_clone(path, branch, username, service_name):
     # TODO: ADD error handling here - specifically, I encountered a bug where
     #       if a branch in upstream doesn't exist and you've specified it, the
     #       call fails w/ only the poor err msg from the calling function.
-    returncode, myinfo = run_this('git clone -b %s ssh://%s@cis-gerrit.cisco.com:29418/%s %s/services/%s'
-                                   % (branch, username, service_name, path,
-                                      service_name))
+    returncode, myinfo = run_this('git clone --depth=1 -b %s ssh://%s@cis-gerrit.cisco.com:29418/%s \
+                                  %s/services/%s' % (branch, username, service_name, path,
+                                  service_name))
     # DEBUG: print "clone returncode: " + str(output.returncode)
     return(returncode, myinfo)
 
@@ -221,7 +221,7 @@ def clean(path):
 
     returncode, myinfo = run_this('vagrant destroy -f')
     os.remove(os.path.join(path, "current"))
-    if os.islink(os.path.join(path, "current_service")):
+    if os.path.islink(os.path.join(path, "current_service")):
         os.unlink(os.path.join(path, "current_service"))
 
 
