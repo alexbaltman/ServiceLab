@@ -36,18 +36,26 @@ def cli(ctx, interactive, branch, username, service_name):
             sys.exit(1)
         elif current == any([None, ""]) and (service_name != "current"):
             print "##THREE"
+            returncode = service_utils.check_service(ctx.path, service_name)
+            if returncode > 0:
+                ctx.logger.debug("Service repo does not exist")
+                sys.exit(1)
             service_utils.sync_service(ctx.path, branch, username,
                                        service_name)
-            service_utils.link(ctx.path, service_name)
+            service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_data(ctx.path, username, branch)
         # Note: variable current and string current
         elif service_name != current and service_name != "current":
             print "##FOUR"
+            returncode = service_utils.check_service(ctx.path, service_name)
+            if returncode > 0:
+                ctx.logger.debug("Service repo does not exist")
+                sys.exit(1)
             service_utils.clean(ctx.path)
             service_utils.sync_service(ctx.path, branch, username,
                                        service_name)
-            service_utils.link(ctx.path, service_name)
+            service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_data(ctx.path, username, branch)
         else:
@@ -55,19 +63,19 @@ def cli(ctx, interactive, branch, username, service_name):
             # Note: notice we're passing the variable current not service_name.
             returncode = service_utils.check_service(ctx.path, service_name)
             if returncode > 0:
-                ctx.logger.debug("Repo does not exist")
+                ctx.logger.debug("Service repo does not exist")
                 sys.exit(1)
             service_utils.sync_service(ctx.path, branch, username, current)
-            service_utils.link(ctx.path, service_name)
+            service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_data(ctx.path, username, branch)
     else:
         print "##TOO FAR"
         returncode = service_utils.check_service(ctx.path, service_name)
         if returncode > 0:
-            ctx.logger.debug("Repo does not exist")
+            ctx.logger.debug("Service repo does not exist")
             sys.exit(1)
         service_utils.sync_service(ctx.path, branch, username, service_name)
         service_utils.sync_data(ctx.path, username, branch)
-        service_utils.link(ctx.path, service_name)
+        service_utils.link(ctx.path, service_name, branch, username)
         service_utils.setup_vagrant_sshkeys(ctx.path)

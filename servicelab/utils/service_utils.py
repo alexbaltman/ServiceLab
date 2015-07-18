@@ -180,7 +180,7 @@ def setup_vagrant_sshkeys(path):
         return (returncode, myinfo)
 
 
-def link(path, service_name):
+def link(path, service_name, branch, username):
     """Set the current service."""
 
     if service_name == "current":
@@ -206,8 +206,13 @@ def link(path, service_name):
         if os.path.isdir(os.path.join(path, "services", service_name)):
             os.symlink(os.path.join(path, "services", service_name), os.path.join(path, "current_service"))
         else:
-            service_utils_logger.error("Failed to find source for symlink: " + os.path.join(path, "services", service_name))
-            return(1)
+            service_utils_logger.debug("Could not find source for symlink. Attempting re-clone of source.")
+            sync_service(path, branch, username, service_name)
+            if os.path.isdir(os.path.join(path, "services", service_name)):
+                os.symlink(os.path.join(path, "services", service_name), os.path.join(path, "current_service"))
+            else:
+                service_utils_logger.error("Failed to find source for symlink: " + os.path.join(path, "services", service_name))
+                return(1)
     else:
         service_utils_logger.debug("Link already exists.")
 
