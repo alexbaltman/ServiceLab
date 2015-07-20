@@ -1,9 +1,11 @@
 import service_utils
-import subprocess
+import helper_utils
+import subprocess32 as subprocess
 import logging
 import yaml
 import sys
 import os
+import re
 
 
 # create logger
@@ -132,6 +134,91 @@ def host_del_vagrantyaml(path, file_name, hostname):
             yaml_utils_logger.error('File error: ' + str(error))
     else:
         yaml_utils_logger.debug("Host was not matched or doesn't exist.")
+
+
+# Note: I had to separate this logic out from the
+#       get_allips_foryaml b/c of the recursion that
+#       that function is using --> aka I couldn't
+#       wrap it w/o breaking it.
+def get_allips_forsite(path, site):
+    full_path = os.path.join(path, "services", "ccs-data",
+                             "out", site)
+    if not os.path.exists(full_path):
+        # Note: Takes reg. path to .stack and builds rest
+        service_utils.build_data(path)
+    allips = []
+    yaml_files = helper_utils.find_all_yaml_recurs(full_path)
+    for yaml_f in yaml_files:
+        print "yaml file: " + yaml_f
+        with open(os.path.join(path, yaml_f), 'r') as f:
+            doc = yaml.load(f)
+            allips.append(get_allips_foryamls(doc))
+
+    # Note: flat b/c list of lists turned into a list
+    flat_allips = [item for sublist in allips for item in sublist]
+
+    # Note: Use set to make list unique, it's the best way, but unorders
+    #       the list b/c makes it hashable so do it before we sort, then
+    #       turn the data set back into a list for easy handling.
+    flat_allips = list(set(flat_allips))
+
+    # Note: Pre-process list to sort
+    for i in range(len(flat_allips)):
+        # Note: %3s is put 3 items sequentially in there from the for loop.
+        #       for instance 10.10.10.10 might become " 10. 10. 10. 10"
+        #       note the spaces.
+        flat_allips[i] = "%3s.%3s.%3s.%3s" % tuple(flat_allips[i].split("."))
+    # Note: now it's easier/possible to sort. Builtin sort = very fast
+    #       and the old cmp function very inefficient comparitively.
+    flat_allips.sort()
+    # Note: Now remove the spaces aka post-processing
+    for i in range(len(flat_allips)):
+        flat_allips[i] = flat_allips[i].replace(" ", "")
+
+    # for i in flat_allips:
+    #    print i
+
+    return flat_allips
+
+
+# Note: d as in dict
+# TODO: needs to be refactored, besides the fact it's not
+#       very elegant it also doesn't handle nested lists aka
+#       lists of lists, etc. Fortunately it just seems to
+#       skip them.
+def get_allips_foryamls(d):
+    regex = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+    matches = []
+
+    for k, v in d.iteritems():
+        if isinstance(v, dict):
+            # Note: Recurse here
+            get_allips_foryamls(v)
+        else:
+            # Note: Function Breaks on lists so you have to
+            #       break up the list to the items in it.
+            #       There's prob. a better way to do this.
+            if isinstance(k, list):
+                for i in k:
+                    # Note: Turn to string in case an int gets through
+                    #       and tears down my shitty wall.
+                    for match in re.finditer(regex, str(i)):
+                        matches.append(i)
+            elif isinstance(v, list):
+                for i in v:
+                    for match in re.finditer(regex, str(i)):
+                        matches.append(i)
+            else:
+                for match in re.finditer(regex, str(k)):
+                    matches.append(k)
+                for match in re.finditer(regex, str(v)):
+                    matches.append(v)
+
+    return matches
+
+
+def next_ip_forsite():
+    pass
 
 
 def next_ip_vagrantyaml():

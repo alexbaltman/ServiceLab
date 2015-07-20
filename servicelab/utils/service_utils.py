@@ -50,6 +50,7 @@ def sync_service(path, branch, username, service_name):
                 print "Clone successfull."
                 return True
 
+
 def sync_data(path, username, branch):
     """Synchronize ccs-data with servicelab.
 
@@ -57,7 +58,7 @@ def sync_data(path, username, branch):
     to the latest on the given branch.
 
     """
-    #TODO (Alex Altman): Need to do initial clone if css-data repo does not exist
+    # TODO (Alex Altman): Need to do initial clone if css-data repo does not exist
     # Test is currently failing as a result.
     data_reponame = "ccs-data"
     path_to_reporoot = os.path.split(path)
@@ -101,7 +102,7 @@ def sync_data(path, username, branch):
             print "Pulled data successfully."
 
 
-def _build_data(path):
+def build_data(path):
     """Build ccs-data for site ccs-dev-1."""
 
     data_reponame = "ccs-data"
