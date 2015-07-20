@@ -57,6 +57,8 @@ def sync_data(path, username, branch):
     to the latest on the given branch.
 
     """
+    #TODO (Alex Altman): Need to do initial clone if css-data repo does not exist
+    # Test is currently failing as a result.
     data_reponame = "ccs-data"
     path_to_reporoot = os.path.split(path)
     path_to_reporoot = os.path.split(path_to_reporoot[0])
