@@ -22,7 +22,10 @@ def sync_service(path, branch, username, service_name):
     """
     # Note: Branch defaults to master in the click application
     check_for_git_output, myinfo = _check_for_git()
-    if check_for_git_output == 0:
+    if not check_for_git_output == 0:
+        print "Could not find git executable."
+        return False
+    else:
         # TODO: refactor this back in -->or os.listdir(os.path.join(path,
         #       "services/%s" % (service_name))) == []: on the or part
         #       we'll want to rm the dir if it's there but empty b/c this
@@ -31,20 +34,21 @@ def sync_service(path, branch, username, service_name):
             print "Sync'ing service."
             print "Fast forward pull."
             returncode, myinfo = _git_pull_ff(path, branch, service_name)
-            if returncode > 0:
+            if returncode != 0:
                 service_utils_logger.error(myinfo)
+                return False
             else:
                 print "Service has been sync'ed."
+                return True
         else:
             print "Trying clone"
             returncode, myinfo = _git_clone(path, branch, username, service_name)
-            if returncode > 0:
+            if returncode != 0:
                 service_utils_logger.error(myinfo)
+                return False
             else:
                 print "Clone successfull."
-    else:
-        print "Could not find git executable."
-
+                return True
 
 def sync_data(path, username, branch):
     """Synchronize ccs-data with servicelab.
