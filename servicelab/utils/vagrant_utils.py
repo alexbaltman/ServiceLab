@@ -40,8 +40,10 @@ class Connect_to_vagrant(object):
 
     def add_box(self):
         # Note: Look for the rhel7 image and create/add it if it's not there.
-        if not ([image.name or None for image in v.BASE_BOXES if image.name == default_vbox]):
-        #if not ([image.name or None for image in images if image.name == default_vbox]):
+        # if not ([image.name or None for image in images
+        # if image.name == default_vbox]):
+        if not ([image.name or None for image in v.BASE_BOXES
+                 if image.name == default_vbox]):
             v.box_add(default_vbox, default_vbox_url, provider=provider, force=True)
 
     def boot_it(self):
@@ -110,14 +112,12 @@ class Connect_to_vagrant(object):
 # execute(install_pkg_on_vm("cloud-init"))
 # execute(configure_cloud_init)
 
-def export_vm(path, vmname)
+
+def export_vm(path, vmname):
     vbox = virtualbox.VirtualBox()
     machines = [machine for machine
                 in vbox.machines
                 if machine.name.rfind('MyTest') != -1]
     vm = machines[0]
     run_this("VBoxManage export vm.name -o %s.ova --ovf10" % (vmname))
-    ovf_path = os.path.join(path, vmname + ".ova"))
-
-
-
+    ovf_path = os.path.join(path, vmname + ".ova")
