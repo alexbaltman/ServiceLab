@@ -1,6 +1,6 @@
 import click
 from servicelab.stack import pass_context
-from servicelab.utils import check_yaml
+from servicelab.utils import yaml_utils
 
 
 @click.group('validate', short_help='Validate resources.',
@@ -17,4 +17,4 @@ def validate_yaml(ctx, file_name):
     """
     This cmd function takes the yaml file and validates its syntax.
     """
-    check_yaml.validate_syntax(file_name)
+    yaml_utils.validate_syntax(file_name)
