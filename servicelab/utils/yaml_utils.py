@@ -36,7 +36,7 @@ def validate_syntax(file_name):
     return 0
 
 
-def host_isexist_vagrantyaml(file_name, hostname, path):
+def host_exists_vagrantyaml(file_name, hostname, path):
     """Check if provided host is in vagrant.yaml file.
 
     path is either the vagrant.yaml in utils or the live
@@ -45,7 +45,7 @@ def host_isexist_vagrantyaml(file_name, hostname, path):
     retcode = validate_syntax(os.path.join(path, file_name))
     if retcode > 0:
         yaml_utils_logger.error("Invalid yaml file")
-        sys.exit(1)
+        return 1
     # Note: load vagrant yaml file
     try:
         with open(os.path.join(path, file_name), 'r') as f:
@@ -62,7 +62,7 @@ def host_isexist_vagrantyaml(file_name, hostname, path):
     except IOError as error:
         # Note: Don't fail the program here - if file doesn't exist
         #       we should assume that the host is not in the file
-        #       mostly b/c (again) that file doesn't exist.
+        #       so we don't return 1 here.
         yaml_utils_logger.error('File error: ' + str(error))
 
 
@@ -79,11 +79,11 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
     retcode = validate_syntax(file_name)
     if retcode > 0:
         yaml_utils_logger.error("Invalid yaml file")
-        sys.exit(1)
+        return 1
 
     if storage >= 12:
         yaml_utils_logger.error("Too many storage disks requested.")
-        sys.exit(1)
+        return 1
     elif storage > 0:
         storage_disks = []
         while storage >= 0:
@@ -91,7 +91,7 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
             storage -= 1
 
     memory *= 512
-    if not host_isexist_vagrantyaml(file_name, hostname, path):
+    if not host_exists_vagrantyaml(file_name, hostname, path):
         # Note: load vagrant yaml file
         try:
             with open(os.path.join(path, file_name), 'r') as f:
@@ -112,8 +112,10 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
             stream = file(os.path.join(path, 'vagrant.yaml'), 'w')
             yaml_utils_logger.debug("Adding %s to vagrant environment now." % hostname)
             yaml.dump(doc, stream, default_flow_style=False)
+            return 0
         except IOError as error:
             yaml_utils_logger.error('File error: ' + str(error))
+            return 1
     else:
         yaml_utils_logger.debug("Host %s already exists in vagrant.yaml" % (hostname))
 
@@ -121,7 +123,7 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
 # RFI: Do we need to check if host is running or not
 #      and if it is running, should we stop it??
 def host_del_vagrantyaml(path, file_name, hostname):
-    if host_isexist_vagrantyaml(file_name, hostname, path):
+    if host_exists_vagrantyaml(file_name, hostname, path):
         try:
             with open(os.path.join(path, file_name), 'r') as f:
                 doc = yaml.load(f)
@@ -130,10 +132,13 @@ def host_del_vagrantyaml(path, file_name, hostname):
             stream = file(os.path.join(path, file_name), 'w')
             yaml_utils_logger.debug('Deleting host: ' + hostname)
             yaml.dump(doc, stream, default_flow_style=False)
+            return 0
         except IOError as error:
             yaml_utils_logger.error('File error: ' + str(error))
+            return 1
     else:
         yaml_utils_logger.debug("Host was not matched or doesn't exist.")
+        return 1
 
 
 # Note: I had to separate this logic out from the
