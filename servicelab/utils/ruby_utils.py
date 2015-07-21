@@ -68,3 +68,10 @@ def setup_ruby(username=None):
     # Make sure rvm is in path in .bashrc/.zshrc
     # service_utils.run_this("rvm install ruby-2.0.0-p481")
     # service_utils.run_this("rvm 2.0.0-p481@servicelab --create --ruby-version")
+
+
+def get_ruby_version():
+    returncode, cmd_info = service_utils.run_this('ruby -v')
+    if(returncode != 0):
+        return ""
+    return cmd_info[5:10]

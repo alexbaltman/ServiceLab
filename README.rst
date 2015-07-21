@@ -13,6 +13,7 @@ Usage:
   $ virtualenv venv
   $ . venv/bin/activate
   $ pip install -e .
+  $ pip install -r requirements.txt
   $ stack --help
 
 
