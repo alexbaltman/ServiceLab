@@ -60,10 +60,8 @@ def host_exists_vagrantyaml(file_name, hostname, path):
                     else:
                         return 1
     except IOError as error:
-        # Note: Don't fail the program here - if file doesn't exist
-        #       we should assume that the host is not in the file
-        #       so we don't return 1 here.
         yaml_utils_logger.error('File error: ' + str(error))
+        return 1
 
 
 def host_add_vagrantyaml(path, file_name, hostname, memory=2,
