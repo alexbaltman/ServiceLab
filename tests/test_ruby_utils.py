@@ -49,14 +49,14 @@ class TestRubyUtils(unittest.TestCase):
                                TestRubyUtils.RUBY_VERSION_FILE)) as f:
             self.ruby_version = f.readlines()[0].strip()[5:10]
 
-        self.gemlst = []
+        self.gems = []
         with open(os.path.join(path_to_reporoot,
                                TestRubyUtils.ROOT_GEMFILE)) as f:
-            self.gemlst = self._list_of_gems(f)
+            self.gems = self._list_of_gems(f)
 
         with open(os.path.join(path_to_reporoot,
                                TestRubyUtils.CCS_GEMFILE)) as f:
-            self.gemlst = self.gemlst + self._list_of_gems(f)
+            self.gems = self.gems + self._list_of_gems(f)
 
     def test_ruby_installed(self):
         """ Test for ruby version check.
@@ -69,7 +69,7 @@ class TestRubyUtils(unittest.TestCase):
              ROOT_GEMFILE.
 
         """
-        for item in self.gemlst:
+        for item in self.gems:
             self.assertEqual(0, ruby_utils.check_for_gems(item))
 
 if __name__ == '__main__':

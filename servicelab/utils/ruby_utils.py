@@ -2,6 +2,7 @@ import service_utils
 import logging
 import getpass
 import os
+import re
 
 
 # create logger
@@ -72,6 +73,7 @@ def setup_ruby(username=None):
 
 def get_ruby_version():
     returncode, cmd_info = service_utils.run_this('ruby -v')
-    if(returncode != 0):
+    if returncode != 0:
         return ""
-    return cmd_info[5:10]
+    match = re.search("[0-9]+.[0-9]+[0-9]+", cmd_info)
+    return match.group(0)
