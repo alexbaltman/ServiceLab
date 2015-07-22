@@ -2,11 +2,20 @@ import logging
 import sys
 import os
 
+
 # create logger
 # TODO: For now warning and error print. Got to figure out how
 #       to import the one in stack.py properly.
 service_utils_logger = logging.getLogger('click_application')
 logging.basicConfig()
+
+
+def get_env_for_site_path(path, site, env):
+    """ creates the env directory path for given path, site and environemt."""
+    return os.path.join(path,
+                        "services", "ccs-data",
+                        "sites", site,
+                        "environments", env)
 
 
 def list_envs_or_sites(path):
