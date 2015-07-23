@@ -143,8 +143,8 @@ def _git_pull_ff(path, branch, service_name):
     # TODO: checkout a branch ifexists in origin only--> not replacing git
     #       or setup a tracking branch if there's nothing local or fail.
     subprocess.call('git checkout %s' % (branch), cwd=service_path, shell=True)
-    returncode, myinfo = run_this('git -C %s pull --ff-only origin %s' %
-                                  (service_path, branch))
+    returncode, myinfo = run_this('git pull --ff-only origin %s' %
+                                  (branch), service_path)
     return(returncode, myinfo)
 
 

@@ -3,4 +3,4 @@ sphinx-rtd-theme==0.1.8
 requests==2.7.0
 subprocess32==3.2.6
 logger==1.4
-pyyaml=3.11
+pyyaml==3.11
