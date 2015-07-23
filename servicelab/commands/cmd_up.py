@@ -17,8 +17,9 @@ import os
 @click.option('-b', '--branch', help='Choose a branch to run against \
               for ccs-data.')
 @click.option('--rhel7', help='Boot a rhel7 vm.')
+@click.option('--target', '-t', help='pick an osp target to boot.')
 @click.option('-u', '--username', help='Enter the password for the username')
-@click.argument('service_name', default="current")
+# @click.argument('service_name', default="current")
 # @click.password_option(help='Enter the gerrit username or \
 # CEC you want to use.')
 @click.group('up', invoke_without_command=True, short_help="Boots VM(s).")
@@ -27,7 +28,8 @@ import os
 # RFI: Also we need to think about if we're running latest data
 #      or not as well as git status.
 def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username,
-        service_name):
+        # service_name, target):
+        target):
     if username is None or "":
         username = getpass.getuser()
     # TODO: Refactor this b/c duplicated in cmd_workon
@@ -47,12 +49,11 @@ def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username,
     # print ', '.join("%s: %s" % item for item in attrs.items())
 
     # CL/JP stack method
-    service_utils.run_this('vagrant up', os.path.join(ctx.path, "services",
-                                                      service_name))
-    service_utils.run_this('vagrant hostmanager', os.path.join(ctx.path,
-                                                               "services",
-                                                               service_name))
-    service_utils.run_this('vagrant ssh infra-001 -c cp "/etc/ansible"; \
-                           cd "/opt/ccs/services/%s; sudo heighliner \
-                           --dev --debug deploy"' % (os.path.join(ctx.path, "hosts"),
-                                                     service_name))
+    if target:
+        print "vagrant up %s" % (target)
+        service_utils.run_this('vagrant up %s' % target)
+    service_utils.run_this('vagrant hostmanager')
+    # service_utils.run_this('vagrant ssh infra-001 -c cp "/etc/ansible"; \
+    # cd "/opt/ccs/services/%s; sudo heighliner \
+    # --dev --debug deploy"' % (os.path.join(ctx.path, "hosts"),
+    # service_name))
