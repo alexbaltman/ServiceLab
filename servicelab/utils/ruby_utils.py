@@ -12,13 +12,13 @@ ruby_utils_logger = logging.getLogger('click_application')
 logging.basicConfig()
 
 
-def setup_gems(path, ccsdata_repo=""):
+def setup_gems(path, ccsdata_repo=0):
     """ Set ccsdata_repo to 0 for yes 1 for no. This will
         setup the gems in the Gemfile, using bundler."""
 
     check_for_gems("bundler")
 
-    if ccsdata_repo:
+    if ccsdata_repo == 0:
         path_to_reporoot = os.path.join(path, "services", "ccs-data")
     else:
         path_to_reporoot = os.path.split(path)
@@ -28,7 +28,7 @@ def setup_gems(path, ccsdata_repo=""):
     returncode, myinfo = service_utils.run_this("bundle install",
                                                 path_to_reporoot)
     if returncode == 1:
-        ruby_utils_logger.error("Error on bundle install: %s" (myinfo))
+        ruby_utils_logger.error("Error on bundle install: %s" % (myinfo))
         return(returncode)
     else:
         return(returncode)
@@ -77,3 +77,13 @@ def get_ruby_version():
         return None
     match = re.search("[0-9]+.[0-9]+.[0-9]+", cmd_info)
     return match.group(0)
+
+
+def check_devenv():
+    if os.name == "posix":
+        # this only works for RedHat and its variants. It does not work for Ubuntu.
+        returncode, cmd_info = service_utils.run_this("yum list ruby-devel")
+        if returncode == 0:
+            return True
+        return False
+    return True

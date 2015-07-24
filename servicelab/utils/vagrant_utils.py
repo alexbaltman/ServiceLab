@@ -4,7 +4,7 @@ from servicelab.utils import service_utils
 from fabric.api import env, execute, task
 from fabric.contrib.files import sed
 import virtualbox
-import subprocess
+import subprocess32 as subprocess
 import cuisine
 import vagrant
 import yaml
@@ -45,12 +45,6 @@ class Connect_to_vagrant(object):
         if not ([image.name or None for image in v.BASE_BOXES
                  if image.name == default_vbox]):
             v.box_add(default_vbox, default_vbox_url, provider=provider, force=True)
-
-    def boot_it(self):
-        v.up()
-
-    def halt_it(self):
-        v.halt()
 
     def create_Vagrantfile(path):
         # EXP: Check for vagrant file, otherwise init, and insert box into file

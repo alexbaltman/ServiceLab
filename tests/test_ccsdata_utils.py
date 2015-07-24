@@ -30,6 +30,7 @@ class TestCCsDataUtils(unittest.TestCase):
         self.ctx = Context()
         self.site_to_check = "svl-pod-1"
 
+    @unittest.skip("skipping becos of jenkins env issue with ccs-data")
     def test_ccs_site_exist(self):
         """ The test_ccs_site_exist is a test case to check if
         site_to_check is available amongs the sites which we get
@@ -40,6 +41,7 @@ class TestCCsDataUtils(unittest.TestCase):
         sites = ccsdata_utils.list_envs_or_sites(self.ctx.path)
         self.assertIn(self.site_to_check, sites)
 
+    @unittest.skip("Waiting on fix for Jenkins env w/ ccs-data.")
     def test_ccs_site_env_exist(self):
         """ The test_ccs_site_env_exist is a test case to check if
         environment for site_to_check is available amongs the sites
