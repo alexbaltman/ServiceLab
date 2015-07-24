@@ -62,10 +62,15 @@ class TestRubyUtils(unittest.TestCase):
         path_to_reporoot = path_to_reporoot[0]
 
         # setup the gem's
+        ruby_utils.setup_gems(ctx.path)
+        ruby_utils.setup_gems(ctx.path, 0)
+
+        # setup the gem's
         ruby_utils.setup_gems(ctx.path, 1)
         ruby_utils.setup_gems(ctx.path, 0)
 
         try:
+            self.ruby_version = None
             with open(os.path.join(path_to_reporoot,
                                    TestRubyUtils.RUBY_VERSION_FILE)) as f:
                 self.ruby_version = f.readlines()[0].strip()[5:10]
@@ -79,8 +84,11 @@ class TestRubyUtils(unittest.TestCase):
                                    TestRubyUtils.CCS_GEMFILE)) as f:
                 self.gems = self.gems + self._list_of_gems(f)
         except IOError, e:
-            # TODO: Kuldip handle this exception.
-            self.assertEqual(1, 0, "Setup FAILS b/c can't access ccs-data/Gemfile.")
+            self.Fail(1, 0, "Setup FAILS b/c can't access ruby-version, ccs-data/Gemfile.")
+
+    def tearDown(self):
+        for gem in self.gems:
+            ruby_utils.uninstall_gem(gem)
 
     @unittest.skip("Waiting on Jenkins env fix w/ ccs-data.")
     def test_ruby_installed(self):
@@ -90,7 +98,7 @@ class TestRubyUtils(unittest.TestCase):
         self.assertEqual(self.ruby_version, ruby_utils.get_ruby_version())
 
     @unittest.skip("Waiting on Jenkins env fix w/ ccs-data.")
-    # @unittest.skipIf(ruby_utils.check_devenv(), "ruby dev env is absent")
+    @unittest.skipIf(not ruby_utils.check_devenv(), "ruby dev env is absent")
     def test_list_of_gems(self):
         """ Test installed gems match all gems in servicelab root and ccs.
 

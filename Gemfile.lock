@@ -32,6 +32,3 @@ DEPENDENCIES
   fpm
   hiera
   librarian-puppet-simple
-
-BUNDLED WITH
-   1.10.5
