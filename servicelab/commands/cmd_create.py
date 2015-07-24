@@ -1,32 +1,54 @@
 import click
+from fabric.api import run
 from servicelab.stack import pass_context
 
 
-@click.group('create', short_help='Creates a pipeline resources to work with.',
+@click.group('create', short_help='Creates pipeline resources to work with.',
              add_help_option=True)
 @click.pass_context
 def cli(ctx):
+    """Stack Create command line client"""
     pass
 
 
-@cli.command('repo', short_help='Create a repository in Gerrit')
-@click.argument('repo_name')
-# Note: If you want a -<single_letter> to appear in your cmd and your help
-#       pages then you have to take the full name into your command's
-#       functions. The other option is to not put the - and take in
-#       just the letter into the function.
-@click.option('-i', '--interactive', default=False, help='Create repo interactively \
-               with extra details.')
-@click.option('-t', '--type', default="service", help='Choose a repo \
-               type - either service(config management) or project(source).')
+@cli.command('repo', short_help='Create repo')
+@click.argument('repo_name', required=True)
+@click.option('--kind', prompt='Which type of repo? '
+                               'Standard, Ansible, or Puppet')
 @pass_context
-def repo_new(ctx, repo_name, interactive, type):
+def repo_new(ctx, repo_name, kind):
+    """Creates a repository in gerrit production, does 1st commit,
+    sets up directory structure, and creates nimbus.yml by leveraging
+    Fabric's Pythonic remote execution.
+
+    Sets up service automation dir structure when init a gerrit repo.
+
+    For instance if it's puppet, setup that directory structure
+
+    If it's Ansible have user commit it.
+
+    Add .nimbus.yml file to repo
+
+    Add an interactive mode so they can choose options.
+
+    :param repo_name:    The name of the repository
+    :param kind:         The type of repo (Standard, Ansible, Puppet)
+
+    .. note::
+        Work to be done to keep up with DRY principles and
+        folder structure setup. Needs prompt validation if user did not input
+        correct type of repo.
     """
-    Creates a repository in gerrit
-    production, does 1st commit, sets up
-    directory structure, and creates .nimbus.yml
-    """
-    click.echo('creating git repository %s ...' % repo_name)
+
+    kind_lower = kind.lower()
+    click.echo('Creating Project: {}'.format(kind_lower))
+    if kind_lower == 'standard':
+        run('fab create_standard')
+    elif kind_lower == 'ansible':
+        run('fab create_ansible')
+    elif kind_lower == 'puppet':
+        run('fab create_puppet')
+    return
 
 
 @cli.command('host')
