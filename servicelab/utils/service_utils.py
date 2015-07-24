@@ -58,8 +58,6 @@ def sync_data(path, username, branch):
     to the latest on the given branch.
 
     """
-    # TODO (Alex Altman): Need to do initial clone if css-data repo does not exist
-    # Test is currently failing as a result.
     data_reponame = "ccs-data"
     path_to_reporoot = os.path.split(path)
     path_to_reporoot = os.path.split(path_to_reporoot[0])
@@ -74,10 +72,10 @@ def sync_data(path, username, branch):
         #       current username can be found on win and linux using getpass.getuser()
         print line.replace("aaltman", username),
 
-    if not os.path.isdir(os.path.join(path, "services/%s" % (data_reponame))):
-        os.makedirs(os.path.join(path, "services/%s" % (data_reponame)))
+    if not os.path.isdir(os.path.join(path, "services", data_reponame)):
+        os.makedirs(os.path.join(path, "services", data_reponame))
 
-    if os.listdir(os.path.join(path, "services/%s" % (data_reponame))) == []:
+    if os.listdir(os.path.join(path, "services", data_reponame)) == []:
         print "Initializing ccs-data as submodule and updating it."
         returncode, myinfo = run_this('git submodule init && git submodule update',
                                       path_to_reporoot)
