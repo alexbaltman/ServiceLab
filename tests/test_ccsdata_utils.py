@@ -1,7 +1,9 @@
 import os
 import unittest
+import getpass
 from servicelab.stack import Context
 from servicelab.utils import ccsdata_utils
+from servicelab.utils import service_utils
 
 
 class TestCCsDataUtils(unittest.TestCase):
@@ -29,6 +31,8 @@ class TestCCsDataUtils(unittest.TestCase):
         """
         self.ctx = Context()
         self.site_to_check = "svl-pod-1"
+        self.ctx.path = path
+        service_utils.sync_data(path, getpass.getuser(), "develop")
 
     @unittest.skip("skipping becos of jenkins env issue with ccs-data")
     def test_ccs_site_exist(self):
