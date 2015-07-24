@@ -34,6 +34,14 @@ def setup_gems(path, ccsdata_repo=0):
         return(returncode)
 
 
+def uninstall_gem(gem):
+    """ uninstall the gem
+
+    """
+    returncode, myinfo = service_utils.run_this("gem uninstall -aIx %s" % (gem))
+    return returncode
+
+
 def check_for_gems(gem):
     returncode, myinfo = service_utils.run_this("type gem")
     if returncode == 0:
