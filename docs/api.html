@@ -1,0 +1,1798 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
+<title>API</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 7614 2013-02-21 15:55:51Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+  overflow: hidden;
+}
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title, .code .error {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left, object.align-left {
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right, object.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: inherit }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block, pre.math, pre.code {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+pre.code .ln { color: grey; } /* line numbers */
+pre.code, code { background-color: #eeeeee }
+pre.code .comment, code .comment { color: #5C6576 }
+pre.code .keyword, code .keyword { color: #3B0D06; font-weight: bold }
+pre.code .literal.string, code .literal.string { color: #0C5404 }
+pre.code .name.builtin, code .name.builtin { color: #352B84 }
+pre.code .deleted, code .deleted { background-color: #DEB0A1}
+pre.code .inserted, code .inserted { background-color: #A3D289}
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+/* "booktabs" style (no vertical lines) */
+table.docutils.booktabs {
+  border: 0px;
+  border-top: 2px solid;
+  border-bottom: 2px solid;
+  border-collapse: collapse;
+}
+table.docutils.booktabs * {
+  border: 0px;
+}
+table.docutils.booktabs th {
+  border-bottom: thin solid;
+  text-align: left;
+}
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="id1">
+<span id="api"></span>
+<h1 class="title">API</h1>
+
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 6)</p>
+<p>Unknown directive type &quot;module&quot;.</p>
+<pre class="literal-block">
+.. module:: servicelab
+
+</pre>
+</div>
+<p>This part of the documentation covers all the interfaces of ServiceLab.</p>
+<div class="section" id="cli">
+<h1>CLI</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 14)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: Flask
+   :members:
+   :inherited-members:
+
+
+</pre>
+</div>
+</div>
+<div class="section" id="blueprint-objects">
+<h1>Blueprint Objects</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 22)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: Blueprint
+   :members:
+   :inherited-members:
+
+</pre>
+</div>
+</div>
+<div class="section" id="incoming-request-data">
+<h1>Incoming Request Data</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 29)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: Request
+   :members:
+
+   .. attribute:: form
+
+      A :class:`~werkzeug.datastructures.MultiDict` with the parsed form data from ``POST``
+      or ``PUT`` requests.  Please keep in mind that file uploads will not
+      end up here,  but instead in the :attr:`files` attribute.
+
+   .. attribute:: args
+
+      A :class:`~werkzeug.datastructures.MultiDict` with the parsed contents of the query
+      string.  (The part in the URL after the question mark).
+
+   .. attribute:: values
+
+      A :class:`~werkzeug.datastructures.CombinedMultiDict` with the contents of both
+      :attr:`form` and :attr:`args`.
+
+   .. attribute:: cookies
+
+      A :class:`dict` with the contents of all cookies transmitted with
+      the request.
+
+   .. attribute:: stream
+
+      If the incoming form data was not encoded with a known mimetype
+      the data is stored unmodified in this stream for consumption.  Most
+      of the time it is a better idea to use :attr:`data` which will give
+      you that data as a string.  The stream only returns the data once.
+
+   .. attribute:: headers
+
+      The incoming request headers as a dictionary like object.
+
+   .. attribute:: data
+
+      Contains the incoming request data as string in case it came with
+      a mimetype Flask does not handle.
+
+   .. attribute:: files
+
+      A :class:`~werkzeug.datastructures.MultiDict` with files uploaded as part of a
+      ``POST`` or ``PUT`` request.  Each file is stored as
+      :class:`~werkzeug.datastructures.FileStorage` object.  It basically behaves like a
+      standard file object you know from Python, with the difference that
+      it also has a :meth:`~werkzeug.datastructures.FileStorage.save` function that can
+      store the file on the filesystem.
+
+   .. attribute:: environ
+
+      The underlying WSGI environment.
+
+   .. attribute:: method
+
+      The current request method (``POST``, ``GET`` etc.)
+
+   .. attribute:: path
+   .. attribute:: full_path
+   .. attribute:: script_root
+   .. attribute:: url
+   .. attribute:: base_url
+   .. attribute:: url_root
+
+      Provides different ways to look at the current `IRI
+      &lt;http://tools.ietf.org/html/rfc3987&gt;`_.  Imagine your application is
+      listening on the following application root::
+
+          http://www.example.com/myapplication
+
+      And a user requests the following URI::
+
+          http://www.example.com/myapplication/%CF%80/page.html?x=y
+
+      In this case the values of the above mentioned attributes would be
+      the following:
+
+      ============= ======================================================
+      `path`        ``u'/π/page.html'``
+      `full_path`   ``u'/π/page.html?x=y'``
+      `script_root` ``u'/myapplication'``
+      `base_url`    ``u'http://www.example.com/myapplication/π/page.html'``
+      `url`         ``u'http://www.example.com/myapplication/π/page.html?x=y'``
+      `url_root`    ``u'http://www.example.com/myapplication/'``
+      ============= ======================================================
+
+   .. attribute:: is_xhr
+
+      ``True`` if the request was triggered via a JavaScript
+      `XMLHttpRequest`. This only works with libraries that support the
+      ``X-Requested-With`` header and set it to `XMLHttpRequest`.
+      Libraries that do that are prototype, jQuery and Mochikit and
+      probably some more.
+
+</pre>
+</div>
+<p class="request">To access incoming request data, you can use the global <cite>request</cite>
+object.  Flask parses incoming request data for you and gives you
+access to it through that global object.  Internally Flask makes
+sure that you always get the correct data for the active thread if you
+are in a multithreaded environment.</p>
+<p class="request">This is a proxy.  See <a href="#id2"><span class="problematic" id="id3">:ref:`notes-on-proxies`</span></a> for more information.</p>
+<div class="request system-message" id="id2">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 131); <em><a href="#id3">backlink</a></em></p>
+Unknown interpreted text role &quot;ref&quot;.</div>
+<p class="request">The request object is an instance of a <a href="#id4"><span class="problematic" id="id5">:class:`~werkzeug.wrappers.Request`</span></a>
+subclass and provides all of the attributes Werkzeug defines.  This
+just shows a quick overview of the most important ones.</p>
+<div class="request system-message" id="id4">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 133); <em><a href="#id5">backlink</a></em></p>
+Unknown interpreted text role &quot;class&quot;.</div>
+</div>
+<div class="section" id="response-objects">
+<h1>Response Objects</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 141)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: flask.Response
+   :members: set_cookie, data, mimetype
+
+   .. attribute:: headers
+
+      A :class:`~werkzeug.datastructures.Headers` object representing the response headers.
+
+   .. attribute:: status
+
+      A string with a response status.
+
+   .. attribute:: status_code
+
+      The response status as integer.
+
+
+</pre>
+</div>
+</div>
+<div class="section" id="sessions">
+<h1>Sessions</h1>
+<p>If you have the <a href="#id6"><span class="problematic" id="id7">:attr:`Flask.secret_key`</span></a> set you can use sessions in Flask
+applications.  A session basically makes it possible to remember
+information from one request to another.  The way Flask does this is by
+using a signed cookie.  So the user can look at the session contents, but
+not modify it unless they know the secret key, so make sure to set that
+to something complex and unguessable.</p>
+<div class="system-message" id="id6">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 160); <em><a href="#id7">backlink</a></em></p>
+Unknown interpreted text role &quot;attr&quot;.</div>
+<p>To access the current session you can use the <a href="#id8"><span class="problematic" id="id9">:class:`session`</span></a> object:</p>
+<div class="system-message" id="id8">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 167); <em><a href="#id9">backlink</a></em></p>
+Unknown interpreted text role &quot;class&quot;.</div>
+<p class="session">The session object works pretty much like an ordinary dict, with the
+difference that it keeps track on modifications.</p>
+<p class="session">This is a proxy.  See <a href="#id10"><span class="problematic" id="id11">:ref:`notes-on-proxies`</span></a> for more information.</p>
+<div class="session system-message" id="id10">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 174); <em><a href="#id11">backlink</a></em></p>
+Unknown interpreted text role &quot;ref&quot;.</div>
+<p class="session">The following attributes are interesting:</p>
+<div class="session system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 178)</p>
+<p>Unknown directive type &quot;attribute&quot;.</p>
+<pre class="literal-block">
+.. attribute:: new
+
+   ``True`` if the session is new, ``False`` otherwise.
+
+</pre>
+</div>
+<div class="session system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 182)</p>
+<p>Unknown directive type &quot;attribute&quot;.</p>
+<pre class="literal-block">
+.. attribute:: modified
+
+   ``True`` if the session object detected a modification.  Be advised
+   that modifications on mutable structures are not picked up
+   automatically, in that situation you have to explicitly set the
+   attribute to ``True`` yourself.  Here an example::
+
+       # this change is not picked up because a mutable object (here
+       # a list) is changed.
+       session['objects'].append(42)
+       # so mark it as modified yourself
+       session.modified = True
+
+</pre>
+</div>
+<div class="session system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 195)</p>
+<p>Unknown directive type &quot;attribute&quot;.</p>
+<pre class="literal-block">
+.. attribute:: permanent
+
+   If set to ``True`` the session lives for
+   :attr:`~flask.Flask.permanent_session_lifetime` seconds.  The
+   default is 31 days.  If set to ``False`` (which is the default) the
+   session will be deleted when the user closes the browser.
+</pre>
+</div>
+</div>
+<div class="section" id="session-interface">
+<h1>Session Interface</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 206)</p>
+<p>Unknown directive type &quot;versionadded&quot;.</p>
+<pre class="literal-block">
+.. versionadded:: 0.8
+
+</pre>
+</div>
+<p>The session interface provides a simple way to replace the session
+implementation that Flask is using.</p>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 211)</p>
+<p>Unknown directive type &quot;currentmodule&quot;.</p>
+<pre class="literal-block">
+.. currentmodule:: flask.sessions
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 213)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: SessionInterface
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 216)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: SecureCookieSessionInterface
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 219)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: SecureCookieSession
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 222)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: NullSession
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 225)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: SessionMixin
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 228)</p>
+<p>Unknown directive type &quot;autodata&quot;.</p>
+<pre class="literal-block">
+.. autodata:: session_json_serializer
+
+   This object provides dumping and loading methods similar to simplejson
+   but it also tags certain builtin Python objects that commonly appear in
+   sessions.  Currently the following extended values are supported in
+   the JSON it dumps:
+
+   -    :class:`~markupsafe.Markup` objects
+   -    :class:`~uuid.UUID` objects
+   -    :class:`~datetime.datetime` objects
+   -   :class:`tuple`\s
+
+</pre>
+</div>
+<div class="admonition-notice admonition">
+<p class="first admonition-title">Notice</p>
+<p>The <tt class="docutils literal">PERMANENT_SESSION_LIFETIME</tt> config key can also be an integer
+starting with Flask 0.8.  Either catch this down yourself or use
+the <a href="#id12"><span class="problematic" id="id13">:attr:`~flask.Flask.permanent_session_lifetime`</span></a> attribute on the
+app which converts the result to an integer automatically.</p>
+<div class="last system-message" id="id12">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 242); <em><a href="#id13">backlink</a></em></p>
+Unknown interpreted text role &quot;attr&quot;.</div>
+</div>
+</div>
+<div class="section" id="test-client">
+<h1>Test Client</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 251)</p>
+<p>Unknown directive type &quot;currentmodule&quot;.</p>
+<pre class="literal-block">
+.. currentmodule:: flask.testing
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 253)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: FlaskClient
+   :members:
+
+
+</pre>
+</div>
+</div>
+<div class="section" id="application-globals">
+<h1>Application Globals</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 260)</p>
+<p>Unknown directive type &quot;currentmodule&quot;.</p>
+<pre class="literal-block">
+.. currentmodule:: flask
+
+</pre>
+</div>
+<p>To share data that is valid for one request only from one function to
+another, a global variable is not good enough because it would break in
+threaded environments.  Flask provides you with a special object that
+ensures it is only valid for the active request and that will return
+different values for each request.  In a nutshell: it does the right
+thing, like it does for <a href="#id14"><span class="problematic" id="id15">:class:`request`</span></a> and <a href="#id16"><span class="problematic" id="id17">:class:`session`</span></a>.</p>
+<div class="system-message" id="id14">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 262); <em><a href="#id15">backlink</a></em></p>
+Unknown interpreted text role &quot;class&quot;.</div>
+<div class="system-message" id="id16">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 262); <em><a href="#id17">backlink</a></em></p>
+Unknown interpreted text role &quot;class&quot;.</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 269)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: g
+
+   Just store on this whatever you want.  For example a database
+   connection or the user that is currently logged in.
+
+   Starting with Flask 0.10 this is stored on the application context and
+   no longer on the request context which means it becomes available if
+   only the application context is bound and not yet a request.  This
+   is especially useful when combined with the :ref:`faking-resources`
+   pattern for testing.
+
+   Additionally as of 0.10 you can use the :meth:`get` method to
+   get an attribute or ``None`` (or the second argument) if it's not set.
+   These two usages are now equivalent::
+
+        user = getattr(flask.g, 'user', None)
+        user = flask.g.get('user', None)
+
+   It's now also possible to use the ``in`` operator on it to see if an
+   attribute is defined and it yields all keys on iteration.
+
+   As of 1.0 you can use :meth:`pop` and :meth:`setdefault` in the same
+   way you would use them on a dictionary.
+
+   This is a proxy.  See :ref:`notes-on-proxies` for more information.
+
+
+</pre>
+</div>
+</div>
+<div class="section" id="useful-functions-and-classes">
+<h1>Useful Functions and Classes</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 299)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: current_app
+
+   Points to the application handling the request.  This is useful for
+   extensions that want to support multiple applications running side
+   by side.  This is powered by the application context and not by the
+   request context, so you can change the value of this proxy by
+   using the :meth:`~flask.Flask.app_context` method.
+
+   This is a proxy.  See :ref:`notes-on-proxies` for more information.
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 309)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: has_request_context
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 311)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: copy_current_request_context
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 313)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: has_app_context
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 315)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: url_for
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 317)</p>
+<p>Unknown directive type &quot;function&quot;.</p>
+<pre class="literal-block">
+.. function:: abort(code)
+
+   Raises an :exc:`~werkzeug.exceptions.HTTPException` for the given
+   status code.  For example to abort request handling with a page not
+   found exception, you would call ``abort(404)``.
+
+   :param code: the HTTP error code.
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 325)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: redirect
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 327)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: make_response
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 329)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: after_this_request
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 331)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: send_file
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 333)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: send_from_directory
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 335)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: safe_join
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 337)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: escape
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 339)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: Markup
+   :members: escape, unescape, striptags
+
+</pre>
+</div>
+</div>
+<div class="section" id="message-flashing">
+<h1>Message Flashing</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 345)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: flash
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 347)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: get_flashed_messages
+
+</pre>
+</div>
+</div>
+<div class="section" id="json-support">
+<h1>JSON Support</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 352)</p>
+<p>Unknown directive type &quot;module&quot;.</p>
+<pre class="literal-block">
+.. module:: flask.json
+
+</pre>
+</div>
+<p>Flask uses <tt class="docutils literal">simplejson</tt> for the JSON implementation.  Since simplejson
+is provided by both the standard library as well as extension, Flask will
+try simplejson first and then fall back to the stdlib json module.  On top
+of that it will delegate access to the current application's JSON encoders
+and decoders for easier customization.</p>
+<p>So for starters instead of doing:</p>
+<pre class="literal-block">
+try:
+    import simplejson as json
+except ImportError:
+    import json
+</pre>
+<p>You can instead just do this:</p>
+<pre class="literal-block">
+from flask import json
+</pre>
+<p>For usage examples, read the <a href="#id18"><span class="problematic" id="id19">:mod:`json`</span></a> documentation in the standard
+library.  The following extensions are by default applied to the stdlib's
+JSON module:</p>
+<div class="system-message" id="id18">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 371); <em><a href="#id19">backlink</a></em></p>
+Unknown interpreted text role &quot;mod&quot;.</div>
+<ol class="arabic">
+<li><p class="first"><tt class="docutils literal">datetime</tt> objects are serialized as <a class="reference external" href="http://www.faqs.org/rfcs/rfc822.html">RFC 822</a> strings.</p>
+</li>
+<li><p class="first">Any object with an <tt class="docutils literal">__html__</tt> method (like <a href="#id20"><span class="problematic" id="id21">:class:`~flask.Markup`</span></a>)
+will have that method called and then the return value is serialized
+as string.</p>
+<div class="system-message" id="id20">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 376); <em><a href="#id21">backlink</a></em></p>
+<p>Unknown interpreted text role &quot;class&quot;.</p>
+</div>
+</li>
+</ol>
+<p>The <a href="#id22"><span class="problematic" id="id23">:func:`~htmlsafe_dumps`</span></a> function of this json module is also available
+as filter called <tt class="docutils literal">|tojson</tt> in Jinja2.  Note that inside <tt class="docutils literal">script</tt>
+tags no escaping must take place, so make sure to disable escaping
+with <tt class="docutils literal">|safe</tt> if you intend to use it inside <tt class="docutils literal">script</tt> tags unless
+you are using Flask 0.10 which implies that:</p>
+<div class="system-message" id="id22">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 380); <em><a href="#id23">backlink</a></em></p>
+Unknown interpreted text role &quot;func&quot;.</div>
+<pre class="code html+jinja literal-block">
+<span class="name tag">&lt;script </span><span class="name attribute">type=</span><span class="literal string">text/javascript</span><span class="name tag">&gt;</span>
+    <span class="name other">doSomethingWith</span><span class="punctuation">(</span><span class="comment preproc">{{</span> <span class="name variable">user.username</span><span class="operator">|</span><span class="name function">tojson</span><span class="operator">|</span><span class="name function">safe</span> <span class="comment preproc">}}</span><span class="punctuation">);</span>
+<span class="name tag">&lt;/script&gt;</span>
+</pre>
+<div class="admonition-auto-sort-json-keys admonition">
+<p class="first admonition-title">Auto-Sort JSON Keys</p>
+<p>The configuration variable <tt class="docutils literal">JSON_SORT_KEYS</tt> (<a href="#id24"><span class="problematic" id="id25">:ref:`config`</span></a>) can be
+set to false to stop Flask from auto-sorting keys.  By default sorting
+is enabled and outside of the app context sorting is turned on.</p>
+<div class="system-message" id="id24">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 394); <em><a href="#id25">backlink</a></em></p>
+Unknown interpreted text role &quot;ref&quot;.</div>
+<p class="last">Notice that disabling key sorting can cause issues when using content
+based HTTP caches and Python's hash randomization feature.</p>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 401)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: jsonify
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 403)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: dumps
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 405)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: dump
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 407)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: loads
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 409)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: load
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 411)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: JSONEncoder
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 414)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: JSONDecoder
+   :members:
+
+</pre>
+</div>
+</div>
+<div class="section" id="template-rendering">
+<h1>Template Rendering</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 420)</p>
+<p>Unknown directive type &quot;currentmodule&quot;.</p>
+<pre class="literal-block">
+.. currentmodule:: flask
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 422)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: render_template
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 424)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: render_template_string
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 426)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: get_template_attribute
+
+</pre>
+</div>
+</div>
+<div class="section" id="configuration">
+<h1>Configuration</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 431)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: Config
+   :members:
+
+</pre>
+</div>
+</div>
+<div class="section" id="extensions">
+<h1>Extensions</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 437)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: flask.ext
+
+   This module acts as redirect import module to Flask extensions.  It was
+   added in 0.8 as the canonical way to import Flask extensions and makes
+   it possible for us to have more flexibility in how we distribute
+   extensions.
+
+   If you want to use an extension named “Flask-Foo” you would import it
+   from :data:`~flask.ext` as follows::
+
+        from flask.ext import foo
+
+   .. versionadded:: 0.8
+
+</pre>
+</div>
+</div>
+<div class="section" id="stream-helpers">
+<h1>Stream Helpers</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 454)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: stream_with_context
+
+</pre>
+</div>
+</div>
+<div class="section" id="useful-internals">
+<h1>Useful Internals</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 459)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: flask.ctx.RequestContext
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 462)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: _request_ctx_stack
+
+   The internal :class:`~werkzeug.local.LocalStack` that is used to implement
+   all the context local objects used in Flask.  This is a documented
+   instance and can be used by extensions and application code but the
+   use is discouraged in general.
+
+   The following attributes are always present on each layer of the
+   stack:
+
+   `app`
+      the active Flask application.
+
+   `url_adapter`
+      the URL adapter that was used to match the request.
+
+   `request`
+      the current request object.
+
+   `session`
+      the active session object.
+
+   `g`
+      an object with all the attributes of the :data:`flask.g` object.
+
+   `flashes`
+      an internal cache for the flashed messages.
+
+   Example usage::
+
+      from flask import _request_ctx_stack
+
+      def get_session():
+          ctx = _request_ctx_stack.top
+          if ctx is not None:
+              return ctx.session
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 499)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: flask.ctx.AppContext
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 502)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: _app_ctx_stack
+
+   Works similar to the request context but only binds the application.
+   This is mainly there for extensions to store data.
+
+   .. versionadded:: 0.9
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 509)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: flask.blueprints.BlueprintSetupState
+   :members:
+
+</pre>
+</div>
+</div>
+<div class="section" id="signals">
+<span id="core-signals-list"></span><h1>Signals</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 517)</p>
+<p>Unknown directive type &quot;versionadded&quot;.</p>
+<pre class="literal-block">
+.. versionadded:: 0.6
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 519)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: signals.signals_available
+
+   ``True`` if the signaling system is available.  This is the case
+   when `blinker`_ is installed.
+
+</pre>
+</div>
+<p>The following signals exist in Flask:</p>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 526)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: template_rendered
+
+   This signal is sent when a template was successfully rendered.  The
+   signal is invoked with the instance of the template as `template`
+   and the context as dictionary (named `context`).
+
+   Example subscriber::
+
+        def log_template_renders(sender, template, context, **extra):
+            sender.logger.debug('Rendering template &quot;%s&quot; with context %s',
+                                template.name or 'string template',
+                                context)
+
+        from flask import template_rendered
+        template_rendered.connect(log_template_renders, app)
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 542)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: flask.before_render_template
+   :noindex:
+
+   This signal is sent before template rendering process. The
+   signal is invoked with the instance of the template as `template`
+   and the context as dictionary (named `context`).
+
+   Example subscriber::
+
+        def log_template_renders(sender, template, context, **extra):
+            sender.logger.debug('Rendering template &quot;%s&quot; with context %s',
+                                template.name or 'string template',
+                                context)
+
+        from flask import before_render_template
+        before_render_template.connect(log_template_renders, app)
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 559)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: request_started
+
+   This signal is sent when the request context is set up, before
+   any request processing happens.  Because the request context is already
+   bound, the subscriber can access the request with the standard global
+   proxies such as :class:`~flask.request`.
+
+   Example subscriber::
+
+        def log_request(sender, **extra):
+            sender.logger.debug('Request context is set up')
+
+        from flask import request_started
+        request_started.connect(log_request, app)
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 574)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: request_finished
+
+   This signal is sent right before the response is sent to the client.
+   It is passed the response to be sent named `response`.
+
+   Example subscriber::
+
+        def log_response(sender, response, **extra):
+            sender.logger.debug('Request context is about to close down.  '
+                                'Response: %s', response)
+
+        from flask import request_finished
+        request_finished.connect(log_response, app)
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 588)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: got_request_exception
+
+   This signal is sent when an exception happens during request processing.
+   It is sent *before* the standard exception handling kicks in and even
+   in debug mode, where no exception handling happens.  The exception
+   itself is passed to the subscriber as `exception`.
+
+   Example subscriber::
+
+        def log_exception(sender, exception, **extra):
+            sender.logger.debug('Got exception during processing: %s', exception)
+
+        from flask import got_request_exception
+        got_request_exception.connect(log_exception, app)
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 603)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: request_tearing_down
+
+   This signal is sent when the request is tearing down.  This is always
+   called, even if an exception is caused.  Currently functions listening
+   to this signal are called after the regular teardown handlers, but this
+   is not something you can rely on.
+
+   Example subscriber::
+
+        def close_db_connection(sender, **extra):
+            session.close()
+
+        from flask import request_tearing_down
+        request_tearing_down.connect(close_db_connection, app)
+
+   As of Flask 0.9, this will also be passed an `exc` keyword argument
+   that has a reference to the exception that caused the teardown if
+   there was one.
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 622)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: appcontext_tearing_down
+
+   This signal is sent when the app context is tearing down.  This is always
+   called, even if an exception is caused.  Currently functions listening
+   to this signal are called after the regular teardown handlers, but this
+   is not something you can rely on.
+
+   Example subscriber::
+
+        def close_db_connection(sender, **extra):
+            session.close()
+
+        from flask import appcontext_tearing_down
+        appcontext_tearing_down.connect(close_db_connection, app)
+
+   This will also be passed an `exc` keyword argument that has a reference
+   to the exception that caused the teardown if there was one.
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 640)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: appcontext_pushed
+
+   This signal is sent when an application context is pushed.  The sender
+   is the application.  This is usually useful for unittests in order to
+   temporarily hook in information.  For instance it can be used to
+   set a resource early onto the `g` object.
+
+   Example usage::
+
+        from contextlib import contextmanager
+        from flask import appcontext_pushed
+
+        &#64;contextmanager
+        def user_set(app, user):
+            def handler(sender, **kwargs):
+                g.user = user
+            with appcontext_pushed.connected_to(handler, app):
+                yield
+
+   And in the testcode::
+
+        def test_user_me(self):
+            with user_set(app, 'john'):
+                c = app.test_client()
+                resp = c.get('/users/me')
+                assert resp.data == 'username=john'
+
+   .. versionadded:: 0.10
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 669)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: appcontext_popped
+
+   This signal is sent when an application context is popped.  The sender
+   is the application.  This usually falls in line with the
+   :data:`appcontext_tearing_down` signal.
+
+   .. versionadded:: 0.10
+
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 678)</p>
+<p>Unknown directive type &quot;data&quot;.</p>
+<pre class="literal-block">
+.. data:: message_flashed
+
+   This signal is sent when the application is flashing a message.  The
+   messages is sent as `message` keyword argument and the category as
+   `category`.
+
+   Example subscriber::
+
+        recorded = []
+        def record(sender, message, category, **extra):
+            recorded.append((message, category))
+
+        from flask import message_flashed
+        message_flashed.connect(record, app)
+
+   .. versionadded:: 0.10
+
+</pre>
+</div>
+<p class="signals-namespace">An alias for <a href="#id26"><span class="problematic" id="id27">:class:`blinker.base.Namespace`</span></a> if blinker is available,
+otherwise a dummy class that creates fake signals.  This class is
+available for Flask extensions that want to provide the same fallback
+system as Flask itself.</p>
+<div class="signals-namespace system-message" id="id26">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 697); <em><a href="#id27">backlink</a></em></p>
+Unknown interpreted text role &quot;class&quot;.</div>
+<div class="signals-namespace system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 702)</p>
+<p>Unknown directive type &quot;method&quot;.</p>
+<pre class="literal-block">
+.. method:: signal(name, doc=None)
+
+   Creates a new signal for this namespace if blinker is available,
+   otherwise returns a fake signal that has a send method that will
+   do nothing but will fail with a :exc:`RuntimeError` for all other
+   operations, including connecting.
+</pre>
+</div>
+</div>
+<div class="section" id="class-based-views">
+<h1>Class-Based Views</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 716)</p>
+<p>Unknown directive type &quot;versionadded&quot;.</p>
+<pre class="literal-block">
+.. versionadded:: 0.7
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 718)</p>
+<p>Unknown directive type &quot;currentmodule&quot;.</p>
+<pre class="literal-block">
+.. currentmodule:: None
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 720)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: flask.views.View
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 723)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: flask.views.MethodView
+   :members:
+
+</pre>
+</div>
+</div>
+<div class="section" id="id28">
+<span id="url-route-registrations"></span><h1>URL Route Registrations</h1>
+<p>Generally there are three ways to define rules for the routing system:</p>
+<ol class="arabic">
+<li><p class="first">You can use the <a href="#id29"><span class="problematic" id="id30">:meth:`flask.Flask.route`</span></a> decorator.</p>
+<div class="system-message" id="id29">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 733); <em><a href="#id30">backlink</a></em></p>
+<p>Unknown interpreted text role &quot;meth&quot;.</p>
+</div>
+</li>
+<li><p class="first">You can use the <a href="#id31"><span class="problematic" id="id32">:meth:`flask.Flask.add_url_rule`</span></a> function.</p>
+<div class="system-message" id="id31">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 734); <em><a href="#id32">backlink</a></em></p>
+<p>Unknown interpreted text role &quot;meth&quot;.</p>
+</div>
+</li>
+<li><p class="first">You can directly access the underlying Werkzeug routing system
+which is exposed as <a href="#id33"><span class="problematic" id="id34">:attr:`flask.Flask.url_map`</span></a>.</p>
+<div class="system-message" id="id33">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 735); <em><a href="#id34">backlink</a></em></p>
+<p>Unknown interpreted text role &quot;attr&quot;.</p>
+</div>
+</li>
+</ol>
+<p>Variable parts in the route can be specified with angular brackets
+(<tt class="docutils literal"><span class="pre">/user/&lt;username&gt;</span></tt>).  By default a variable part in the URL accepts any
+string without a slash however a different converter can be specified as
+well by using <tt class="docutils literal">&lt;converter:name&gt;</tt>.</p>
+<p>Variable parts are passed to the view function as keyword arguments.</p>
+<p>The following converters are available:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr><td><cite>string</cite></td>
+<td>accepts any text without a slash (the default)</td>
+</tr>
+<tr><td><cite>int</cite></td>
+<td>accepts integers</td>
+</tr>
+<tr><td><cite>float</cite></td>
+<td>like <cite>int</cite> but for floating point values</td>
+</tr>
+<tr><td><cite>path</cite></td>
+<td>like the default but also accepts slashes</td>
+</tr>
+</tbody>
+</table>
+<p>Custom converters can be defined using <a href="#id35"><span class="problematic" id="id36">:attr:`flask.Flask.url_map`</span></a>.</p>
+<div class="system-message" id="id35">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 754); <em><a href="#id36">backlink</a></em></p>
+Unknown interpreted text role &quot;attr&quot;.</div>
+<p>Here are some examples:</p>
+<pre class="literal-block">
+&#64;app.route('/')
+def index():
+    pass
+
+&#64;app.route('/&lt;username&gt;')
+def show_user(username):
+    pass
+
+&#64;app.route('/post/&lt;int:post_id&gt;')
+def show_post(post_id):
+    pass
+</pre>
+<p>An important detail to keep in mind is how Flask deals with trailing
+slashes.  The idea is to keep each URL unique so the following rules
+apply:</p>
+<ol class="arabic simple">
+<li>If a rule ends with a slash and is requested without a slash by the
+user, the user is automatically redirected to the same page with a
+trailing slash attached.</li>
+<li>If a rule does not end with a trailing slash and the user requests the
+page with a trailing slash, a 404 not found is raised.</li>
+</ol>
+<p>This is consistent with how web servers deal with static files.  This
+also makes it possible to use relative link targets safely.</p>
+<p>You can also define multiple rules for the same function.  They have to be
+unique however.  Defaults can also be specified.  Here for example is a
+definition for a URL that accepts an optional page:</p>
+<pre class="literal-block">
+&#64;app.route('/users/', defaults={'page': 1})
+&#64;app.route('/users/page/&lt;int:page&gt;')
+def show_users(page):
+    pass
+</pre>
+<p>This specifies that <tt class="docutils literal">/users/</tt> will be the URL for page one and
+<tt class="docutils literal">/users/page/N</tt> will be the URL for page <cite>N</cite>.</p>
+<p>Here are the parameters that <a href="#id37"><span class="problematic" id="id38">:meth:`~flask.Flask.route`</span></a> and
+<a href="#id39"><span class="problematic" id="id40">:meth:`~flask.Flask.add_url_rule`</span></a> accept.  The only difference is that
+with the route parameter the view function is defined with the decorator
+instead of the <cite>view_func</cite> parameter.</p>
+<div class="system-message" id="id37">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 795); <em><a href="#id38">backlink</a></em></p>
+Unknown interpreted text role &quot;meth&quot;.</div>
+<div class="system-message" id="id39">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 795); <em><a href="#id40">backlink</a></em></p>
+Unknown interpreted text role &quot;meth&quot;.</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr><td><cite>rule</cite></td>
+<td>the URL rule as string</td>
+</tr>
+<tr><td><cite>endpoint</cite></td>
+<td>the endpoint for the registered URL rule.  Flask itself
+assumes that the name of the view function is the name
+of the endpoint if not explicitly stated.</td>
+</tr>
+<tr><td><cite>view_func</cite></td>
+<td><p class="first">the function to call when serving a request to the
+provided endpoint.  If this is not provided one can
+specify the function later by storing it in the
+<a href="#id41"><span class="problematic" id="id42">:attr:`~flask.Flask.view_functions`</span></a> dictionary with the
+endpoint as key.</p>
+<div class="last system-message" id="id41">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 806); <em><a href="#id42">backlink</a></em></p>
+Unknown interpreted text role &quot;attr&quot;.</div>
+</td>
+</tr>
+<tr><td><cite>defaults</cite></td>
+<td>A dictionary with defaults for this rule.  See the
+example above for how defaults work.</td>
+</tr>
+<tr><td><cite>subdomain</cite></td>
+<td>specifies the rule for the subdomain in case subdomain
+matching is in use.  If not specified the default
+subdomain is assumed.</td>
+</tr>
+<tr><td><cite>**options</cite></td>
+<td><p class="first">the options to be forwarded to the underlying
+<a href="#id43"><span class="problematic" id="id44">:class:`~werkzeug.routing.Rule`</span></a> object.  A change to
+Werkzeug is handling of method options.  methods is a list
+of methods this rule should be limited to (<tt class="docutils literal">GET</tt>, <tt class="docutils literal">POST</tt>
+etc.).  By default a rule just listens for <tt class="docutils literal">GET</tt> (and
+implicitly <tt class="docutils literal">HEAD</tt>).  Starting with Flask 0.6, <tt class="docutils literal">OPTIONS</tt> is
+implicitly added and handled by the standard request
+handling.  They have to be specified as keyword arguments.</p>
+<div class="last system-message" id="id43">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 816); <em><a href="#id44">backlink</a></em></p>
+Unknown interpreted text role &quot;class&quot;.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="view-function-options">
+<span id="view-func-options"></span><h1>View Function Options</h1>
+<p>For internal usage the view functions can have some attributes attached to
+customize behavior the view function would normally not have control over.
+The following attributes can be provided optionally to either override
+some defaults to <a href="#id45"><span class="problematic" id="id46">:meth:`~flask.Flask.add_url_rule`</span></a> or general behavior:</p>
+<div class="system-message" id="id45">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 830); <em><a href="#id46">backlink</a></em></p>
+Unknown interpreted text role &quot;meth&quot;.</div>
+<ul class="simple">
+<li><cite>__name__</cite>: The name of a function is by default used as endpoint.  If
+endpoint is provided explicitly this value is used.  Additionally this
+will be prefixed with the name of the blueprint by default which
+cannot be customized from the function itself.</li>
+<li><cite>methods</cite>: If methods are not provided when the URL rule is added,
+Flask will look on the view function object itself if a <cite>methods</cite>
+attribute exists.  If it does, it will pull the information for the
+methods from there.</li>
+<li><cite>provide_automatic_options</cite>: if this attribute is set Flask will
+either force enable or disable the automatic implementation of the
+HTTP <tt class="docutils literal">OPTIONS</tt> response.  This can be useful when working with
+decorators that want to customize the <tt class="docutils literal">OPTIONS</tt> response on a per-view
+basis.</li>
+<li><cite>required_methods</cite>: if this attribute is set, Flask will always add
+these methods when registering a URL rule even if the methods were
+explicitly overridden in the <tt class="docutils literal">route()</tt> call.</li>
+</ul>
+<p>Full example:</p>
+<pre class="literal-block">
+def index():
+    if request.method == 'OPTIONS':
+        # custom options handling here
+        ...
+    return 'Hello World!'
+index.provide_automatic_options = False
+index.methods = ['GET', 'OPTIONS']
+
+app.add_url_rule('/', index)
+</pre>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 867)</p>
+<p>Unknown directive type &quot;versionadded&quot;.</p>
+<pre class="literal-block">
+.. versionadded:: 0.8
+   The `provide_automatic_options` functionality was added.
+
+</pre>
+</div>
+</div>
+<div class="section" id="command-line-interface">
+<h1>Command Line Interface</h1>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 873)</p>
+<p>Unknown directive type &quot;currentmodule&quot;.</p>
+<pre class="literal-block">
+.. currentmodule:: flask.cli
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 875)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: FlaskGroup
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 878)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: AppGroup
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 881)</p>
+<p>Unknown directive type &quot;autoclass&quot;.</p>
+<pre class="literal-block">
+.. autoclass:: ScriptInfo
+   :members:
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 884)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: with_appcontext
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 886)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: pass_script_info
+
+   Marks a function so that an instance of :class:`ScriptInfo` is passed
+   as first argument to the click callback.
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 891)</p>
+<p>Unknown directive type &quot;autofunction&quot;.</p>
+<pre class="literal-block">
+.. autofunction:: script_info_option
+
+   A special decorator that informs a click callback to be passed the
+   script info object as first argument.  This is normally not useful
+   unless you implement very special commands like the run command which
+   does not want the application to be loaded yet.
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 898)</p>
+<p>Unknown directive type &quot;autodata&quot;.</p>
+<pre class="literal-block">
+.. autodata:: run_command
+
+</pre>
+</div>
+<div class="system-message">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">C:/Users/nickfost/Documents/SDLC/servicelab/docs/api.rst</tt>, line 900)</p>
+<p>Unknown directive type &quot;autodata&quot;.</p>
+<pre class="literal-block">
+.. autodata:: shell_command
+</pre>
+</div>
+</div>
+</div>
+</body>
+</html>
