@@ -21,11 +21,11 @@ Use Cases
 
 Features
 --------
-- Users interact with the terminal to perform robust functions
-- Automate the deploy of a new environment
-- Create a repo in the Gerrit
-- Conduct a Gerrit review from the CLI
-- Work on a Vagrant development environment
+- Streamlines the development workflow into the command line
+- Automates the deploy of a new environment
+- Creates a repo in Gerrit with the ability to review others
+- Describes sites and environments
+- Spin up Vagrant development environments and test
 - ...much More!
 
 Contents:
@@ -33,22 +33,23 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-  introduction
-  quickstart
-  installation
-  tutorial
-  commands
-  api
+   introduction
+   quickstart
+   installation
+   tutorial
+   commands
+   api
+   ...
 
 Indices and tables
 ------------------
 
-* :ref:`Introduction`
-* :ref:`Quickstart`
-* :ref:`Installation`
-* :ref:`Tutorial`
-* :ref:`Commands`
-* :ref:`API`
+:ref:`Introduction`
+:ref:`Quickstart`
+:ref:`Installation`
+:ref:`Tutorial`
+:ref:`Commands`
+:ref:`API`
 
 
 
