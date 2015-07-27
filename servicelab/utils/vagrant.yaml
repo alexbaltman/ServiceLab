@@ -1,4 +1,20 @@
 hosts:
+  infra-001:
+    role: build
+    domain: 1 
+    profile: 
+    ip: 192.168.100.30
+    mac: "000027000030
+    memory: 1024
+    box: "http://cis-kickstart.cisco.com/ccs-rhel7.box"
+  infra-002:
+    role: build
+    domain: 1 
+    profile: 
+    ip: 192.168.100.31
+    mac: "000027000031
+    memory: 1024
+    box: "http://cis-kickstart.cisco.com/ccs-rhel7.box"
   keystonectl-001:
     role: tenant_keystone_ctl
     domain: 1
