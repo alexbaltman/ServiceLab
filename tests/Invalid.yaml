@@ -1,0 +1,12 @@
+me: coreos-01
+  box: coreos-alpha
+  ram: 512
+  ip: 172.17.8.101
+- name: coreos-02
+  box: coreos-alpha
+  ram: 512
+  ip: 172.17.8.102
+- name: coreos-03
+  box: coreos-alpha
+     ram: 512
+  ip: 172.17.8.103

@@ -80,6 +80,7 @@ def host_exists_vagrantyaml(file_name, hostname, path):
     try:
         with open(os.path.join(path, file_name), 'r') as f:
             doc = yaml.load(f)
+
             # EXP: Prints top lvl, aka d = "hosts", doc = dictofyaml
             for d in doc:
                 # EXP: x = hostname for vagrantyaml
@@ -87,14 +88,13 @@ def host_exists_vagrantyaml(file_name, hostname, path):
                     if hostname == x:
                         yaml_utils_logger.debug("Found host:" + hostname)
                         return 0
-                    else:
-                        return 1
+            return 1
     except IOError as error:
         yaml_utils_logger.error('File error: ' + str(error))
         return 1
 
 
-def host_add_vagrantyaml(path, file_name, hostname, memory=2,
+def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
                          box='http://cis-kickstart.cisco.com/ccs-rhel-7.box',
                          role=None, profile=None, domain=1, storage=0):
     """Add a host to the working (servicelab/servicelab.stack/) vagrant.yaml file.
@@ -108,6 +108,7 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
                          structure {host: {hostname_here: {etc.
         hostname (str): The name of the host you would like added to the
                         yaml file.
+        site (str): The name of site to lookup the ips.
         memory (int): Memory is given as an integer 1, 2, 3, etc. and multiplied
                       by 512. The default is 2, which results in 2*512 = 1024.
         box (str): The default box is from cis-kickstart called ccs-rhel-7. You can
@@ -175,16 +176,18 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
         return 1
 
     if storage >= 12:
+        yaml_utils_logger.error("Invalid yaml file")
         yaml_utils_logger.error("Too many storage disks requested.")
         return 1
     elif storage > 0:
+        yaml_utils_logger.error("Invalid yaml file")
         storage_disks = []
         while storage >= 0:
             storage_disks.append(string.ascii_lowercase[disk])
             storage -= 1
 
     memory *= 512
-    if not host_exists_vagrantyaml(file_name, hostname, path):
+    if host_exists_vagrantyaml(file_name, hostname, path):
         # Note: load vagrant yaml file
         try:
             with open(os.path.join(path, file_name), 'r') as f:
@@ -205,9 +208,10 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
                                         }
                 if storage > 0:
                     doc[d][hostname] = {storage: storage_disks}
-
             stream = file(os.path.join(path, 'vagrant.yaml'), 'w')
-            yaml_utils_logger.debug("Adding %s to vagrant environment now." % hostname)
+            yaml_utils_logger.debug(
+                "Adding %s to vagrant environment now." %
+                hostname)
             yaml.dump(doc, stream, default_flow_style=False)
             return 0
         except IOError as error:
@@ -223,14 +227,14 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
 def host_del_vagrantyaml(path, file_name, hostname):
     """Remove a host from the working (.stack/) vagrant.yaml.
 
-    Args:
-        path (str): The path to your working .stack directory. Typically,
-                    this looks like ./servicelab/servicelab/.stack where "."
-                    is the path to the root of the servicelab repository.
-        file_name (str): Typically vagrant.yaml, but can be any yaml file
-                         containing host definitions that follows the
-                         structure {host: {hostname_here: {etc.
-        hostname (str): The name of the host you would like removed from the
+       Args:
+            path (str): The path to your working .stack directory. Typically,
+                        this looks like ./servicelab/servicelab/.stack where "."
+                        is the path to the root of the servicelab repository.
+            file_name (str): Typically vagrant.yaml, but can be any yaml file
+                        containing host definitions that follows the
+                        structure {host: {hostname_here: {etc.
+            hostname (str): The name of the host you would like removed from the
                         vagrant.yaml file.
 
     Returns:
@@ -243,7 +247,7 @@ def host_del_vagrantyaml(path, file_name, hostname):
                                     "/Users/aaltman/Git/servicelab/servicelab/.stack")
         0
     """
-    if host_exists_vagrantyaml(file_name, hostname, path):
+    if not host_exists_vagrantyaml(file_name, hostname, path):
         try:
             with open(os.path.join(path, file_name), 'r') as f:
                 doc = yaml.load(f)
@@ -251,6 +255,7 @@ def host_del_vagrantyaml(path, file_name, hostname):
                     del doc[d][hostname]
             stream = file(os.path.join(path, file_name), 'w')
             yaml_utils_logger.debug('Deleting host: ' + hostname)
+
             yaml.dump(doc, stream, default_flow_style=False)
             return 0
         except IOError as error:
