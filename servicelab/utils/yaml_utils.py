@@ -39,8 +39,38 @@ def validate_syntax(file_name):
 def host_exists_vagrantyaml(file_name, hostname, path):
     """Check if provided host is in vagrant.yaml file.
 
-    path is either the vagrant.yaml in utils or the live
-    working file in .stack.
+    Args:
+        file_name (str): Typically vagrant.yaml, but can be any yaml file
+                         containing host definitions that follows the
+                         structure {host: {hostname_here: {etc.
+        hostname (str): The name of the host you would like added to the
+                        yaml file.
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+
+    Returns:
+        (int) The return code::
+        0 -- Success
+        1 -- Failure
+
+    Example vagrant.yaml format:
+            Hosts:
+              keystonectl-001:
+                role: tenant_keystone_ctl
+                domain: 1
+                profile: tenant
+                ip: 192.168.100.111
+                mac: "000027000111"
+                memory: 1024
+                box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
+              keystonectl-002:
+                etc.
+
+    Example Usage:
+        >>> print host_exists_vagrantyaml("vagrant.yaml", "proxyinternal-001",
+                                          "/Users/aaltman/Git/servicelab/servicelab/.stack")
+        0
     """
     retcode = validate_syntax(os.path.join(path, file_name))
     if retcode > 0:
@@ -65,15 +95,80 @@ def host_exists_vagrantyaml(file_name, hostname, path):
 
 
 def host_add_vagrantyaml(path, file_name, hostname, memory=2,
-                         box='http://cis-kickstart.cisco.com/ccs-rhel7.box',
+                         box='http://cis-kickstart.cisco.com/ccs-rhel-7.box',
                          role=None, profile=None, domain=1, storage=0):
-    """Add a host to the vagrant.yaml file.
+    """Add a host to the working (.stack) vagrant.yaml file.
 
-    Memory is given as an integer and multiplied by 512.
-    Storage is given as an integer and translated into desired # of disks
-    up to 11, which corresponds to "k" alphabetically.
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        file_name (str): Typically vagrant.yaml, but can be any yaml file
+                         containing host definitions that follows the
+                         structure {host: {hostname_here: {etc.
+        hostname (str): The name of the host you would like added to the
+                        yaml file.
+        memory (int): Memory is given as an integer 1, 2, 3, etc. and multiplied
+                      by 512. The default is 2, which results in 2*512 = 1024.
+        box (str): The default box is from cis-kickstart called ccs-rhel-7. You can
+             swap this variable with a box of your choosing.
+        role (str): Primarily for puppet based automation and OSP team compatability.
+              The current roles are:
+                                    * build
+                                    * tenant_keystone_ctl
+                                    * tenant_glance_ctl
+                                    * tenant_cinder_ctl
+                                    * tenant_nova_ctl
+                                    * tenant_horizon
+                                    * tenant_ceilometer_ctl
+                                    * tenant_heat_ctl
+                                    * tenant_network_agents
+                                    * tenant_proxy_internal
+                                    * tenant_proxy_external
+                                    * tenant_compute
+                                    * tenant_db
+                                    * ceph_mon
+                                    * ceph_osd
+                                    * ceph_rgw
+                                    * compute_local
+                                    * aio
+
+        profile (str): Primarily for puppet based systems and OSP team compatability.
+                 The current profiles are:
+                                    * tenant
+                                    * aio,tenant
+                                    * aio
+
+        domain (str): We're currently using the faux domain of "1"; however, you may
+                override the default as needed.
+        storage (int): Storage is given as an integer and translated into the
+                       desired number of disks up to 11, which corresponds to
+                       the letter "k" that the system will see (aka "sdk")
+
+    Returns:
+        (int) The return code::
+        0 -- Success
+        1 -- Failure
+
+    Example Usage:
+        >>> print host_add_vagrantyaml("/Users/aaltman/Git/servicelab/servicelab/.stack",
+                                       "vagrant.yaml", "infra-001", memory=2, role="build")
+        0
+
+    The yaml file will add in the infra node under "Hosts" like this:
+        Hosts:
+          infra-001:
+            role: build
+            domain: 1
+            profile: None
+            ip: 192.168.100.30
+            mac: "000027000030"
+            memory: 1024
+            box: "http://cis-kickstart.cisco.com/ccs-rhel7.box"
+
+    One last note the ip and mac are autogenerated from a couple other
+    functions. TODO: add ref to funct here for shortlink.
     """
-
     retcode = validate_syntax(file_name)
     if retcode > 0:
         yaml_utils_logger.error("Invalid yaml file")
@@ -94,12 +189,16 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
         try:
             with open(os.path.join(path, file_name), 'r') as f:
                 doc = yaml.load(f)
+                returncode, ip, mac_colon, mac_nocolon = next_macip_for_devsite(path, site)
+                if returncode > 0:
+                    yaml_utils_logger.error("couldn't write file because no ip provided.")
+                    return 1
                 for d in doc:
                     doc[d][hostname] = {'role': role,
                                         'domain': domain,
                                         'profile': profile,
-                                        'ip': '192.168.100.111',
-                                        'mac': '000027000111',
+                                        'ip': ip,
+                                        'mac': mac_nocolon,
                                         'memory': memory,
                                         'box':
                                         'http://cis-kickstart.cisco.com/ccs-rhel7.box',
@@ -116,6 +215,7 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
             return 1
     else:
         yaml_utils_logger.debug("Host %s already exists in vagrant.yaml" % (hostname))
+        return 0
 
 
 # RFI: Do we need to check if host is running or not
