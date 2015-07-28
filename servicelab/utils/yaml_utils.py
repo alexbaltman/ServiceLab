@@ -155,7 +155,7 @@ def get_allips_forsite(path, site):
         print "yaml file: " + yaml_f
         with open(os.path.join(path, yaml_f), 'r') as f:
             doc = yaml.load(f)
-            allips.append(get_allips_foryamls(doc))
+            allips.append(get_allips_foryaml(doc))
 
     # Note: flat b/c list of lists turned into a list
     flat_allips = [item for sublist in allips for item in sublist]
@@ -189,14 +189,14 @@ def get_allips_forsite(path, site):
 #       very elegant it also doesn't handle nested lists aka
 #       lists of lists, etc. Fortunately it just seems to
 #       skip them.
-def get_allips_foryamls(d):
+def get_allips_foryaml(d):
     regex = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
     matches = []
 
     for k, v in d.iteritems():
         if isinstance(v, dict):
             # Note: Recurse here
-            get_allips_foryamls(v)
+            get_allips_foryaml(v)
         else:
             # Note: Function Breaks on lists so you have to
             #       break up the list to the items in it.
@@ -224,11 +224,7 @@ def next_ip_forsite():
     pass
 
 
-def next_ip_vagrantyaml():
-    pass
-
-
-def next_mac_vagrantyaml():
+def next_ip_and_mac_for_vagrantyaml():
     pass
 
 

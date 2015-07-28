@@ -68,7 +68,7 @@ class Connect_to_vagrant(object):
 
     @staticmethod
     def rename_vmname_in_vagrantfile(vagrant_file, vmname):
-            # EXP: Execute a touch of ruby to rename vm to mytest
+            # EXP: Execute a touch of ruby to rename vm to vname
             with open(vagrant_file, 'w') as vfile:
                 with open(vagrant_file+'.bak', 'r') as bfile:
                     for line in bfile:

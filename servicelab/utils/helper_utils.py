@@ -22,4 +22,4 @@ def find_all_yaml_recurs(full_path):
                                   % (full_path))
         sys.exit(1)
 
-    return (matches)
+    return matches

@@ -10,9 +10,9 @@ Vagrantfile_utils_logger = logging.getLogger('click_application')
 logging.basicConfig()
 
 
-# should be the one in .stack as working directory
-def overwrite_vagrantfile(path, file_name):
-    with open(filename, 'w') as f:
+def overwrite_vagrantfile(path):
+    Vfile = "Vagrantfile"
+    with open(Vfile, 'w') as f:
         h1, h2, h3 = _set_vagrantfile_header()
         f.write(h1)
         f.write(h2)
@@ -35,7 +35,7 @@ def overwrite_vagrantfile(path, file_name):
             f.write(item)
         load_vagrantyaml = _load_vagrantyaml_
         f.write(load_vagrantyaml)
-        vbox_config = _vbox_provider_configure(path)
+        vbox_config = _vbox_provider_configure()
         f.write(vbox_config)
 
 
@@ -92,29 +92,9 @@ def _required_vagrant_plugins(path):
         return 1, all_strings
 
 
-# RFI: Do we need this?? and wouldn't this happen in the vagrant_utils vagrant.Vagrant()
-def _verify_vagrant_plugins(path):
-    pass
-
-
 def _set_vagrant_user_and_group(user="vagrant", group="vagrant"):
     s = "$data = {:user => '%s', :group => '%s'}" % (user, group)
     return s
-
-
-# RFI: wouldn't we just read the file our selves and set current?
-#      why let ruby inside of the vagrantfile do it?
-def _set_current_service(path):
-    # Do we need to set this to dev? I don't c this in use. heighliner??
-    # service = 'dev'
-    service = ""
-    L1 = "if File.exist?({0})".format(os.path.join(path, "current"))
-    L2 = "  service = IO.read('{}0').strip".format(os.path.join(path, "current"))
-    L3 = "else"
-    L4 = "raise 'Vagrantfile: No service configured. Run `stack workon [service]`'"
-    L5 = "end"
-    all_strings = [L1, L2, L3, L4, L5]
-    return all_strings
 
 
 def _set_current_service(path):
@@ -146,12 +126,11 @@ def _load_vagrantyaml(path):
     vagrantyaml = os.path.join(path, vagrant.yaml)
     s = "$envyaml = YAML::load_file('{0}')".format(vagrantyaml)
     return s
-# TODO: Set hostmanager here instead of ruby.
 # Ruby: "$envyaml['hosts'].each do |name, h|"
 # Ruby: File.open(".ccs_vagrant_hosts", "w") {|f| f.write(host_entries.join("\n")) }
 
 
-def _vbox_provider_configure(path):
+def _vbox_provider_configure():
 
     # Init. Config.
     s = ("Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|\n\n"
