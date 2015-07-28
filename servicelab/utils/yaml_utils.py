@@ -97,7 +97,7 @@ def host_exists_vagrantyaml(file_name, hostname, path):
 def host_add_vagrantyaml(path, file_name, hostname, memory=2,
                          box='http://cis-kickstart.cisco.com/ccs-rhel-7.box',
                          role=None, profile=None, domain=1, storage=0):
-    """Add a host to the working (.stack) vagrant.yaml file.
+    """Add a host to the working (servicelab/servicelab.stack/) vagrant.yaml file.
 
     Args:
         path (str): The path to your working .stack directory. Typically,
@@ -221,6 +221,28 @@ def host_add_vagrantyaml(path, file_name, hostname, memory=2,
 # RFI: Do we need to check if host is running or not
 #      and if it is running, should we stop it??
 def host_del_vagrantyaml(path, file_name, hostname):
+    """Remove a host from the working (.stack/) vagrant.yaml.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        file_name (str): Typically vagrant.yaml, but can be any yaml file
+                         containing host definitions that follows the
+                         structure {host: {hostname_here: {etc.
+        hostname (str): The name of the host you would like removed from the
+                        vagrant.yaml file.
+
+    Returns:
+        (int) The return code::
+        0 -- Success
+        1 -- Failure
+
+    Example Usage:
+        >>> print host_exists_vagrantyaml("vagrant.yaml", "keystonectl-001",
+                                    "/Users/aaltman/Git/servicelab/servicelab/.stack")
+        0
+    """
     if host_exists_vagrantyaml(file_name, hostname, path):
         try:
             with open(os.path.join(path, file_name), 'r') as f:
@@ -244,6 +266,29 @@ def host_del_vagrantyaml(path, file_name, hostname):
 #       that function is using --> aka I couldn't
 #       wrap it w/o breaking it.
 def get_allips_forsite(path, site):
+    """Crawl the known relative path given the base part
+       of the path and find all the yaml files to pass to
+       another function to pull the ips from.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        site (str): You can use the list sites function to find out what
+                    sites are available. We're primarily using ccs-dev-1
+                    with servicelab.
+
+    Returns:
+        Returns a list of strings that look something like xxx.xxx.xxx.xxx,
+        where x is a number and there can be between 1 and 3 digits per
+        section. For example, "192.168.10.1".
+
+    Example Usage:
+        >>> print get_allips_forsite(
+                  "/Users/aaltman/Git/servicelab/servicelab/.stack",
+                  "ccs-dev-1")
+        ['192.168.100.0', '192.168.100.2', '192.168.100.4']
+    """
     full_path = os.path.join(path, "services", "ccs-data",
                              "out", site)
     if not os.path.exists(full_path):
@@ -289,6 +334,33 @@ def get_allips_forsite(path, site):
 #       lists of lists, etc. Fortunately it just seems to
 #       skip them.
 def get_allips_foryaml(d):
+    """Given a yaml file match all the ips and put them into a list.
+
+    Given a yaml file pull all the matches for the following
+    regex:  r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$" -->
+    should be a match for an ip. The regex itself says match
+    the beginning of the line, immediately followed by by 1-3
+    digits, immediately followed by a period, etc. until EOL.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        site (str): You can use the list sites function to find out what
+                    sites are available. We're primarily using ccs-dev-1
+                    with servicelab.
+
+    Returns:
+        Returns a list of strings that look something like xxx.xxx.xxx.xxx,
+        where x is a number and there can be between 1 and 3 digits per
+        section. For example, "192.168.10.1".
+
+    Example Usage:
+        >>> print get_allips_forsite(
+                  "/Users/aaltman/Git/servicelab/servicelab/.stack",
+                  "ccs-dev-1")
+        ['192.168.100.0', '192.168.100.2', '192.168.100.4']
+    """
     regex = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
     matches = []
 
@@ -320,6 +392,35 @@ def get_allips_foryaml(d):
 
 
 def next_macip_for_devsite(path, site):
+    """Gets the next ip for the dev site. Calls helper function for mac.
+
+    The reason is it's hardcoded to what ips are being used at the dev site.
+    Specifically the 192.168.100.0/24 ip range b/c we don't "yet" have a
+    better way for discovering that yet.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        site (str): You can use the list sites function to find out what
+                    sites are available. We're primarily using ccs-dev-1
+                    with servicelab.
+
+    Returns:
+        returncode (int): 0 - Success, 1 - Failure
+        ip (str): String of form xxx.xxx.xxx.xxx where x is a number and
+                  there can be between 1 and 3 digits per section.
+        mac_colon (str): 12 hexadecimal number where every two digits are
+                         separated by a ":". I.e. "02:00:27:00:00:99"
+        mac_nocolon (str): Same as above except it does not include the
+                           colon
+
+    Example Usage:
+        >>> print next_macip_for_devsite(
+                  "/Users/aaltman/Git/servicelab/servicelab/.stack",
+                  "ccs-dev-1")
+        (0, '192.168.100.3', '02:00:27:00:00:03', '020027000003')
+    """
     # Note: We're assuming a pre-sorted list here from
     #       get_allips_forsite, otherwise we'd have to here.
     l = get_allips_forsite(path, site)
@@ -340,9 +441,10 @@ def next_macip_for_devsite(path, site):
                 yaml_utils_logger.error("No ips remaining on the \
                                          192.168.100.0/24 block.")
                 return 1
+
             if ip not in l:
                 returncode, mac_colon, mac_nocolon = gen_mac_from_ip(ip)
-                if returncode == "0":
+                if returncode == 0:
                     return 0, ip, mac_colon, mac_nocolon
                 else:
                     # Note: everything after the 1 should be None b/c
@@ -351,8 +453,33 @@ def next_macip_for_devsite(path, site):
 
 
 def gen_mac_from_ip(ip):
-    """For dev site only currently - we can get more
-       sophisticated in the future"""
+    """Given an ip address generate a mac address.
+
+    Mac will be in form: 02:00:27:00:0x:xx where the Xs will depend
+    on the ip provided. The fourth octet gets turned into those last
+    three digits on the end. If it's short we prefix a 0 onto it
+    preceding the last colon.
+
+    The macs that we're using are all reserved for private usage.
+    Anything that is in form x2:... x6:... xA... or XE... and 12
+    digits long and x is a digit is fair game. I went with x2 for
+    ours.
+
+    Args:
+        ip (str): String of form xxx.xxx.xxx.xxx where x is a number and
+                  there can be between 1 and 3 digits per section.
+
+    Returns:
+        returncode (int): 0 - Success, 1 - Failure
+        mac_colon (str): 12 hexadecimal number where every two digits are
+                         separated by a ":". I.e. "02:00:27:00:00:99"
+        mac_nocolon (str): Same as above except it does not include the
+                           colon
+
+    Example Usage:
+        >>> print gen_mac_from_ip("192.168.100.3")
+        (0, '02:00:27:00:00:03', '020027000003')
+    """
     oct1, oct2, oct3, oct4 = ip.split(".")
     # Note: Both missing last 3 digits.
     # Note: x2, x6, xA, xE are all avail for fake macs.
@@ -380,7 +507,90 @@ def gen_mac_from_ip(ip):
 
 def write_dev_hostyaml_out(path, hostname, role=None, site="ccs-dev-1",
                            env="dev-tenant"):
+    """Given an ip address generate a mac address.
 
+    Mac will be in form: 02:00:27:00:0x:xx where the Xs will depend
+    on the ip provided. The fourth octet gets turned into those last
+    three digits on the end. If it's short we prefix a 0 onto it
+    preceding the last colon.
+
+    The macs that we're using are all reserved for private usage.
+    Anything that is in form x2:... x6:... xA... or XE... and 12
+    digits long and x is a digit is fair game. I went with x2 for
+    ours.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        hostname (str): The name of the host you would like added to
+                        ccs-data in the ccs-dev-1 site.
+        role (str): Primarily for puppet based automation and OSP team compatability.
+              The current roles are:
+                                    * build
+                                    * tenant_keystone_ctl
+                                    * tenant_glance_ctl
+                                    * tenant_cinder_ctl
+                                    * tenant_nova_ctl
+                                    * tenant_horizon
+                                    * tenant_ceilometer_ctl
+                                    * tenant_heat_ctl
+                                    * tenant_network_agents
+                                    * tenant_proxy_internal
+                                    * tenant_proxy_external
+                                    * tenant_compute
+                                    * tenant_db
+                                    * ceph_mon
+                                    * ceph_osd
+                                    * ceph_rgw
+                                    * compute_local
+                                    * aio
+        site (str): You can use the stack list sites command to find out what
+                    sites are available. We're primarily using ccs-dev-1
+                    with servicelab. The default is set to ccs-dev-1.
+        env (str): You can use the stack list envs command to find out what
+                    sites are available. We're primarily using dev-tenant
+                    with servicelab. The default is set to dev-tenant.
+
+    Returns:
+        returncode (int): 0 - Success, 1 - Failure
+
+    Example Usage:
+        >>> print write_dev_hostyaml_out("/Users/aaltman/Git/servicelab/servicelab/.stack",
+                                         "testingtesting")
+        0
+
+        If you look in:
+
+            "/Users/aaltman/Git/servicelab/servicelab/.stack/services/
+            ccs-data/sites/ccs-dev-1/site/environments/dev-tenant-1/
+            hosts.d/"
+
+        Altering the aaltman for your username you'll see a new host.yaml where host
+        is the hostname you gave this function. and dev-tenant-1 and ccs-dev-1 could
+        be different depending on what was provided.
+
+        Finally, the host.yaml file will look something like a physical yaml elsewhere:
+
+            deploy_args:
+              cobbler_kickstart: /etc/cobbler/preseed/rhel-preseed
+              cobbler_pass: ''
+              cobbler_profile: rhel-server-7.0-x86_64
+              mac_address: "'00:00:27:00:00:12'"
+              management_ip: 192.168.100.254
+              management_pass: cisco
+              management_type: cimc
+            hostname: db-001
+            interfaces:
+              eth0:
+                gateway: 192.168.100.2
+                ip_address: 192.168.100.12
+                netmask: 255.255.255.0
+            nameservers: 192.168.100.2
+            role: tenant_db
+            server: sdlc-mirror.cisco.com
+            type: physical
+    """
     deploy_hostyaml_to = os.path.join(path, "services", "ccs-data", "sites",
                                       site, "environments", env, "hosts.d")
 
