@@ -1,0 +1,18 @@
+deploy_args:
+  cobbler_kickstart: /etc/cobbler/preseed/rhel-preseed
+  cobbler_pass: ''
+  cobbler_profile: rhel-server-7.0-x86_64
+  mac_address: "'00:00:27:00:00:12'"
+  management_ip: 192.168.100.254
+  management_pass: cisco
+  management_type: cimc
+hostname: db-001
+interfaces:
+  eth0:
+    gateway: 192.168.100.2
+    ip_address: 192.168.100.12
+    netmask: 255.255.255.0
+nameservers: 192.168.100.2
+role: tenant_db
+server: sdlc-mirror.cisco.com
+type: physical

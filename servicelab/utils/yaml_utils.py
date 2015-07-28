@@ -152,7 +152,6 @@ def get_allips_forsite(path, site):
     allips = []
     yaml_files = helper_utils.find_all_yaml_recurs(full_path)
     for yaml_f in yaml_files:
-        print "yaml file: " + yaml_f
         with open(os.path.join(path, yaml_f), 'r') as f:
             doc = yaml.load(f)
             allips.append(get_allips_foryaml(doc))
@@ -220,12 +219,90 @@ def get_allips_foryaml(d):
     return matches
 
 
-def next_ip_forsite():
-    pass
+def next_macip_for_devsite(path, site):
+    # Note: We're assuming a pre-sorted list here from
+    #       get_allips_forsite, otherwise we'd have to here.
+    l = get_allips_forsite(path, site)
+    # [i.split(".")[0] for i in l]
+    for ip in l:
+        # Note: oct, meaning octet of an ip.
+        oct1, oct2, oct3, oct4 = ip.split(".")
+        if int(oct1) == 192 and int(oct2) == 168 and int(oct3) == 100:
+            # Note: oct4 is str so to add 1 need to make int and then
+            #       to compare to list need to make str again.
+            oct4 = str(int(oct4)+1)
+            # Note: Recreate string w/ new oct 4 for list comparison.
+            ip = ".".join([oct1, oct2, oct3, oct4])
+            if ip == "192.168.100.1":
+                # Note: Don't want to match the gateway.
+                continue
+            elif ip == "192.168.100.255":
+                yaml_utils_logger.error("No ips remaining on the \
+                                         192.168.100.0/24 block.")
+                return 1
+            if ip not in l:
+                returncode, mac_colon, mac_nocolon = gen_mac_from_ip(ip)
+                if returncode == "0":
+                    return 0, ip, mac_colon, mac_nocolon
+                else:
+                    # Note: everything after the 1 should be None b/c
+                    #       of the failure in that function.
+                    return 1, ip, mac_colon, mac_nocolon
 
 
-def next_ip_and_mac_for_vagrantyaml():
-    pass
+def gen_mac_from_ip(ip):
+    """For dev site only currently - we can get more
+       sophisticated in the future"""
+    oct1, oct2, oct3, oct4 = ip.split(".")
+    # Note: Both missing last 3 digits.
+    # Note: x2, x6, xA, xE are all avail for fake macs.
+    mac_colon = "02:00:27:00:0"
+    mac_nocolon = "020027000"
+    if len(oct4) <= 2:
+        if len(oct4) == 1:
+            oct4 = "0" + oct4
+        mac_colon += "0:"
+        mac_colon += oct4
+        mac_nocolon += "0"
+        mac_nocolon += oct4
+        return 0, mac_colon, mac_nocolon
+    elif len(oct4) == 3:
+        for i in oct4:
+            if len(mac_colon) == 14:
+                mac_colon += ":"
+            mac_colon += i
+            mac_nocolon += i
+        return 0, mac_colon, mac_nocolon
+    else:
+        yaml_utils_logger.error("Too many digits to be an ip.")
+        return 1, mac_colon, mac_nocolon
+
+
+def write_dev_hostyaml_out(path, hostname, role=None, site="ccs-dev-1",
+                           env="dev-tenant"):
+
+    deploy_hostyaml_to = os.path.join(path, "services", "ccs-data", "sites",
+                                      site, "environments", env, "hosts.d")
+
+    ret, ip, mac_colon, mac_nocolon = next_macip_for_devsite(path, site)
+    if ret > 0:
+        return 1
+
+    with open("ccsdata_dev_example_host.yaml", 'r') as f:
+
+        doc = yaml.load(f)
+        doc['deploy_args']['mac_address'] = mac_colon
+        doc['hostname'] = hostname
+        doc['interfaces']['eth0']['ip_address'] = ip
+        doc['role'] = role
+
+        if os.path.exists(os.path.join(deploy_hostyaml_to, hostname + ".yaml")):
+            yaml_utils_logger.error("Host yaml already exists.")
+            return 1
+        else:
+            stream = file(os.path.join(deploy_hostyaml_to, hostname + ".yaml"), 'w')
+            yaml.dump(doc, stream, default_flow_style=False)
+            return 0
 
 
 # small driver stub
