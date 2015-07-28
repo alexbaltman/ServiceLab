@@ -23,6 +23,8 @@ class Context(object):
         self.path = os.path.join(os.path.dirname(__file__), '.stack')
         self.config = os.path.join(os.path.dirname(__file__),
                                    '.stack/stack.conf')
+
+        self.pkey_name = "servicelab/utils/public_key.pkcs7.pem"
         # Setup Logging
         self.branch = "master"
         self.verbose = False
@@ -45,6 +47,15 @@ class Context(object):
         # Add handlers to the logger
         self.logger.addHandler(self.file_handler)
         self.logger.addHandler(self.console_handler)
+
+    def reporoot_path(self):
+        path_to_reporoot = os.path.split(self.path)
+        path_to_reporoot = os.path.split(path_to_reporoot[0])
+        path_to_reporoot = path_to_reporoot[0]
+        return path_to_reporoot
+
+    def pkey_fname(self):
+        return os.path.join(self.reporoot_path(), self.pkey_name)
 
 
 pass_context = click.make_pass_decorator(Context, ensure=True)
