@@ -1,0 +1,3 @@
+.. module:: servicelab
+
+.. include:: ../CHANGES
