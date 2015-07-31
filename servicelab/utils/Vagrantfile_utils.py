@@ -11,6 +11,33 @@ logging.basicConfig()
 
 
 def overwrite_vagrantfile(path):
+    """Overwrites Vagrantfile
+
+    The following attributes are written into/over the Vagrantfile:
+        *header: version & mode
+        *required ruby modules: listed in ruby_modules.yaml
+        *required plugins: listed in vagrant_plugins.yaml
+        *user & group: either vagrant or cloud-user (Vbox or OSP)
+        *current services
+        *command to load the hosts denoted in vagrant.yaml
+        *VirtualBox provider Vagrantfile configuration
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+
+    Returns:
+        (int) The return code::
+        0 -- Success
+        1 -- Failure, caused by invalid or nonexistent yaml files
+
+    Example Usage:
+        >>> print overwrite_vagrantfile("/Users/aaltman/Git/servicelab/servicelab/.stack")
+        0
+
+
+    """
     Vfile = "Vagrantfile"
     with open(Vfile, 'w') as f:
         h1, h2, h3 = _set_vagrantfile_header()
@@ -40,12 +67,48 @@ def overwrite_vagrantfile(path):
 
 
 def _set_vagrantfile_header():
+    """Sets the Vagrantfile header fields
+
+    Returns:
+        Returns three strings which define the Vagrantfile header:
+            *h1, h2: sets mode in which vim editor opens Vagrantfile
+            *h3: Vagrant API Version Number
+
+    Example Usage:
+        >>> print _set_vagrantfile_header()
+        ("# -*- mode: ruby -*-", "# vi: set ft=ruby :", "VAGRANTFILE_API_VERSION = \"2\"")
+    """
     h1 = "# -*- mode: ruby -*-"
     h2 = "# vi: set ft=ruby :"
     h3 = "VAGRANTFILE_API_VERSION = \"2\""
 
 
 def _required_ruby_modules(path):
+    """Compiles a list of the required ruby modules.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+
+    Returns:
+        *(int) The return code::
+        0 -- Success
+        1 -- Failure, ruby_modules.yaml doesn't exist or improper syntax
+
+        *s, a single string in the form:
+            require 'a'
+            require 'b'
+            require 'c'
+            ...
+            ...
+               where lowercase letters represent the required ruby modules defined in
+               the ruby_modules.yaml in the ./servicelab/servicelab/.utils folder.
+
+   Example Usage:
+        >>> print _required_ruby_modules("/Users/aaltman/Git/servicelab/servicelab/.stack")
+        (0, " require 'a.rb'\n require 'b.rb'\n require 'c.rb'\n ")
+    """
     path_to_utils = os.path.split(path)
     path_to_utils = os.path.join(path_to_utils[0], "utils")
     path_to_ruby_modules = os.path.join(path_to_utils, "ruby_modules.yaml")
@@ -64,6 +127,36 @@ def _required_ruby_modules(path):
 
 
 def _required_vagrant_plugins(path):
+    """Compiles a list of the required Vagrant plugins.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+
+    Returns:
+        *(int) The return code::
+        0 -- Success
+        1 -- Failure, vagrant_plugins.yaml doesn't exist or improper syntax
+
+        *s, a list of four strings:
+            *s   --  all required vagrant plugins separated by spaces
+            *s2  --  the command to force install all plugins every time
+            *s3  --  the command to install required plugins that don't exist
+            *s4  --  constant string "end"
+
+            The user will have two options to install the plugins, force install all, or
+            just the ones needed.
+
+    Example Usage:
+        >>> print _required_vagrant_plugins("/Users/aaltman/Git/servicelab/
+                                            servicelab/.stack")
+        (0, "vagrant-hostmanager vagrant-openstack-plugin",
+                    "required_plugins.each do |plugin|",
+          " system \"vagrant plugin install #{plugin}\" unless Vagrant.has_plugin? plugin",
+          "end")
+    """
+
     path_to_utils = os.path.split(path)
     path_to_utils = os.path.join(path_to_utils[0], "utils")
     path_to_vagrant_plugins = os.path.join(path_to_utils, "vagrant_plugins.yaml")
@@ -93,11 +186,42 @@ def _required_vagrant_plugins(path):
 
 
 def _set_vagrant_user_and_group(user="vagrant", group="vagrant"):
+    """Sets vagrant user and group
+
+    Function used mainly to define either Virtualbox provisioning (vagrant user) or
+    OpenStack Provider provisioning (cloud user)
+
+    Args:
+        user (str): Set to "vagrant" by default.
+        group (str): Set to "vagrant" by default
+
+    Returns:
+        Returns a string in Ruby format that echoes the input user & group.
+
+    Example Usage:
+        >>> print _set_vagrant_user_and_group()
+        $data = {:user => 'vagrant', :group => 'vagrant'}
+    """
     s = "$data = {:user => '%s', :group => '%s'}" % (user, group)
     return s
 
 
 def _set_current_service(path):
+    """Returns string of current service.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+
+    Returns:
+        Returns the name of the current service.
+
+]   Example Usage:
+        >>> print _set_current_service("/Users/aaltman/Git/servicelab/servicelab/.stack")
+        dev
+
+    """
     current_file = os.path.join(path, "current")
     f = open(current_file, 'r')
     # TODO: verify that current is set to something sane.
@@ -120,8 +244,21 @@ def _set_current_service(path):
 # end
 
 
-# Load environment config
 def _load_vagrantyaml(path):
+    """Loads environment configuration
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+
+    Returns:
+        Returns a string with the command to load the vagrant.yaml file.
+
+    Example Usage:
+        >>> print _load_vagrantyaml("/Users/aaltman/Git/servicelab/servicelab/.stack")
+        $envyaml = YAML::load_file("/Users/aaltman/Git/servicelab/servicelab/vagrant.yaml")
+    """
     # Note: This should be the vagrant.yaml in the working directory
     vagrantyaml = os.path.join(path, vagrant.yaml)
     s = "$envyaml = YAML::load_file('{0}')".format(vagrantyaml)
@@ -131,7 +268,22 @@ def _load_vagrantyaml(path):
 
 
 def _vbox_provider_configure():
+    """Returns configuration for Vagrantfile with the VirtualBox provider
 
+    Returns:
+        Returns a single string outlining configuration specs that are applied to every host
+        The string is a concatenation of four:
+            *s    --  initial configuration: sets up box
+            *net  --  private networking configuration: sets up shared folders, port
+                      forwarding
+            *hw   --  hardware configuration: sets up hardware specs of VBox
+            *p    --  provisioning configuration: provisioner shell scripts to run ansible
+                      playbooks on VMs
+
+    Example Usage:
+        >>> print _vbox_provider_configure()
+        --see code for outputted string--
+    """
     # Init. Config.
     s = ("Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|\n\n"
          "  $envyaml['hosts'].each do |name, ho|\n"

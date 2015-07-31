@@ -38,7 +38,6 @@ def find_all_yaml_recurs(full_path):
 
         A very large list is typically expected when dealing with ccs-data.
     """
-
     matches = []
     if os.path.exists(full_path):
         for dirpath, dirnames, filenames in os.walk(full_path):

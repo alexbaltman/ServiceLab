@@ -7,7 +7,6 @@ import sys
 import os
 import re
 
-
 # create logger
 # TODO: For now warning and error print. Got to figure out how
 #       to import the one in stack.py properly.
@@ -16,15 +15,22 @@ logging.basicConfig()
 
 
 def validate_syntax(file_name):
-    """Syntax checker for a yaml file
+    """Syntax checker for a yaml file.
 
+    Writes command output to Service Utils Log file.
+
+    Args:
+        file_name (str): pathway to file to validate
     Returns:
-        yaml-syntax checker returns 0 for success. It returns 1 for failure.
-        The failure can occur because:
-        - the file has yaml syntax error
-        - the file does not exist or is not readable.
-        - or ruby is not installed and 1 if there are any syntax errors.
-        The Service Utils Log file contains the command output.
+        0 -- Success
+        1 -- failure, possibly because
+                - the file has yaml syntax error
+                - the file does not exist or is not readable.
+                - or ruby is not installed and 1 if there are any syntax errors.
+
+    Example Usage:
+        >>> print validate_syntax("~/vagrant.yaml")
+        0
     """
     code = "\"require 'yaml'; YAML.load_file('" + file_name + "');\""
     cmd = "ruby -e " + code
@@ -97,7 +103,7 @@ def host_exists_vagrantyaml(file_name, hostname, path):
 def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
                          box='http://cis-kickstart.cisco.com/ccs-rhel-7.box',
                          role=None, profile=None, domain=1, storage=0):
-    """Add a host to the working (servicelab/servicelab.stack/) vagrant.yaml file.
+    """Add a host to the working (servicelab/servicelab/.stack/) vagrant.yaml file.
 
     Args:
         path (str): The path to your working .stack directory. Typically,
@@ -243,7 +249,7 @@ def host_del_vagrantyaml(path, file_name, hostname):
         1 -- Failure
 
     Example Usage:
-        >>> print host_exists_vagrantyaml("vagrant.yaml", "keystonectl-001",
+        >>> print host_del_vagrantyaml("vagrant.yaml", "keystonectl-001",
                                     "/Users/aaltman/Git/servicelab/servicelab/.stack")
         0
     """
@@ -272,8 +278,8 @@ def host_del_vagrantyaml(path, file_name, hostname):
 #       wrap it w/o breaking it.
 def get_allips_forsite(path, site):
     """Crawl the known relative path given the base part
-       of the path and find all the yaml files to pass to
-       another function to pull the ips from.
+        of the path and find all the yaml files to pass to
+        another function to pull the ips from.
 
     Args:
         path (str): The path to your working .stack directory. Typically,
@@ -404,7 +410,7 @@ def next_macip_for_devsite(path, site):
 
     The reason is it's hardcoded to what ips are being used at the dev site.
     Specifically the 192.168.100.0/24 ip range b/c we don't "yet" have a
-    better way for discovering that yet.
+    better way for discovering that.
 
     Args:
         path (str): The path to your working .stack directory. Typically,

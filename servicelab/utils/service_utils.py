@@ -14,12 +14,36 @@ logging.basicConfig()
 
 
 def sync_service(path, branch, username, service_name):
-    """Synchronize a service with servicelab.
+    """Synchronize a service with service-lab.
 
     Do a git clone or fast forward pull to bring a given
     service to latest on the given branch.
 
+    Also prints a log message. If the service directory to be synced exists,
+    it pulls the latest branch from git. If it doesn't exist, the function
+    tries to clone its latest version.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        branch (str): The branch you want to check out to.
+        username (str): name of user
+        service_name(str): name of service
+
+    Returns:
+        True  -- Success
+        False -- Failure
+
+    Example Usage:
+        >>> print sync_service("/Users/aaltman/Git/servicelab/servicelab/.stack",
+                                "master", "aaltman", "ccs-data")
+        Sync'ing Service
+        Fast forward pull
+        Service has been sync'ed
+        True
     """
+
     # Note: Branch defaults to master in the click application
     check_for_git_output, myinfo = _check_for_git()
     if not check_for_git_output == 0:
@@ -47,7 +71,7 @@ def sync_service(path, branch, username, service_name):
                 service_utils_logger.error(myinfo)
                 return False
             else:
-                print "Clone successfull."
+                print "Clone successful."
                 return True
 
 
@@ -57,6 +81,30 @@ def sync_data(path, username, branch):
     Do a git clone or fast forward pull to bring ccs-data
     to the latest on the given branch.
 
+    Attempts to update/pull the latest version of the ccs-data branch
+    simultaneously printing a log of its actions:
+        *in .gitmodules in the home servicelab directory,
+        ensures the ssh url path has the correct username
+        *creates a services directory if one doesn't exist
+        (this means this is the first service to be synced)
+        *pull the latest ccs-data branch, cloning it if necessary
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        username (str): name of user
+        branch (str): The branch you want to check out to.
+
+    Returns:
+        No variables returned.
+
+    Example Usage:
+        >>> print sync_data("/Users/aaltman/Git/servicelab/servicelab/.stack",
+                      "aaltman", "master")
+        url = ssh://aaltman@ccs-gerrit.cisco.com:29418/ccs-data
+        Initializing ccs-data as submodule and updating it.
+        Init and update done, now checking out master
     """
     data_reponame = "ccs-data"
     path_to_reporoot = os.path.split(path)
@@ -101,7 +149,26 @@ def sync_data(path, username, branch):
 
 
 def build_data(path):
-    """Build ccs-data for site ccs-dev-1."""
+    """Build ccs-data for site ccs-dev-1.
+
+    Build the data via lightfuse.rb, the BOM generation script.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+
+    Returns:
+
+        returncode (str) -- 0 if success, failure otherwise
+        myinfo (str)     -- stderr/stdout of running lightfuse
+
+    Example Usage:
+        >>> print build_data("/Users/aaltman/Git/servicelab/servicelab/.stack")
+        Building the data
+        (0,"")
+
+    """
 
     data_reponame = "ccs-data"
     print "Building the data."
@@ -115,7 +182,26 @@ def build_data(path):
 
 
 def _git_clone(path, branch, username, service_name):
-    """Clone the repository of the passed service."""
+    """Clone the repository of the passed service.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        branch (str): The branch you want to check out to.
+        username (str): name of user
+        service_name(str): name of service
+
+    Returns:
+        returncode (int) -- 0 if successful, failure otherwise
+        myinfo (str)     -- stderr/stdout logs of the attempted git clone
+
+    Example Usage:
+        >>> print _git_clone("/Users/aaltman/Git/servicelab/servicelab/.stack", "master",
+                              "aaltman", "ccs-data")
+        (0, "")
+
+    """
 
     # Note: Branch defaults to master in the click application
     # DEBUG: print "Executing subprocess for git clone"
@@ -125,7 +211,8 @@ def _git_clone(path, branch, username, service_name):
     # TODO: ADD error handling here - specifically, I encountered a bug where
     #       if a branch in upstream doesn't exist and you've specified it, the
     #       call fails w/ only the poor err msg from the calling function.
-    returncode, myinfo = run_this('git clone --depth=1 -b %s ssh://%s@cis-gerrit.cisco.com:29418/%s \
+    returncode, myinfo = run_this('git clone --depth=1 -b %s \
+                                  ssh://%s@cis-gerrit.cisco.com:29418/%s \
                                   %s/services/%s' % (branch, username, service_name, path,
                                   service_name))
     # DEBUG: print "clone returncode: " + str(output.returncode)
@@ -133,7 +220,30 @@ def _git_clone(path, branch, username, service_name):
 
 
 def _git_pull_ff(path, branch, service_name):
-    """Fast forward only pull of a service on the given Branch."""
+    """Fast forward only pull of a service on the given Branch.
+
+    Do a fast forward pull to bring a given
+    service to latest on the given branch.
+
+    Does NOT clone the git repository if it doesn't exist.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        branch (str): The branch you want to check out to.
+        service_name(str): name of service
+
+    Returns:
+        returncode (int) -- 0 if successful, failure otherwise
+        myinfo (str)     -- stderr/stdout logs of the attempted git pull
+
+    Example Usage:
+        >>> print _git_pull_ff("/Users/aaltman/Git/servicelab/servicelab/.stack",
+                               "master", "ccs-data")
+        (0, "")
+
+    """
 
     # Note: Branch defaults to master in the click application
     service_path = os.path.join(path, "services", service_name)
@@ -147,7 +257,23 @@ def _git_pull_ff(path, branch, service_name):
 
 
 def _submodule_pull_ff(path, branch):
-    """Fast forward pull of a ccs-data submodule."""
+    """Fast forward pull of all ccs-data submodules.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        branch (str): The branch you want to check out to.
+
+    Returns:
+        returncode (int) -- 0 if successful, failure otherwise
+        myinfo (str)     -- stderr/stdout logs of the attempted git pull
+
+    Example Usage:
+        >>> print _submodule_pull_ff("/Users/aaltman/Git/servicelab/servicelab/
+                                     .stack", "master")
+        (0, "")
+    """
 
     # Note: Branch defaults to master in the click application
     # TODO: Do more error checking here --> after debugging, definitely
@@ -162,7 +288,15 @@ def _submodule_pull_ff(path, branch):
 
 
 def _check_for_git():
-    """Check if git is available on the current system."""
+    """Check if git is available on the current system.
+    Returns:
+        returncode (int) -- 0 if git exists, otherwise doesn't
+        myinfo (str)     -- stderr/stdout logs of the attempted "type git"
+
+    Example Usage:
+        >>> print _check_for_git()
+        (0, "")
+    """
 
     # Note: Using type git here to establish if posix system has a binary
     #       called git instead of which git b/c which often doesn't return
@@ -180,7 +314,26 @@ def _check_for_git():
 #       It's for Vagrant.
 # TODO: Check for ssh commands
 def setup_vagrant_sshkeys(path):
-    """Ensure ssh keys are present."""
+    """Ensure ssh keys for Vagrant are present.
+
+    Uses ssh-keygen to generate a keypair if they don't exist.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+
+    Returns:
+        returncode (int) -- 0 if successful, failure otherwise
+        myinfo (str)     -- stderr/stdout logs of the attempted git pull
+
+
+
+    Example Usage:
+        >>> setup_vagrant_sshkeys("/Users/aaltman/Git/servicelab/servicelab/.stack",
+                                  "master", "ccs-data")
+        (0, "")
+    """
 
     if not os.path.isfile(os.path.join(path, "id_rsa")):
         returncode, myinfo = run_this('ssh-keygen -q -t rsa -N "" -f %s/id_rsa' % (path))
@@ -188,7 +341,27 @@ def setup_vagrant_sshkeys(path):
 
 
 def link(path, service_name, branch, username):
-    """Set the current service."""
+    """Set the current service.
+
+    Sets current service to input service in current file.
+    Links the services directory to the current service if link doesn't exist.
+    Adds service to hosts file in the form "<name>\nvm-001\nvm-002\nvm-003\n"
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        service_name(str): name of service
+        branch (str): The branch you want to check out to.
+        username (str): name of user
+
+    Returns:
+        Returns 1 if error, tried to read file that doesn't exist.
+
+    Example Usage:
+        >>> print link("/Users/aaltman/Git/servicelab/servicelab/.stack", "ccs-data",
+                       "master", "aaltman"")
+    """
 
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
@@ -233,8 +406,24 @@ def link(path, service_name, branch, username):
 
 
 def clean(path):
-    """Clean up services and symlinks created from working on services."""
+    """Clean up services and symlinks created from working on services.
 
+    Destroys all booted VMs.
+    Removes current file denoting the current service.
+    Removes symbolic link of the current_service.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+
+    Returns:
+        Returns no variables.
+
+
+    Example Usage:
+        >>> print clean("/Users/aaltman/Git/servicelab/servicelab/.stack")
+    """
     returncode, myinfo = run_this('vagrant destroy -f')
     os.remove(os.path.join(path, "current"))
     if os.path.islink(os.path.join(path, "current_service")):
@@ -242,7 +431,25 @@ def clean(path):
 
 
 def check_service(path, service_name):
-    """Checks gerrit for a repo matching service_name."""
+    """Checks gerrit for a repo matching service_name.
+
+    Destroys all booted VMs.
+    Removes current file denoting the current service.
+    Removes symbolic link of the current_service.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        service_name(str): name of service
+
+    Returns:
+        returncode (int) -- 0 if successful, failure otherwise
+
+    Example Usage:
+        >>> check_service("/Users/aaltman/Git/servicelab/servicelab/.stack", "ccs-data")
+        0
+    """
 
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
@@ -298,8 +505,24 @@ def check_service(path, service_name):
 
 
 def run_this(command_to_run, cwd=os.getcwd()):
-    """Run a command via the shell and subprocess."""
+    """Run a command via the input shell and subprocess.
 
+    Args:
+        command_to_run (str): The shell command you want to run.
+        cwd (str): The subprocess to run the command. Defaults to the
+                   subprocess of the current working directory.
+
+    Returns:
+        Return code of the shell command's output and any stderr/stdout data:
+        1 -- Failure, couldn't create subprocess/run command
+        0 -- Success
+
+
+    Example Usage:
+        >>> print run_this('echo a')
+        echo a
+        a
+    """
     try:
         output = subprocess.Popen(command_to_run, shell=True,
                                   stdin=subprocess.PIPE,

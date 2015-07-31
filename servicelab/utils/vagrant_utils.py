@@ -19,11 +19,7 @@ logging.basicConfig()
 
 
 class Connect_to_vagrant(object):
-    """ Use vagrant to create a vm.
-
-        Providers: virtualbox, openstack.
-        In the future may accept docker.
-    """
+    """Vagrant class for booting, provisioning and managing a virtual machine."""
 
     def __init__(
             self,
@@ -32,6 +28,22 @@ class Connect_to_vagrant(object):
             provider="virtualbox",
             default_vbox="Cisco/rhel-7",
             default_vbox_url='http://cis-kickstart.cisco.com/ccs-rhel-7.box'):
+        """
+        Constructor for Vagrant Class
+
+        Assigns member variables to constructor parameters.
+        Sets up Vagrant Client.
+
+        Args:
+            self                -- self-referencing pointer
+            vname               -- name of the virtual machine
+            path                -- The path to your working .stack directory. Typically,
+                                   this looks like ./servicelab/servicelab/.stack where "."
+                                   is the path to the root of the servicelab repository.
+            provider            -- vagrant provider, defaults to virtualbox
+            default_vbox        -- default virtualbox, defaults to "Cisco/Rhel7"
+            default_vbox_url    -- hyperlink to the default_vbox
+        """
         self.vmname = vmname
         self.provider = provider
         self.default_vbox = default_vbox
@@ -48,15 +60,24 @@ class Connect_to_vagrant(object):
         v = self.v
 
     def add_box(self):
+        """
+        Member function which adds a virtualbox to the Vagrant environment.
+        Also creates RHEL7 image if it doesn't exist.
+
+        Args:
+            self -- self-referencing pointer
+
+        """
         v = self.v
         if not os.path.exists(v.root):
             os.makedirs(v.root)
 
+        box_list = v.box_list()
+
         # Note: Look for the rhel7 image and create/add it if it's not there.
         # if not ([image.name or None for image in images
         # if image.name == default_vbox]):
-        box_list = v.box_list()
-        if not ([image or None for image in box_list
+        if not ([image.name or None for image in box_list
                  if image.name == self.default_vbox]):
             v.box_add(
                 self.default_vbox,
@@ -65,6 +86,16 @@ class Connect_to_vagrant(object):
                 force=True)
 
     def create_Vagrantfile(self, path):
+        """
+        Member function which creates/overwrites a Vagrantfile. Then it uses
+        the Vagrantfile to reinitialize the class instance.
+
+        Args:
+            path                -- The path to your working .stack directory. Typically,
+                                   this looks like ./servicelab/servicelab/.stack where "."
+                                   is the path to the root of the servicelab repository.
+
+        """
         # EXP: Check for vagrant file, otherwise init, and insert box into file
         # RFI: Create Vagrantfile in Current_Services?
         v = self.v
@@ -79,6 +110,14 @@ class Connect_to_vagrant(object):
 
     @staticmethod
     def backup_vagrantfile(path):
+        """
+        Member function which backs up the existing Vagrantfile.
+
+        Args:
+            path    -- The path to your working .stack directory. Typically,
+                       this looks like ./servicelab/servicelab/.stack where "."
+                       is the path to the root of the servicelab repository.
+        """
         vagrant_file = os.path.join(
             path, "services", "current_service", "Vagrantfile")
         # EXP: Create backup
@@ -89,19 +128,35 @@ class Connect_to_vagrant(object):
 
     @staticmethod
     def rename_vmname_in_vagrantfile(vagrant_file, vmname):
-            # EXP: Execute a touch of ruby to rename vm to vname
-            with open(vagrant_file, 'w') as vfile:
-                with open(vagrant_file+'.bak', 'r') as bfile:
-                    for line in bfile:
-                        if (line.rfind('config.vm.box = "%s"' % (default_vbox)) != -1):
-                            line = ' %s.vm.box = "%s"' % (vmname, default_vbox)
-                            # Note: Need the space before config.
-                            line = str(' config.vm.define "%s" do |%s|\n%s' % (vmname,
-                                       vmname + "vm", line))
-                            line = str(line + '\n end')
-                            vfile.write(line)
+        """
+        Member function which renames the virtual machine name. Replaces all
+        old names in the Vagrantfile with the new inputted one.
+
+        Args:
+            vagrant_file    -- Path to the existing Vagrantfile.
+            vmname          -- new name to assign to VM
+        """
+        # EXP: Execute a touch of ruby to rename vm to vname
+        with open(vagrant_file, 'w') as vfile:
+            with open(vagrant_file+'.bak', 'r') as bfile:
+                for line in bfile:
+                    if (line.rfind('config.vm.box = "%s"' % (default_vbox)) != -1):
+                        line = ' %s.vm.box = "%s"' % (vmname, default_vbox)
+                        # Note: Need the space before config.
+                        line = str(' config.vm.define "%s" do |%s|\n%s' % (vmname,
+                                   vmname + "vm", line))
+                        line = str(line + '\n end')
+                        vfile.write(line)
 
     def setup_vagrant_vm(vmname):
+        """
+        Member function which sets up the VM.
+
+        Opens up host port to vmname, sets file name and disables known hosts.
+
+        Args:
+            vmname  --  name to assign to VM
+        """
         env.hosts = [v.user_hostname_port(vm_name='%s' % (vmname))]
         env.key_filename = v.keyfile(vm_name='%s' % (vmname))
         env.disable_known_hosts = True
@@ -113,6 +168,9 @@ class Connect_to_vagrant(object):
     def install_pkg_on_vm(pkg):
         """
         Installs a package on a linux VM with yum.
+
+        Args:
+            pkg  --  name of package to be installed
         """
         cuisine.package_ensure_yum(pkg)
 
@@ -129,6 +187,15 @@ class Connect_to_vagrant(object):
 
 
 def export_vm(path, vmname):
+    """
+    Exports the virtualmachine to Virtualbox.
+
+    Args:
+        path  --  The path to your working .stack directory. Typically,
+                  this looks like ./servicelab/servicelab/.stack where "."
+                  is the path to the root of the servicelab repository.
+        vmname  --  name of virtualmachine
+    """
     vbox = virtualbox.VirtualBox()
     machines = [machine for machine
                 in vbox.machines

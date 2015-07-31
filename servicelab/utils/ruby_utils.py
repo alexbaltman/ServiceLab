@@ -13,8 +13,27 @@ logging.basicConfig()
 
 
 def setup_gems(path, ccsdata_repo=0):
-    """ Set ccsdata_repo to 0 for yes 1 for no. This will
-        setup the gems in the Gemfile, using bundler."""
+    """ Set up gems in Gemfile to be used by bundler.
+
+    Runs `bundle install` to setup gems in ccs-data if repo is present,
+    and in home directory otherwise.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        ccsdata_repo (int): set to 0 if ccs-data repo exists, 1 if it doesn't
+
+    Returns:
+        returncode (int):
+            0 -- Success
+            1 -- Failure, caused by failed bundle install
+
+    Example Usage:
+        >>> print setup_gems("/Users/aaltman/Git/servicelab/servicelab/.stack", 0)
+        0
+            #bundle install will have been performed in the servicelab root directory
+    """
 
     check_for_gems("bundler")
 
@@ -35,14 +54,41 @@ def setup_gems(path, ccsdata_repo=0):
 
 
 def uninstall_gem(gem):
-    """ uninstall the gem
+    """ Uninstall a specific gem.
 
+    Args:
+        gem(str): gem to uninstall
+
+    Returns:
+        returncode (int) -- 0 if successful, failure otherwise
+        myinfo (str)     -- stderr/stdout logs of the attempted gem uninstall
+
+    Example Usage:
+        >>> print uninstall_gem("bundler")
+        0
     """
     returncode, myinfo = service_utils.run_this("gem uninstall -aIx %s" % (gem))
     return returncode
 
 
 def check_for_gems(gem):
+    """ Check that a gem exists.
+
+    Before checking for gem, runs `type gem` command to check that gem commands are
+    available.
+    Outputs log as it checks for gem.
+
+    Args:
+        gem(str): gem to search for
+
+    Returns:
+        returncode (int) -- 0 if successful find, 1 otherwise (either not found or gem
+                                                              command unavailable)
+
+    Example Usage:
+        >>> print check_for_gems("bundler")
+        0
+    """
     returncode, myinfo = service_utils.run_this("type gem")
     if returncode == 0:
         returncode_b, myinfo_b = service_utils.run_this('gem list | grep -q %s'
@@ -60,6 +106,23 @@ def check_for_gems(gem):
 
 
 def setup_ruby(username=None):
+    """ Ruby set up.
+
+    Installs rvm
+    Sets username if none set.
+
+    Args:
+        username (str): defaults to None
+
+    Returns:
+        Returns no variables.
+
+    Example Usage:
+        >>> print setup_ruby()
+            #rvm installed
+            #username is set to aaltman
+    """
+
     # Note: I needed this on my CentOS7 machine, but not my MAC.
     #       Being allowed to fail for now.
     service_utils.run_this("gpg2 --keyserver hkp://keys.gnupg.net \
@@ -80,6 +143,15 @@ def setup_ruby(username=None):
 
 
 def get_ruby_version():
+    """ Returns the version of Ruby.
+
+    Returns:
+        Returns ruby version # or nothing if command `ruby -v` fails.
+
+    Example Usage:
+        >>> print get_ruby_version()
+        2.1.6
+    """
     returncode, cmd_info = service_utils.run_this('ruby -v')
     if returncode != 0:
         return None
@@ -88,6 +160,16 @@ def get_ruby_version():
 
 
 def check_devenv():
+    """ Check that there is a proper development environment installed.
+
+    Returns:
+        True  -- if a Redhat Variant or Windows
+        False -- Ubuntu or other machines
+    Example Usage:
+        >>> print check_devenv()
+        True
+    """
+
     if os.name == "posix":
         # this only works for RedHat and its variants. It does not work for Ubuntu.
         returncode, cmd_info = service_utils.run_this("yum list ruby-devel")
