@@ -191,7 +191,7 @@ class SLab_OS(object):
             0
         """
         networks = self.neutron.list_networks(name=name)
-        if networks['networks']['name'] == name:
+        if networks['networks'][0]['name'] == name:
             return 0
         else:
             return 1
@@ -219,7 +219,7 @@ class SLab_OS(object):
             name "SLAB_aaltman_network".
         """
         subnets = self.neutron.list_subnets(name=name)
-        if subnets['subnets']['name'] == name:
+        if subnets['subnets'][0]['name'] == name:
             return 0
         else:
             return 1
@@ -243,7 +243,7 @@ class SLab_OS(object):
             0
         """
         routers = self.neutron.list_routers(name=name)
-        if routers['routers']['name'] == name:
+        if routers['routers'][0]['name'] == name:
             return 0
         else:
             return 1
@@ -343,28 +343,38 @@ class SLab_OS(object):
         network_id = ""
 
         if neutron_type == "network":
-            network = {'name': name, 'admin_state_up': True, 'tenant_id': self.tenant_id}
-            network = self.neutron.create_network({'network': network})
-            network_id = network['network']['id']
-            write_to_cache(path, network)
             returncode = check_for_network(name)
-            if returncode == 0:
-                return 0
+            if returncode == 1:
+                network = {'name': name, 'admin_state_up': True, 'tenant_id': self.tenant_id}
+                network = self.neutron.create_network({'network': network})
+                network_id = network['network']['id']
+                returncode2 = check_for_network(name)
+                if returncode2 == 0:
+                    return 0
+                    write_to_cache(path, network)
+                else:
+                    openstack_utils_logger.error("Tried to make the network, but failed.")
+                    return 1
             else:
-                openstack_utils_logger.error("Tried to make the network, but failed.")
-                return 1
+                # RFI: Not sure what to do here, if the network is already in OS.
+                return 0
         elif neutron_type == "router":
-            router = {'name': name, 'admin_state_up': True, 'external_gateway_info':
-                      {'network_id': external_net, 'external_snat': True}
-                      }
-            router = self.neutron.create_router({'router': router})
-            write_to_cache(path, router)
             returncode = check_for_router(name)
-            if returncode == 0:
-                return 0
+            if returncode == 1:
+                router = {'name': name, 'admin_state_up': True, 'external_gateway_info':
+                          {'network_id': external_net, 'external_snat': True}
+                          }
+                router = self.neutron.create_router({'router': router})
+                returncode2 = check_for_router(name)
+                if returncode2 == 0:
+                    write_to_cache(path, router)
+                    return 0
+                else:
+                    openstack_utils_logger.error("Tried to make the router, but failed.")
+                    return 1
             else:
-                openstack_utils_logger.error("Tried to make the router, but failed.")
-                return 1
+                # RFI: Not sure what to do here, if the router is already in OS.
+                return 0
         elif neutron_type == "subnet":
             if not network_id:
                 name = create_name_for("network")
@@ -375,25 +385,32 @@ class SLab_OS(object):
                                                  provided because it doesn't exist.")
                     return 1
                 else:
-                    # TODO: These next two lines may not work. There could easily
-                    #       be more than 1 of same named network or diff username SLAB.
-                    networks = self.neutron.list_networks(name=name)
-                    network_id = networks['networks'][0]['id']
-                    subnets_name = create_name_for("subnet")
-                    base_cidr, bitmask = cidr.split('/')
-                    oct1, oct2, oct3, oct4 = base_cidr.split(".")
-                    oct4 = str(int(oct4) + 1)
-                    gateway_ip = ".".join([oct1, oct2, oct3, oct4])
-                    subnet = {'name': name, 'network_id': network_id, 'ip_version': 4,
-                              'cidr': cidr, 'tenant_id': self.tenant_id, 'gateway_ip':
-                              gateway_ip}
-                    subnet = self.neutron.create_subnet({'subnet': subnet})
-                    write_to_cache(path, subnet)
                     returncode = check_for_subnet(name)
-                    if returncode == 0:
-                        return 0
+                    if returncode == 1:
+                        # TODO: These next two lines may not work. There could easily
+                        #       be more than 1 of same named network or diff username SLAB.
+                        networks = self.neutron.list_networks(name=name)
+                        network_id = networks['networks'][0]['id']
+                        subnets_name = create_name_for("subnet")
+                        base_cidr, bitmask = cidr.split('/')
+                        oct1, oct2, oct3, oct4 = base_cidr.split(".")
+                        oct4 = str(int(oct4) + 1)
+                        gateway_ip = ".".join([oct1, oct2, oct3, oct4])
+                        subnet = {'name': name, 'network_id': network_id, 'ip_version': 4,
+                                  'cidr': cidr, 'tenant_id': self.tenant_id, 'gateway_ip':
+                                  gateway_ip}
+                        subnet = self.neutron.create_subnet({'subnet': subnet})
+                        returncode2 = check_for_subnet(name)
+                        if returncode2 == 0:
+                            write_to_cache(path, subnet)
+                            return 0
+                        else:
+                            openstack_utils_logger.error("Failed to create the subnet")
+                            return 1
                     else:
-                        return 1
+                        # RFI: Not sure what to do here, if the subnet is already in OS.
+                        return 0
+
         elif neutron_type == "floating_ip":
             floatingip = {'floating_network_id': external_net, 'tenant_id': self.tenant.id}
             floatingip = self.neutron.create_floatingip({'floatingip': floatingip})
