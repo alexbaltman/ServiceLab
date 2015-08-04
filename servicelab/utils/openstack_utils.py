@@ -2,7 +2,6 @@ from keystoneclient.exceptions import AuthorizationFailure, Unauthorized
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client
 import logging
-import getpass
 import yaml
 import os
 
@@ -86,9 +85,9 @@ class SLab_OS(object):
 
         Example Usage:
             >>> a.login_or_gettoken()
-           0, 2e3e3bb7ce9f4ab6912da0e500a822ac,
-            >>> a.login_or_gettoken("2e3e3bb7ce9f4ab6912da0e500a822ac")
-           0, 2e3e3bb7ce9f4ab6912da0e500a822ac, TODO: put ex token here.
+           0, 2e3e3bb7ce9f4ab6912da0e500a822ac, 4946e8af849f46879ea08796274d1d46
+            >>> a.login_or_gettoken(tenant_id="2e3e3bb7ce9f4ab6912da0e500a822ac")
+           0, 2e3e3bb7ce9f4ab6912da0e500a822ac, 3e03f91d8ee549e6bf9337169141103e
 
         Example OS return of a list of tenant objects:
             [<Tenant {u'enabled': True, u'description': u'', u'name': u'ServiceLab',
@@ -102,6 +101,7 @@ class SLab_OS(object):
                                          auth_url=self.auth_url)
                 self.token = keystone.auth_token
                 all_tenants = keystone.tenants.list()
+                # TODO: Look for one in cache rather than just failing.
                 if len(all_tenants) > 1:
                     openstack_utils_logger.error("Can't determine, which tenant to get tenant_id\
                                                   from b/c there's more than 1.")
@@ -168,8 +168,8 @@ class SLab_OS(object):
             >>> create_name_for("subnet")
             SLAB_aaltman_subnet
         """
-        user = getpass.getuser()
-        name = "SLAB" + + "_" + user + "_" + os_type
+        username = self.username
+        name = "SLAB_%s_%s" % (self.username, neutron_type)
         return name
 
     def check_for_network(self, name):
@@ -181,7 +181,7 @@ class SLab_OS(object):
                         you're not sure of the name you can always generate
                         it from the create_name_for() function.
 
-        Returns
+        Returns:
             Returncode (int):
                 0 - Success
                 1 - Failure
@@ -282,14 +282,70 @@ class SLab_OS(object):
             >>> create_in_project("/Users/aaltman/Git/servicelab/servicelab/.stack",
                                   "subnet")
             0
+
+        Example Network list response:
+            {'networks': [{u'admin_state_up': True,
+              u'id': u'364c4cc8-dbc0-406b-b996-b20f1e164b74',
+              u'name': u'public-floating-602',
+              u'router:external': True,
+              u'shared': False,
+              u'status': u'ACTIVE',
+              u'subnets': [u'2a033745-4f29-4eaa-9fff-15a1fa62d8f7',
+              u'386ef54a-2eb9-4e56-9c3b-421fe99cc17f'],
+              u'tenant_id': u'5b7ae6322eed4f22958b2779f36bf7f4'},
+             {u'admin_state_up': True,
+              u'id': u'5e44df27-6940-4415-b0ab-216d4fd94ea6',
+              u'name': u'SLAB_aaltman_network',
+              u'router:external': False,
+              u'shared': False,
+              u'status': u'ACTIVE',
+              u'subnets': [],
+              u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac'}]}
+
+        Example response to network creation:
+            {u'network': {u'status': u'ACTIVE',
+                          u'subnets': [],
+                          u'name': u'SLAB_aaltman_network',
+                          u'admin_state_up': True,
+                          u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+                          u'shared': False,
+                          u'id': u'c42bf975-8ef3-43d3-94a4-fde3251b7cf3'}
+             }
+
+        Example reponse to subnet creation:
+            {u'subnet': {u'name': u'SLAB_aaltman_subnet',
+                         u'enable_dhcp': True,
+                         u'network_id': u'c42bf975-8ef3-43d3-94a4-fde3251b7cf3',
+                         u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+                         u'dns_nameservers': [],
+                         u'ipv6_ra_mode': None,
+                         u'allocation_pools': [{u'start': u'192.168.100.2',
+                                                u'end': u'192.168.100.254'}],
+                         u'gateway_ip': u'192.168.100.1',
+                         u'ipv6_address_mode': None,
+                         u'ip_version': 4,
+                         u'host_routes': [],
+                         u'cidr': u'192.168.100.0/24',
+                         u'id': u'bd738973-2d66-4e19-b67c-1ee261244a91'}
+             }
+
+        Example response to router creation:
+            {u'router': {u'status': u'ACTIVE',
+                         u'external_gateway_info': {u'network_id': u'364c4cc8-dbc0-406b\
+                                                                     -b996-b20f1e164b74'},
+                         u'name': u'SLAB_aaltman_router',
+                         u'admin_state_up': True,
+                         u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+                         u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'}
+             }
         """
-        name = create_name_for(neutron_type)
+        name = self.create_name_for(neutron_type)
         network_id = ""
 
         if neutron_type == "network":
             network = {'name': name, 'admin_state_up': True, 'tenant_id': self.tenant_id}
             network = self.neutron.create_network({'network': network})
-            network_id = networks['networks'][0]['id']
+            network_id = network['network']['id']
             write_to_cache(path, network)
             returncode = check_for_network(name)
             if returncode == 0:
@@ -319,6 +375,8 @@ class SLab_OS(object):
                                                  provided because it doesn't exist.")
                     return 1
                 else:
+                    # TODO: These next two lines may not work. There could easily
+                    #       be more than 1 of same named network or diff username SLAB.
                     networks = self.neutron.list_networks(name=name)
                     network_id = networks['networks'][0]['id']
                     subnets_name = create_name_for("subnet")
@@ -327,7 +385,8 @@ class SLab_OS(object):
                     oct4 = str(int(oct4) + 1)
                     gateway_ip = ".".join([oct1, oct2, oct3, oct4])
                     subnet = {'name': name, 'network_id': network_id, 'ip_version': 4,
-                              'cidr': cidr, 'tenant_id': self.tenant_id, gateway_ip}
+                              'cidr': cidr, 'tenant_id': self.tenant_id, 'gateway_ip':
+                              gateway_ip}
                     subnet = self.neutron.create_subnet({'subnet': subnet})
                     write_to_cache(path, subnet)
                     returncode = check_for_subnet(name)
@@ -336,7 +395,7 @@ class SLab_OS(object):
                     else:
                         return 1
         elif neutron_type == "floating_ip":
-            floatingip = {'floating_network_id' = external_net, 'tenant_id': self.tenant.id}
+            floatingip = {'floating_network_id': external_net, 'tenant_id': self.tenant.id}
             floatingip = self.neutron.create_floatingip({'floatingip': floatingip})
             # check if success b4 returning 0
             write_to_cache(path, floatingip)
@@ -419,13 +478,18 @@ class SLab_OS(object):
             >>> add_int_to_router("/Users/aaltman/Git/servicelab/servicelab/.stack",
                                   sbunet_id:"TODO: ID HERE")
             0
+
+        Example port add interface response:
+            {u'subnet_id': u'bd738973-2d66-4e19-b67c-1ee261244a91',
+             u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+             u'port_id': u'ca7c8de8-1b99-4a76-9297-0c171f804a13',
+             u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'}
         """
         # Note: Adding port to router to internal network
         neutron.add_interface_router
         # RFI: Read router id from cache and read subnet id from cache?
         port = neutron.add_interface_router(router['router']['id'],
-                                            {'subnet_id': subnet_id,
-                                             'tenant_id': self.tenant_id}
+                                            {'subnet_id': subnet_id}
                                             )
         # TODO: write to cache if port has id returned aka is a success else fail.
         write_to_cache(path, port)
