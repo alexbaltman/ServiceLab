@@ -25,41 +25,62 @@ class Connect_to_vagrant(object):
         In the future may accept docker.
     """
 
-    def __init__(self, vmname, path, provider="virtualbox", default_vbox="Cisco/rhel7",
-                 default_vbox_url='http://cis-kickstart.cisco.com/ccs-rhel7.box'):
+    def __init__(
+            self,
+            vmname,
+            path,
+            provider="virtualbox",
+            default_vbox="Cisco/rhel-7",
+            default_vbox_url='http://cis-kickstart.cisco.com/ccs-rhel-7.box'):
         self.vmname = vmname
         self.provider = provider
         self.default_vbox = default_vbox
-        self.default_vbox_url = 'default_vbox_url'
+        self.default_vbox_url = default_vbox_url
         self.path = path
         # Note: The quiet is so we know what's happening during
         #       vagrant commands in the term.
         # Note: Setup vagrant client.
-        self.v = vagrant.Vagrant(quiet_stdout=False, quiet_stderr=False)
+        vagrant_dir = os.path.join(path, "services", "current_service")
+        self.v = vagrant.Vagrant(
+            root=vagrant_dir,
+            quiet_stdout=False,
+            quiet_stderr=False)
         v = self.v
 
     def add_box(self):
+        v = self.v
+        if not os.path.exists(v.root):
+            os.makedirs(v.root)
+
         # Note: Look for the rhel7 image and create/add it if it's not there.
         # if not ([image.name or None for image in images
         # if image.name == default_vbox]):
-        if not ([image.name or None for image in v.BASE_BOXES
-                 if image.name == default_vbox]):
-            v.box_add(default_vbox, default_vbox_url, provider=provider, force=True)
+        box_list = v.box_list()
+        if not ([image or None for image in box_list
+                 if image.name == self.default_vbox]):
+            v.box_add(
+                self.default_vbox,
+                self.default_vbox_url,
+                provider=self.provider,
+                force=True)
 
-    def create_Vagrantfile(path):
+    def create_Vagrantfile(self, path):
         # EXP: Check for vagrant file, otherwise init, and insert box into file
         # RFI: Create Vagrantfile in Current_Services?
-        vagrant_file = os.path.join(path, "services", "current_service", "Vagrantfile")
+        v = self.v
+        vagrant_file = os.path.join(v.root, "Vagrantfile")
+
         if (os.path.isfile(vagrant_file)):
             # Note: We're removing their file b/c we want to standardize how we're
             #       using vagrant.
             # TODO: we should really just back this up then remove.
             os.remove(vagrant_file)
-        v.init(box_name=default_vbox)
+        v.init(box_name=self.default_vbox)
 
     @staticmethod
     def backup_vagrantfile(path):
-        vagrant_file = os.path.join(path, "services", "current_service", "Vagrantfile")
+        vagrant_file = os.path.join(
+            path, "services", "current_service", "Vagrantfile")
         # EXP: Create backup
         if not (os.path.isfile(vagrant_file + '.bak')):
             os.rename(vagrant_file, vagrant_file + '.bak')
