@@ -249,7 +249,7 @@ class SLab_OS(object):
             return 1
 
     def create_in_project(self, path, neutron_type, tenant_id="self.tenant_id",
-                          cidr="192.168.100.0/24", external_net="public-floating-602"):
+                          cidr="192.168.100.0/24"):
         """Create a neutron object (subnet, router, network, floatingip) in a project /
            tenant in OS.
 
@@ -266,12 +266,6 @@ class SLab_OS(object):
                         bits (e.g. /24, /8) to look like "192.168.100.0/24". For more
                         details see:
                         "https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing".
-            external_net (str): This is a network that contains the publicly addressable
-                                ip range outside of OS. Typically this network is called
-                                "public-floating-601", but can differ depending on how
-                                many tenant clouds are sharing the same network backbone.
-                                For instance, in us-rdu-3 the public float is
-                                "public-floating-602".
 
         Returns:
             Returncode:
@@ -361,12 +355,17 @@ class SLab_OS(object):
         elif neutron_type == "router":
             returncode = check_for_router(name)
             if returncode == 1:
+                returncode2, external_net_id = find_floatnet_id()
+                if returncode2 == 1:
+                    openstack_utils_logger.error("Tried to make the router, but failed\
+                                                  b/c can't find floating ip network.")
+                    return 1
                 router = {'name': name, 'admin_state_up': True, 'external_gateway_info':
-                          {'network_id': external_net, 'external_snat': True}
+                          {'network_id': external_net_id, 'external_snat': True}
                           }
                 router = self.neutron.create_router({'router': router})
-                returncode2 = check_for_router(name)
-                if returncode2 == 0:
+                returncode3 = check_for_router(name)
+                if returncode3 == 0:
                     write_to_cache(path, router)
                     return 0
                 else:
@@ -418,6 +417,40 @@ class SLab_OS(object):
             write_to_cache(path, floatingip)
             return 0
 
+    def find_floatnet_id():
+        """Find the public floating network by searching all networks by name.
+
+        This is a network that contains the publicly addressable ip range
+        outside of OS. Typically this network is called "public-floating-601",
+        but can differ depending on how many tenant clouds are sharing the same
+        network backbone. For instance, in us-rdu-3 the public float is
+        "public-floating-602".
+
+        Args:
+            None
+
+        Returns
+            Returncode (int):
+                0 - Success
+                1 - Failure
+            id (str): This is the unique identifier provided by OS on a
+                      per component basis. For instance, if you create a new
+                      subnet it will get an id or if you create a new router
+                      it will get an id, etc.
+                      Ex id:  364c4cc8-dbc0-406b-b996-b20f1e164b74
+
+        Example Usage:
+            >>> print a.find_floatnet_id()
+            0, 364c4cc8-dbc0-406b-b996-b20f1e164b74
+        """
+        id = ""
+        networks = self.neutron.list_networks()
+        for i in networks['networks']:
+            if "public-floating" in i['name']:
+                return 0, i['id']
+        openstack_utils_logger.error('Failed to find public-floating-\* in networks names')
+        return 1, id
+
     def del_in_project(self, neutron_type, id):
         """Delete a neutron object (subnet, network, router, floatingip) in a
            tenant/project in OS.
@@ -435,7 +468,7 @@ class SLab_OS(object):
                       per component basis. For instance, if you create a new
                       subnet it will get an id or if you create a new router
                       it will get an id, etc.
-                      TODO: Add example id.
+                      Ex id: 364c4cc8-dbc0-406b-b996-b20f1e164b74
         Returns
             Returncode (int):
                 0 - Success
