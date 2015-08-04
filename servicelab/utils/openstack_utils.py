@@ -1,6 +1,7 @@
 from keystoneclient.exceptions import AuthorizationFailure, Unauthorized
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client
+import getpass
 import logging
 import yaml
 import os
@@ -15,10 +16,13 @@ logging.basicConfig()
 
 class SLab_OS(object):
 
-    def __init__(self, password, base_url, url_domain=".cisco.com", username=None):
+    def __init__(self, path, password, base_url, url_domain=".cisco.com", username=None):
         """Init some of the variables we'll use to manipulate our Openstack tenant.
 
         Args:
+            path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
             password (str): This is the string base password associated with your
                             Openstack (OS) tenant/project.
             username (str): This is the username associated with your project /
@@ -41,6 +45,7 @@ class SLab_OS(object):
         """
         if not username:
             username = getpass.getuser()
+        self.path = path
         self.username = username
         self.password = password
         self.base_url = base_url
@@ -191,10 +196,10 @@ class SLab_OS(object):
             0
         """
         networks = self.neutron.list_networks(name=name)
-        if networks['networks'][0]['name'] == name:
-            return 0
-        else:
-            return 1
+        for i in networks['networks']:
+            if name in i['name']:
+                return 0
+        return 1
 
     def check_for_subnet(self, name):
         """Check to see if the named subnet exists.
@@ -218,11 +223,11 @@ class SLab_OS(object):
             created and associated to a network of essentially the same
             name "SLAB_aaltman_network".
         """
-        subnets = self.neutron.list_subnets(name=name)
-        if subnets['subnets'][0]['name'] == name:
-            return 0
-        else:
-            return 1
+        subnets = self.neutron.list_subnets()
+        for i in subnets['subnets']:
+            if name in i['name']:
+                return 0
+        return 1
 
     def check_for_router(self, name):
         """Check to see if the named router exists.
@@ -243,25 +248,25 @@ class SLab_OS(object):
             0
         """
         routers = self.neutron.list_routers(name=name)
-        if routers['routers'][0]['name'] == name:
-            return 0
-        else:
-            return 1
+        for i in routers['routers']:
+            if name in i['name']:
+                return 0
+        return 1
 
-    def create_in_project(self, path, neutron_type, tenant_id="self.tenant_id",
-                          cidr="192.168.100.0/24"):
+    def create_in_project(self, neutron_type, neutron_type_name="",
+                          tenant_id="self.tenant_id", cidr="192.168.100.0/24"):
         """Create a neutron object (subnet, router, network, floatingip) in a project /
            tenant in OS.
 
         Args:
-            path (str): The path to your working .stack directory. Typically,
-                    this looks like ./servicelab/servicelab/.stack where "."
-                    is the path to the root of the servicelab repository.
             neutron_type (str): The type of neutron object you're trying to
                                 work with, including subnet, router, network,
                                 or floatingip.
+            neutron_type_name (str): The name for the neutron object you would
+                                     like created instead of the regular name
+                                     provided by create_name_for() function.
             tenant_id (str): An openstack unique identifier for a project/tenant. It
-                                  looks like this: "2e3e3bb7ce9f4ab6912da0e500a822ac".
+                             looks like this: "2e3e3bb7ce9f4ab6912da0e500a822ac".
             cidr (str): A network (e.g. 192.168.100.0) with it's associated netmask
                         bits (e.g. /24, /8) to look like "192.168.100.0/24". For more
                         details see:
@@ -273,8 +278,7 @@ class SLab_OS(object):
                 1 - Failure
 
         Example Usage:
-            >>> create_in_project("/Users/aaltman/Git/servicelab/servicelab/.stack",
-                                  "subnet")
+            >>> create_in_project("subnet")
             0
 
         Example Network list response:
@@ -333,19 +337,21 @@ class SLab_OS(object):
                          u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'}
              }
         """
-        name = self.create_name_for(neutron_type)
+        name = ""
+        if not neutron_type_name:
+            name = self.create_name_for(neutron_type)
         network_id = ""
 
         if neutron_type == "network":
-            returncode = check_for_network(name)
+            returncode = self.check_for_network(name)
             if returncode == 1:
                 network = {'name': name, 'admin_state_up': True, 'tenant_id': self.tenant_id}
                 network = self.neutron.create_network({'network': network})
                 network_id = network['network']['id']
-                returncode2 = check_for_network(name)
+                returncode2 = self.check_for_network(name)
                 if returncode2 == 0:
                     return 0
-                    write_to_cache(path, network)
+                    self.write_to_cache(network)
                 else:
                     openstack_utils_logger.error("Tried to make the network, but failed.")
                     return 1
@@ -353,9 +359,9 @@ class SLab_OS(object):
                 # RFI: Not sure what to do here, if the network is already in OS.
                 return 0
         elif neutron_type == "router":
-            returncode = check_for_router(name)
+            returncode = self.check_for_router(name)
             if returncode == 1:
-                returncode2, external_net_id = find_floatnet_id()
+                returncode2, external_net_id = self.find_floatnet_id()
                 if returncode2 == 1:
                     openstack_utils_logger.error("Tried to make the router, but failed\
                                                   b/c can't find floating ip network.")
@@ -364,9 +370,9 @@ class SLab_OS(object):
                           {'network_id': external_net_id, 'external_snat': True}
                           }
                 router = self.neutron.create_router({'router': router})
-                returncode3 = check_for_router(name)
+                returncode3 = self.check_for_router(name)
                 if returncode3 == 0:
-                    write_to_cache(path, router)
+                    self.write_to_cache(router)
                     return 0
                 else:
                     openstack_utils_logger.error("Tried to make the router, but failed.")
@@ -376,21 +382,20 @@ class SLab_OS(object):
                 return 0
         elif neutron_type == "subnet":
             if not network_id:
-                name = create_name_for("network")
-                returncode = check_for_network(name)
+                name = self.create_name_for("network")
+                returncode = self.check_for_network(name)
                 if returncode > 0:
                     # TODO: Attempt to create network if it doesn't exist.
                     openstack_utils_logger.error("Can't attach subnet to network\
                                                  provided because it doesn't exist.")
                     return 1
                 else:
-                    returncode = check_for_subnet(name)
+                    returncode = self.check_for_subnet(name)
                     if returncode == 1:
                         # TODO: These next two lines may not work. There could easily
                         #       be more than 1 of same named network or diff username SLAB.
                         networks = self.neutron.list_networks(name=name)
                         network_id = networks['networks'][0]['id']
-                        subnets_name = create_name_for("subnet")
                         base_cidr, bitmask = cidr.split('/')
                         oct1, oct2, oct3, oct4 = base_cidr.split(".")
                         oct4 = str(int(oct4) + 1)
@@ -399,9 +404,9 @@ class SLab_OS(object):
                                   'cidr': cidr, 'tenant_id': self.tenant_id, 'gateway_ip':
                                   gateway_ip}
                         subnet = self.neutron.create_subnet({'subnet': subnet})
-                        returncode2 = check_for_subnet(name)
+                        returncode2 = self.check_for_subnet(name)
                         if returncode2 == 0:
-                            write_to_cache(path, subnet)
+                            self.write_to_cache(subnet)
                             return 0
                         else:
                             openstack_utils_logger.error("Failed to create the subnet")
@@ -414,10 +419,10 @@ class SLab_OS(object):
             floatingip = {'floating_network_id': external_net, 'tenant_id': self.tenant.id}
             floatingip = self.neutron.create_floatingip({'floatingip': floatingip})
             # check if success b4 returning 0
-            write_to_cache(path, floatingip)
+            self.write_to_cache(floatingip)
             return 0
 
-    def find_floatnet_id():
+    def find_floatnet_id(self):
         """Find the public floating network by searching all networks by name.
 
         This is a network that contains the publicly addressable ip range
@@ -429,15 +434,15 @@ class SLab_OS(object):
         Args:
             None
 
-        Returns
-            Returncode (int):
-                0 - Success
-                1 - Failure
+        Returns:
             id (str): This is the unique identifier provided by OS on a
                       per component basis. For instance, if you create a new
                       subnet it will get an id or if you create a new router
                       it will get an id, etc.
                       Ex id:  364c4cc8-dbc0-406b-b996-b20f1e164b74
+            Returncode (int):
+                0 - Success
+                1 - Failure
 
         Example Usage:
             >>> print a.find_floatnet_id()
@@ -447,7 +452,8 @@ class SLab_OS(object):
         networks = self.neutron.list_networks()
         for i in networks['networks']:
             if "public-floating" in i['name']:
-                return 0, i['id']
+                id = i['id']
+                return 0, id
         openstack_utils_logger.error('Failed to find public-floating-\* in networks names')
         return 1, id
 
@@ -469,19 +475,18 @@ class SLab_OS(object):
                       subnet it will get an id or if you create a new router
                       it will get an id, etc.
                       Ex id: 364c4cc8-dbc0-406b-b996-b20f1e164b74
-        Returns
+        Returns:
             Returncode (int):
                 0 - Success
                 1 - Failure
 
         Example Usage:
-            TODO: Add ex id here:
-            >>> del_in_project(subnet, "")
+            >>> del_in_project(subnet, "bd738973-2d66-4e19-b67c-1ee261244a91")
             0
         """
         if neutron_type == "network":
             self.neutron.delete_network(id)
-            returncode = check_for_network(id)
+            returncode = self.check_for_network(id)
             if returncode > 0:
                 return 0
             else:
@@ -489,44 +494,45 @@ class SLab_OS(object):
                 return 1
         elif neutron_type == "router":
             self.neutron.delete_router(id)
-            returncode = check_for_router(id)
+            returncode = self.check_for_router(id)
             if returncode > 0:
                 return 0
             else:
                 return 1
         elif neutron_type == "subnet":
             self.neutron.delete_subnet(id)
-            returncode = check_for_subnet(id)
+            returncode = self.check_for_subnet(id)
             if returncode > 0:
                 return 0
             else:
                 return 1
         elif neutron_type == "floatingip":
-            self.neutron.delete_floatingip
-            # TODO: return 1 until flesh this out. fix this.
+            self.neutron.delete_floatingip(id)
+            # TODO: return 1 until we have real check in place.
             return 1
 
     def verify_connect_router_subnet(self):
+        # TODO: Find a way to verify that we've connected the
+        #       router and the subnet.
         pass
 
-    def add_int_to_router(self, path, subnet_id):
+    def add_int_to_router(self, router_id, subnet_id):
         """Add a port to a router to an internal network.
 
         Args:
-            path (str): The path to your working .stack directory. Typically,
-                    this looks like ./servicelab/servicelab/.stack where "."
-                    is the path to the root of the servicelab repository.
             subnet_id (str): This is the unique identifier provided by OS on a
                       per component basis, including the subnet..
                       TODO: Add example id.
-        Returns
+            router_id (str): This is the unique identifier provided by OS on a
+                      per component basis, including the router..
+
+        Returns:
             Returncode (int):
                 0 - Success
                 1 - Failure
 
         Example Usage:
-            >>> add_int_to_router("/Users/aaltman/Git/servicelab/servicelab/.stack",
-                                  sbunet_id:"TODO: ID HERE")
+            >>> add_int_to_router(subnet_id: "2a033745-4f29-4eaa-9fff-15a1fa62d8f7")
             0
 
         Example port add interface response:
@@ -535,23 +541,19 @@ class SLab_OS(object):
              u'port_id': u'ca7c8de8-1b99-4a76-9297-0c171f804a13',
              u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'}
         """
-        # Note: Adding port to router to internal network
-        neutron.add_interface_router
         # RFI: Read router id from cache and read subnet id from cache?
-        port = neutron.add_interface_router(router['router']['id'],
-                                            {'subnet_id': subnet_id}
-                                            )
+        # port = neutron.add_interface_router(router['router']['id'],
+        port = self.neutron.add_interface_router(router_id,
+                                                 {'subnet_id': subnet_id}
+                                                 )
         # TODO: write to cache if port has id returned aka is a success else fail.
-        write_to_cache(path, port)
+        self.write_to_cache(port)
         return 0
 
-    def write_to_cache(self, path, writeit):
+    def write_to_cache(self, writeit):
         """Write a dictionary item to cache.
 
         Args:
-            path (str): The path to your working .stack directory. Typically,
-                    this looks like ./servicelab/servicelab/.stack where "."
-                    is the path to the root of the servicelab repository.
             writeit (dict): This should be a dictionary so that we can post
                     the data as yaml. We can append it
 
@@ -561,15 +563,14 @@ class SLab_OS(object):
                 1 - Failure
 
         Example Usage:
-            >>> write_to_cache("/Users/aaltman/Git/servicelab/servicelab/.stack",
-                               {"this": "is", "a": "dictionary"})
+            >>> write_to_cache({"this": "is", "a": "dictionary"})
             0
 
         TODO: catch exceptions so I can return 1 on failure. Or check to see if
               if an item is already in dict.
         """
         # Note: write should be a dictionary so we can write as yaml
-        self.OS_ids_cachefile = os.path.join(path, cache, "OS_ids.yaml")
+        self.OS_ids_cachefile = os.path.join(self.path, "cache", "OS_ids.yaml")
         if os.path.exists(self.OS_ids_cachefile):
             with open(OS_ids_cachefile, 'a') as f:
                 f.write(yaml.dump(writeit, default_flow_style=False))
@@ -579,13 +580,10 @@ class SLab_OS(object):
                 f.write(yaml.dump(writeit, default_flow_style=False))
                 return 0
 
-    def get_from_cache(self, path, neutron_type, get_this):
+    def get_from_cache(self, neutron_type, get_this):
         """Get a dictionary item from yaml file serving as cache.
 
         Args:
-            path (str): The path to your working .stack directory. Typically,
-                    this looks like ./servicelab/servicelab/.stack where "."
-                    is the path to the root of the servicelab repository.
             neutron_type (str): The type of neutron object you're trying to
                                 work with, including subnet, router, network,
                                 or floatingip.
@@ -601,14 +599,13 @@ class SLab_OS(object):
                 1 - Failure
 
         Example Usage:
-            >>> get_from_cache("/Users/aaltman/Git/servicelab/servicelab/.stack",
-                               "subnet", TODO: put maybe interpolated "id" here.)
+            >>> get_from_cache("subnet", TODO: put maybe interpolated "id" here.)
             0, TODO: show example item
         """
 
         # Note: get_this should be some sort of key in one of the neutron
         #      types. Pls see the create function for more details.
-        self.OS_ids_cachefile = os.path.join(path, cache, "OS_ids.yaml")
+        self.OS_ids_cachefile = os.path.join(self.path, cache, "OS_ids.yaml")
         if os.path.exists(self.OS_ids_cachefile):
             with open(OS_ids_cachefile, 'r') as f:
                 d = yaml.load(f)
