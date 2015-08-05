@@ -1,6 +1,9 @@
 import click
 from fabric.api import run
+import getpass
 from servicelab.stack import pass_context
+from servicelab.utils import service_utils
+from servicelab.utils import ccsbuildtools_utils
 
 
 @click.group('create', short_help='Creates pipeline resources to work with.',
@@ -39,7 +42,6 @@ def repo_new(ctx, repo_name, kind):
         folder structure setup. Needs prompt validation if user did not input
         correct type of repo.
     """
-
     kind_lower = kind.lower()
     click.echo('Creating Project: {}'.format(kind_lower))
     if kind_lower == 'standard':
@@ -71,12 +73,33 @@ def host_new(ctx, host_name, env):
                creating your site and paused midway you can continue it.')
 @click.option('cont', '--abort', help='If you did not finish \
                creating your site and paused midway you can abort it.')
+@click.option('-u', '--username', help='Enter the password for the username')
 @pass_context
-def site_new(ctx, site_name, cont):
+def site_new(ctx, site_name, username, cont):
     """
-    Create a whole site in ccs-data.
+    Create a whole new site in ccs-data.
     """
-    click.echo('creating new host yaml for %s ...' % site_name)
+    click.echo('creating new site directory')
+    # Get username
+    if username is None or "":
+        username = getpass.getuser()
+    print "Retrieving latest ccs-data branch"
+    service_utils.sync_data(ctx.path, username, "master")
+    print "Retrieving latest ccs-build-tools branch"
+    service_utils.sync_service(ctx.path, "master", username, "ccs-build-tools")
+    # TODO: Make sure I have installed required packages for ccs-build-tools -> add to reqs
+    print "Writing site specs to answer-sample.yaml"
+    ccsbuildtools_utils.overwrite_ansyaml(ctx.path)
+    # print "Building and exporting site to ccs-data"
+    # passed, log = service_utils.run_this('vagrant up', \
+    #                         os.path.join(ctx.path, "services", \
+    #                       "ccs-build-tools", "ignition_rb")
+    #                    )
+    # if log == 1:
+    #  return False
+    # service_utils.run_this('cp ccs-build-tools/ignition_rb/sites/%s ccs-data/sites' \
+    #                        % (site_name) , os.path.join(ctx.path, "services")
+    #                      )
 
 
 @cli.command('env')
@@ -87,12 +110,29 @@ def site_new(ctx, site_name, cont):
                creating your site and paused midway you can continue it.')
 @click.option('cont', '--abort', help='If you did not finish \
                creating your site and paused mid-way you can abort it.')
+@click.option('-u', '--username', help='Enter the password for the username')
 @pass_context
 def env_new(ctx, env_name, site, cont):
     """
     Create a new environment in a site in ccs-data.
     """
     click.echo('Creating new env yamls in %s for %s' % (site, env_name))
+    # Get username
+    # if username is None or "":
+    #    username = getpass.getuser()
+    # Ensure you have latest ccs-data branch
+    # Might need to replace ".' with path to reporoot... from class context?
+    # service_utils.sync_data("./servicelab/servicelab/.stack", username, master)
+    # Check for the site in ccs-data
+    # site_path = os.path.join("./servicelab/servicelab/.stack", "services", "ccs-data", \
+    #                      "sites", site, "environments", env_name)
+    #    if not os.path.exists(site_path)
+    #       echo "Site does not exist"
+    #      return False
+    # Manually inject file into the site
+    # Build data via BOM Generation Script
+    #   service_utils.build_data("./servicelab/servicelab/.stack")
+    #    return True
 
 
 # RFI: is this the right place for this integration w/ haproxy?
