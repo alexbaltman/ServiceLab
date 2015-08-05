@@ -12,7 +12,7 @@ logging.basicConfig()
 
 def overwrite_vagrantfile(path):
     Vfile = "Vagrantfile"
-    with open(Vfile, 'w') as f:
+    with open(os.path.join(path, Vfile), 'w') as f:
         h1, h2, h3 = _set_vagrantfile_header()
         f.write(h1)
         f.write(h2)
@@ -27,13 +27,13 @@ def overwrite_vagrantfile(path):
         if returncode > 0:
             return 1
         else:
-            f.write(vagrant_plugins)
+            f.write(str(vagrant_plugins))
         users = _set_vagrant_user_and_group()
         f.write(users)
         set_current_service = _set_current_service(path)
         for item in set_current_service:
             f.write(item)
-        load_vagrantyaml = _load_vagrantyaml_
+        load_vagrantyaml = _load_vagrantyaml(path)
         f.write(load_vagrantyaml)
         vbox_config = _vbox_provider_configure()
         f.write(vbox_config)
@@ -43,17 +43,17 @@ def _set_vagrantfile_header():
     h1 = "# -*- mode: ruby -*-"
     h2 = "# vi: set ft=ruby :"
     h3 = "VAGRANTFILE_API_VERSION = \"2\""
+    return h1, h2, h3
 
 
 def _required_ruby_modules(path):
-    path_to_utils = os.path.split(path)
-    path_to_utils = os.path.join(path_to_utils[0], "utils")
+    path_to_utils = os.path.join(path, "utils")
     path_to_ruby_modules = os.path.join(path_to_utils, "ruby_modules.yaml")
     returncode = yaml_utils.validate_syntax(path_to_ruby_modules)
+    s = ""
     if returncode == 0:
         stream = file(path_to_ruby_modules, 'r')
         ruby_modules = yaml.load(stream)
-        s = ""
         for item in ruby_modules:
             s += "require \'" + item + "\'\n"
         return 0, s
@@ -64,9 +64,9 @@ def _required_ruby_modules(path):
 
 
 def _required_vagrant_plugins(path):
-    path_to_utils = os.path.split(path)
-    path_to_utils = os.path.join(path_to_utils[0], "utils")
-    path_to_vagrant_plugins = os.path.join(path_to_utils, "vagrant_plugins.yaml")
+    path_to_utils = os.path.join(path, "utils")
+    path_to_vagrant_plugins = os.path.join(
+        path_to_utils, "vagrant_plugins.yaml")
     returncode = yaml_utils.validate_syntax(path_to_vagrant_plugins)
     if returncode == 0:
         stream = file(path_to_vagrant_plugins, 'r')
@@ -78,7 +78,8 @@ def _required_vagrant_plugins(path):
         #       or check for vagrant plugins in local env and then do 1 or 2.
 
         s = "required_plugins = %w( " + vagrant_plugin_string + ")"
-        # Note: in the vagrant file we need to do "something" in ruby with the plugins
+        # Note: in the vagrant file we need to do "something" in ruby with the
+        # plugins
         s2 = "required_plugins.each do |plugin|"
         s3 = ("  system \"vagrant plugin install #{plugin}\" "
               "unless Vagrant.has_plugin? plugin")
@@ -105,7 +106,8 @@ def _set_current_service(path):
     return current_service
 
 
-# Ruby Yaml merge - allow settings to be set here? prob not, do in stack.py w/ configparser
+# Ruby Yaml merge - allow settings to be set here? prob not,
+# do in stack.py w/ configparser
 # default_settings in yaml file:
 # cache_packages: false
 # puppet_mode: apply
@@ -123,26 +125,28 @@ def _set_current_service(path):
 # Load environment config
 def _load_vagrantyaml(path):
     # Note: This should be the vagrant.yaml in the working directory
-    vagrantyaml = os.path.join(path, vagrant.yaml)
+    vagrantyaml = os.path.join(path, "vagrant.yaml")
     s = "$envyaml = YAML::load_file('{0}')".format(vagrantyaml)
     return s
 # Ruby: "$envyaml['hosts'].each do |name, h|"
-# Ruby: File.open(".ccs_vagrant_hosts", "w") {|f| f.write(host_entries.join("\n")) }
+# Ruby: File.open(".ccs_vagrant_hosts", "w") {|f|
+# f.write(host_entries.join("\n")) }
 
 
 def _vbox_provider_configure():
 
     # Init. Config.
-    s = ("Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|\n\n"
-         "  $envyaml['hosts'].each do |name, ho|\n"
-         "    config.vm.define name.split('.')[0] do |h|\n"
-         "      if ho['box']\n"
-         "        h.vm.box = ho['box']\n"
-         "      else\n"
-         "        h.vm.box = 'ccs-rhel-7'\n"
-         "        h.vm.box_url = 'http://cis-kickstart.cisco.com/ccs-rhel-7.box'\n"
-         "      end\n\n"
-         )
+    s = (
+        "Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|\n\n"
+        "  $envyaml['hosts'].each do |name, ho|\n"
+        "    config.vm.define name.split('.')[0] do |h|\n"
+        "      if ho['box']\n"
+        "        h.vm.box = ho['box']\n"
+        "      else\n"
+        "        h.vm.box = 'ccs-rhel-7'\n"
+        "        h.vm.box_url = "
+        "'http://cis-kickstart.cisco.com/ccs-rhel-7.box'\n"
+        "      end\n\n")
 
     # Private Networking
     net = ("      h.vm.network 'private_network', "
@@ -166,30 +170,30 @@ def _vbox_provider_configure():
            )
 
     # Virtualbox Hardware
-    hw = ("      h.vm.provider :virtualbox do |vb|\n"
-          "        if ho['memory']\n"
-          "          vb.customize ['modifyvm', :id, '--memory', "
-          "ho['memory']]\n"
-          "        end\n"
-          "        vb.customize ['modifyvm', :id, '--usb', 'off']\n"
-          "        if ho['storage_disks']\n"
-          "          vb.customize ['storagectl', :id, '--name', "
-          "'SATA Controller', '--add', 'sata']\n"
-          "          disk_port_num = 2\n"
-          "          ho['storage_disks'].each do |sd|\n"
-          "            disk_port_num += 1\n"
-          "            file_to_disk = '#{name}-disk-#{sd}'\n"
-          "            unless File.exist?(file_to_disk)\n"
-          "              vb.customize ['createhd', '--filename', file_to_disk, "
-          "'--size', 102400]\n"
-          "            end\n"
-          "            vb.customize ['storageattach', :id, '--storagectl', "
-          "'SATA Controller', '--port', disk_port_num, '--device', 0, "
-          "'--type', 'hdd', '--medium', 'file_to_disk' + '.vdi']\n"
-          "         end\n"
-          "       end\n"
-          "     end\n"
-          )
+    hw = (
+        "      h.vm.provider :virtualbox do |vb|\n"
+        "        if ho['memory']\n"
+        "          vb.customize ['modifyvm', :id, '--memory', "
+        "ho['memory']]\n"
+        "        end\n"
+        "        vb.customize ['modifyvm', :id, '--usb', 'off']\n"
+        "        if ho['storage_disks']\n"
+        "          vb.customize ['storagectl', :id, '--name', "
+        "'SATA Controller', '--add', 'sata']\n"
+        "          disk_port_num = 2\n"
+        "          ho['storage_disks'].each do |sd|\n"
+        "            disk_port_num += 1\n"
+        "            file_to_disk = '#{name}-disk-#{sd}'\n"
+        "            unless File.exist?(file_to_disk)\n"
+        "              vb.customize ['createhd', '--filename', file_to_disk, "
+        "'--size', 102400]\n"
+        "            end\n"
+        "            vb.customize ['storageattach', :id, '--storagectl', "
+        "'SATA Controller', '--port', disk_port_num, '--device', 0, "
+        "'--type', 'hdd', '--medium', 'file_to_disk' + '.vdi']\n"
+        "         end\n"
+        "       end\n"
+        "     end\n")
 
     # Provision
     p = ("h.vm.provision :shell, inline: echo 'role=#{ho['role']} > "
@@ -212,7 +216,8 @@ def _vbox_provider_configure():
          "      else:\n"
          "        h.vm.provision :shell, path: './provision/node.sh'\n"
          "        h.vm.provision :shell, inline: 'ansible-playbook /opt/ccs/"
-         "services/redhouse-svc/dev/provision.yml -e hostname=#{name}.cis.local'\n"
+         "services/redhouse-svc/dev/provision.yml -e"
+         " hostname=#{name}.cis.local'\n"
          "      end\n"
          "    end\n"
          "  end\n\n"

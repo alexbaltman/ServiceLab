@@ -1,0 +1,63 @@
+# -*- mode: ruby -*-# vi: set ft=ruby :VAGRANTFILE_API_VERSION = "2"
+require 'yaml'
+require 'fileutils'
+['required_plugins = %w( vagrant-hostmanager vagrant-openstack-plugin)', 'required_plugins.each do |plugin|', '  system "vagrant plugin install #{plugin}" unless Vagrant.has_plugin? plugin', 'end']$data = {:user => 'vagrant', :group => 'vagrant'}horizon
+$envyaml = YAML::load_file('temp_dir/vagrant.yaml')Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  $envyaml['hosts'].each do |name, ho|
+    config.vm.define name.split('.')[0] do |h|
+      if ho['box']
+        h.vm.box = ho['box']
+      else
+        h.vm.box = 'ccs-rhel-7'
+        h.vm.box_url = 'http://cis-kickstart.cisco.com/ccs-rhel-7.box'
+      end
+
+      h.vm.network 'private_network', ip: ho['ip'], mac: ho['mac']
+      h.vm.host_name = '#{name}.cis.local'
+      h.vm.synced_folder './services/ccs-data/out/ccs-dev-1/dev/etc/ccs/data/', '/etc/ccs/data/environments/dev'
+      h.vm.synced_folder './services/ccs-data/out/ccs-dev-1/dev/etc/puppet/data/hiera_data', '/etc/puppet/data/hiera_data'
+      h.vm.synced_folder './services/service-redhouse-svc', '/opt/ccs/services/redhouse-svc'
+      h.vm.synced_folder './services/service-redhouse-tenant', '/opt/ccs/services/redhouse-tenant'
+
+      if ho['ports']
+        ho['ports'].each do |port|
+          h.vm.network 'forwarded_port', guest: port['guest'], host: port['host']
+        end
+      end
+      h.vm.provider :virtualbox do |vb|
+        if ho['memory']
+          vb.customize ['modifyvm', :id, '--memory', ho['memory']]
+        end
+        vb.customize ['modifyvm', :id, '--usb', 'off']
+        if ho['storage_disks']
+          vb.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata']
+          disk_port_num = 2
+          ho['storage_disks'].each do |sd|
+            disk_port_num += 1
+            file_to_disk = '#{name}-disk-#{sd}'
+            unless File.exist?(file_to_disk)
+              vb.customize ['createhd', '--filename', file_to_disk, '--size', 102400]
+            end
+            vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', disk_port_num, '--device', 0, '--type', 'hdd', '--medium', 'file_to_disk' + '.vdi']
+         end
+       end
+     end
+h.vm.provision :shell, inline: echo 'role=#{ho['role']} > /etc/facter/facts.d/role.txt'
+      if name = 'infra-001' or name = 'infra-002'
+        config.vm.define 'infra-001' do |node|
+          h.vm.provision :hostmanager
+          h.vm.provision :file, source: './provision/ssh-config', destination: '/home/vagrant/.ssh/config'
+          h.vm.provision :file, source: './id_rsa', destination: '/home/vagrant/.ssh/id_rsa'
+          h.vm.provision :file, source: './hosts', destination: '/etc/ansible/hosts'
+          h.vm.synced_folder './services', '/opt/ccs/services'
+          h.vm.provision 'shell', path: './provision/infra.sh'
+        end
+      else:
+        h.vm.provision :shell, path: './provision/node.sh'
+        h.vm.provision :shell, inline: 'ansible-playbook /opt/ccs/services/redhouse-svc/dev/provision.yml -e hostname=#{name}.cis.local'
+      end
+    end
+  end
+
+end
