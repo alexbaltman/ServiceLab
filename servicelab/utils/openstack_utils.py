@@ -41,7 +41,7 @@ class SLab_OS(object):
             instance of the class.
 
         Example Usage:
-            >>> alexs_instance = SLab_OS(password="donttell", base_url="us-rdu-3")
+            >>> a = SLab_OS(password="donttell", base_url="us-rdu-3")
         """
         if not username:
             username = getpass.getuser()
@@ -89,9 +89,9 @@ class SLab_OS(object):
                 1 - failure
 
         Example Usage:
-            >>> a.login_or_gettoken()
+            >>> print a.login_or_gettoken()
            0, 2e3e3bb7ce9f4ab6912da0e500a822ac, 4946e8af849f46879ea08796274d1d46
-            >>> a.login_or_gettoken(tenant_id="2e3e3bb7ce9f4ab6912da0e500a822ac")
+            >>> print a.login_or_gettoken(tenant_id="2e3e3bb7ce9f4ab6912da0e500a822ac")
            0, 2e3e3bb7ce9f4ab6912da0e500a822ac, 3e03f91d8ee549e6bf9337169141103e
 
         Example OS return of a list of tenant objects:
@@ -148,7 +148,7 @@ class SLab_OS(object):
                       function. return 1 on failure.
 
         Example Usage:
-            >>> a.connect_to_neutron()
+            >>> print a.connect_to_neutron()
             0
         """
         self.endpoint_url = "https://" + self.base_url + self.url_domain + ":9696"
@@ -157,12 +157,17 @@ class SLab_OS(object):
         self.neutron.format = 'json'
         return 0
 
-    def create_name_for(self, neutron_type):
+    def create_name_for(self, neutron_type, append=""):
         """Generates some consistent naming for us to use and reference.
 
         Args:
             neutron_type (str): The neutron type can be a subnet, network, or router.
                                 We'll use this to help create a name.
+            append (str): If you want more than the default name ie. "mgmt" included
+                          in your naming scheme then you can add that extra piece
+                          to the string there otherwise this will be "". It does not
+                          get added to the end of the string, but after the username.
+
         Returns:
             name (str): A not so unique name is created depending on the type of
                         neutron object we're dealing with; however, we will still
@@ -170,11 +175,16 @@ class SLab_OS(object):
                         locally.
 
         Example Usage:
-            >>> create_name_for("subnet")
+            >>> print a.create_name_for("subnet")
             SLAB_aaltman_subnet
+            >>> print a.create_name_for("subnet", "mgmt")
+            SLAB_aaltman_mgmt_subnet
         """
+        if append:
+            append = "_" + append
+
         username = self.username
-        name = "SLAB_%s_%s" % (self.username, neutron_type)
+        name = "SLAB_%s%s_%s" % (self.username, append, neutron_type)
         return name
 
     def check_for_network(self, name):
@@ -190,99 +200,23 @@ class SLab_OS(object):
             Returncode (int):
                 0 - Success
                 1 - Failure
+            network (dict): It returns the first network that matches
+                            the named network that you're looking for.
+                            See the example for what that dict looks like.
 
         Example Usage:
-            >>> check_for_network("SLAB_aaltman_network")
-            0
-        """
-        networks = self.neutron.list_networks(name=name)
-        for i in networks['networks']:
-            if name in i['name']:
-                return 0
-        return 1
+            >>> print a.check_for_network("SLAB_aaltman_network")
+            0, {u'status': u'ACTIVE',
+                u'subnets': [],
+                u'name': u'SLAB_aaltman_network',
+                u'admin_state_up': True,
+                u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+                u'shared': False,
+                u'id': u'c42bf975-8ef3-43d3-94a4-fde3251b7cf3'
+                }
 
-    def check_for_subnet(self, name):
-        """Check to see if the named subnet exists.
-
-        Args:
-            name (str): The name of the subnet you would like to see if it
-                        exists in your tenant/project or not. If needed and
-                        you're not sure of the name you can always generate
-                        it from the create_name_for() function.
-
-        Returns:
-            Returncode (int):
-                0 - Success
-                1 - Failure
-
-        Example Usage:
-            >>> check_for_subnet("SLAB_aaltman_subnet")
-            0
-
-            We should expect in a return 0 scenario that the subnet was
-            created and associated to a network of essentially the same
-            name "SLAB_aaltman_network".
-        """
-        subnets = self.neutron.list_subnets()
-        for i in subnets['subnets']:
-            if name in i['name']:
-                return 0
-        return 1
-
-    def check_for_router(self, name):
-        """Check to see if the named router exists.
-
-        Args:
-            name (str): The name of the router you would like to see if it
-                        exists in your tenant/project or not. If needed and
-                        you're not sure of the name you can always generate
-                        it from the create_name_for() function.
-
-        Returns:
-            Returncode (int):
-                0 - Success
-                1 - Failure
-
-        Example Usage:
-            >>> check_for_router("SLAB_aaltman_router")
-            0
-        """
-        routers = self.neutron.list_routers(name=name)
-        for i in routers['routers']:
-            if name in i['name']:
-                return 0
-        return 1
-
-    def create_in_project(self, neutron_type, neutron_type_name="",
-                          tenant_id="self.tenant_id", cidr="192.168.100.0/24"):
-        """Create a neutron object (subnet, router, network, floatingip) in a project /
-           tenant in OS.
-
-        Args:
-            neutron_type (str): The type of neutron object you're trying to
-                                work with, including subnet, router, network,
-                                or floatingip.
-            neutron_type_name (str): The name for the neutron object you would
-                                     like created instead of the regular name
-                                     provided by create_name_for() function.
-            tenant_id (str): An openstack unique identifier for a project/tenant. It
-                             looks like this: "2e3e3bb7ce9f4ab6912da0e500a822ac".
-            cidr (str): A network (e.g. 192.168.100.0) with it's associated netmask
-                        bits (e.g. /24, /8) to look like "192.168.100.0/24". For more
-                        details see:
-                        "https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing".
-
-        Returns:
-            Returncode:
-                0 - Success
-                1 - Failure
-
-        Example Usage:
-            >>> create_in_project("subnet")
-            0
-
-        Example Network list response:
-            {'networks': [{u'admin_state_up': True,
+        Example Networks list:
+             {'networks': [{u'admin_state_up': True,
               u'id': u'364c4cc8-dbc0-406b-b996-b20f1e164b74',
               u'name': u'public-floating-602',
               u'router:external': True,
@@ -299,128 +233,290 @@ class SLab_OS(object):
               u'status': u'ACTIVE',
               u'subnets': [],
               u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac'}]}
-
-        Example response to network creation:
-            {u'network': {u'status': u'ACTIVE',
-                          u'subnets': [],
-                          u'name': u'SLAB_aaltman_network',
-                          u'admin_state_up': True,
-                          u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
-                          u'shared': False,
-                          u'id': u'c42bf975-8ef3-43d3-94a4-fde3251b7cf3'}
-             }
-
-        Example reponse to subnet creation:
-            {u'subnet': {u'name': u'SLAB_aaltman_subnet',
-                         u'enable_dhcp': True,
-                         u'network_id': u'c42bf975-8ef3-43d3-94a4-fde3251b7cf3',
-                         u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
-                         u'dns_nameservers': [],
-                         u'ipv6_ra_mode': None,
-                         u'allocation_pools': [{u'start': u'192.168.100.2',
-                                                u'end': u'192.168.100.254'}],
-                         u'gateway_ip': u'192.168.100.1',
-                         u'ipv6_address_mode': None,
-                         u'ip_version': 4,
-                         u'host_routes': [],
-                         u'cidr': u'192.168.100.0/24',
-                         u'id': u'bd738973-2d66-4e19-b67c-1ee261244a91'}
-             }
-
-        Example response to router creation:
-            {u'router': {u'status': u'ACTIVE',
-                         u'external_gateway_info': {u'network_id': u'364c4cc8-dbc0-406b\
-                                                                     -b996-b20f1e164b74'},
-                         u'name': u'SLAB_aaltman_router',
-                         u'admin_state_up': True,
-                         u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
-                         u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'}
-             }
         """
-        name = ""
-        if not neutron_type_name:
-            name = self.create_name_for(neutron_type)
-        network_id = ""
+        networks = self.neutron.list_networks(name=name)
+        network = ""
+        for network in networks['networks']:
+            if name in network['name']:
+                return 0, network
+        return 1, network
 
-        if neutron_type == "network":
-            returncode = self.check_for_network(name)
-            if returncode == 1:
-                network = {'name': name, 'admin_state_up': True, 'tenant_id': self.tenant_id}
-                network = self.neutron.create_network({'network': network})
-                network_id = network['network']['id']
-                returncode2 = self.check_for_network(name)
-                if returncode2 == 0:
-                    return 0
-                    self.write_to_cache(network)
-                else:
-                    openstack_utils_logger.error("Tried to make the network, but failed.")
-                    return 1
+    def check_for_subnet(self, name):
+        """Check to see if the named subnet exists.
+
+        Args:
+            name (str): The name of the subnet you would like to see if it
+                        exists in your tenant/project or not. If needed and
+                        you're not sure of the name you can always generate
+                        it from the create_name_for() function.
+
+        Returns:
+            Returncode (int):
+                0 - Success
+                1 - Failure
+            subnet (dict): It returns the first subnet that matches
+                            the named subnet that you're looking for.
+                            See the example for what that dict looks like.
+
+        Example Usage:
+            >>> print a.check_for_subnet("SLAB_aaltman_subnet")
+            0, {u'name': u'SLAB_aaltman_subnet',
+                u'enable_dhcp': True,
+                u'network_id': u'c42bf975-8ef3-43d3-94a4-fde3251b7cf3',
+                u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+                u'dns_nameservers': [],
+                u'ipv6_ra_mode': None,
+                u'allocation_pools': [{u'start': u'192.168.100.2',
+                                       u'end': u'192.168.100.254'}],
+                u'gateway_ip': u'192.168.100.1',
+                u'ipv6_address_mode': None,
+                u'ip_version': 4,
+                u'host_routes': [],
+                u'cidr': u'192.168.100.0/24',
+                u'id': u'bd738973-2d66-4e19-b67c-1ee261244a91'
+                }
+
+            We should expect in a return 0 scenario that the subnet was
+            created and associated to a network of essentially the same
+            name "SLAB_aaltman_network".
+        """
+        subnets = self.neutron.list_subnets()
+        subnet = ""
+        for subnet in subnets['subnets']:
+            if name in subnet['name']:
+                return 0, subnet
+        return 1, subnet
+
+    def check_for_router(self, name):
+        """Check to see if the named router exists.
+
+        Args:
+            name (str): The name of the router you would like to see if it
+                        exists in your tenant/project or not. If needed and
+                        you're not sure of the name you can always generate
+                        it from the create_name_for() function.
+
+        Returns:
+            Returncode (int):
+                0 - Success
+                1 - Failure
+            router (dict): It returns the first router that matches
+                            the named router that you're looking for.
+                            See the example for what that dict looks like.
+
+        Example Usage:
+            >>> print a.check_for_router("SLAB_aaltman_router")
+            0, {u'status': u'ACTIVE',
+                u'external_gateway_info': {u'network_id': u'364c4cc8-dbc0-406b\
+                                                            -b996-b20f1e164b74'},
+                u'name': u'SLAB_aaltman_router',
+                u'admin_state_up': True,
+                u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+                u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'
+                }
+        """
+        routers = self.neutron.list_routers(name=name)
+        router = ""
+        for router in routers['routers']:
+            if name in router['name']:
+                return 0, router
+        return 1, router
+
+    def create_network(self, name=""):
+        """Create a network in OS tenant/project.
+
+        Args:
+            name (str): The name for the neutron object you would
+                        like created instead of the regular name
+                        provided by create_name_for() function.
+
+        Returns:
+            Returncode:
+                0 - Success
+                1 - Failure
+            network (dict): We return a dict of the network's attributes that
+                            arises from the response to the creation of a network
+                            in the project/tenant in OS.
+
+        Example Usage:
+            >>> print a.create_network()
+            0, {u'status': u'ACTIVE',
+                u'subnets': [],
+                u'name': u'SLAB_aaltman_network',
+                u'admin_state_up': True,
+                u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+                u'shared': False,
+                u'id': u'c42bf975-8ef3-43d3-94a4-fde3251b7cf3'
+                }
+        """
+        if not name:
+            name = self.create_name_for("network")
+
+        returncode, network = self.check_for_network(name)
+        if returncode == 1:
+            network = {'name': name, 'admin_state_up': True, 'tenant_id': self.tenant_id}
+            self.neutron.create_network({'network': network})
+            returncode2, network = self.check_for_network(name)
+            if returncode2 == 0:
+                self.write_to_cache(network)
+                return 0, network
             else:
-                # RFI: Not sure what to do here, if the network is already in OS.
-                return 0
-        elif neutron_type == "router":
-            returncode = self.check_for_router(name)
-            if returncode == 1:
+                openstack_utils_logger.error("Tried to make the network, but failed.")
+                return 1, network
+        else:
+            return 0, network
+
+    def create_router(self, name=""):
+        """Create a router in your OS tenant/project.
+
+        Args:
+            name (str): The name for the router you would
+                        like created instead of the regular name
+                        provided by create_name_for() function.
+         Returns:
+            Returncode:
+                0 - Success
+                1 - Failure
+            router (dict): We return a dict of the router's attributes that
+                           arises from the response to the creation of a router
+                           in the project/tenant in OS.
+
+        Example Usage:
+            >>> print a.create_router()
+            0, {u'status': u'ACTIVE',
+                u'external_gateway_info': {u'network_id': u'364c4cc8-dbc0-406b\
+                                                            -b996-b20f1e164b74'},
+                u'name': u'SLAB_aaltman_router',
+                u'admin_state_up': True,
+                u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+                u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'
+                }
+        """
+        if not name:
+            name = self.create_name_for("router")
+
+        returncode, router = self.check_for_router(name)
+        if returncode == 1:
                 returncode2, external_net_id = self.find_floatnet_id()
-                if returncode2 == 1:
+                if returncode2 > 0:
                     openstack_utils_logger.error("Tried to make the router, but failed\
-                                                  b/c can't find floating ip network.")
-                    return 1
-                router = {'name': name, 'admin_state_up': True, 'external_gateway_info':
-                          {'network_id': external_net_id, 'external_snat': True}
-                          }
-                router = self.neutron.create_router({'router': router})
-                returncode3 = self.check_for_router(name)
-                if returncode3 == 0:
-                    self.write_to_cache(router)
-                    return 0
+                                                  b/c can't find public floating network.")
+                    return 1, router
                 else:
-                    openstack_utils_logger.error("Tried to make the router, but failed.")
-                    return 1
-            else:
-                # RFI: Not sure what to do here, if the router is already in OS.
-                return 0
-        elif neutron_type == "subnet":
-            if not network_id:
-                name = self.create_name_for("network")
-                returncode = self.check_for_network(name)
-                if returncode > 0:
-                    # TODO: Attempt to create network if it doesn't exist.
-                    openstack_utils_logger.error("Can't attach subnet to network\
-                                                 provided because it doesn't exist.")
-                    return 1
-                else:
-                    returncode = self.check_for_subnet(name)
-                    if returncode == 1:
-                        # TODO: These next two lines may not work. There could easily
-                        #       be more than 1 of same named network or diff username SLAB.
-                        networks = self.neutron.list_networks(name=name)
-                        network_id = networks['networks'][0]['id']
-                        base_cidr, bitmask = cidr.split('/')
-                        oct1, oct2, oct3, oct4 = base_cidr.split(".")
-                        oct4 = str(int(oct4) + 1)
-                        gateway_ip = ".".join([oct1, oct2, oct3, oct4])
-                        subnet = {'name': name, 'network_id': network_id, 'ip_version': 4,
-                                  'cidr': cidr, 'tenant_id': self.tenant_id, 'gateway_ip':
-                                  gateway_ip}
-                        subnet = self.neutron.create_subnet({'subnet': subnet})
-                        returncode2 = self.check_for_subnet(name)
-                        if returncode2 == 0:
-                            self.write_to_cache(subnet)
-                            return 0
-                        else:
-                            openstack_utils_logger.error("Failed to create the subnet")
-                            return 1
+                    router = {'name': name, 'admin_state_up': True, 'external_gateway_info':
+                              {'network_id': external_net_id, 'external_snat': True}
+                              }
+                    self.neutron.create_router({'router': router})
+                    returncode3, router = self.check_for_router(name)
+                    if returncode3 == 0:
+                        self.write_to_cache(router)
+                        return 0, router
                     else:
-                        # RFI: Not sure what to do here, if the subnet is already in OS.
-                        return 0
+                        openstack_utils_logger.error("Tried to make the router, but failed.")
+                        return 1, router
+        else:
+            return 0, router
 
-        elif neutron_type == "floating_ip":
-            floatingip = {'floating_network_id': external_net, 'tenant_id': self.tenant.id}
-            floatingip = self.neutron.create_floatingip({'floatingip': floatingip})
-            # check if success b4 returning 0
-            self.write_to_cache(floatingip)
-            return 0
+    def create_subnet(self, name="", cidr="192.168.100.0/24"):
+        """Create a subnet in your teannt/project in OS.
+
+        Args:
+            cidr (str): A network (e.g. 192.168.100.0) with it's associated netmask
+                        bits (e.g. /24, /8) to look like "192.168.100.0/24". For more
+                        details see:
+                        "https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing".
+        Returns:
+            Returncode:
+                0 - Success
+                1 - Failure
+            subnet (dict): We return a dict of the subnet's attributes that
+                           arises from the response to the creation of a router
+                           in the project/tenant in OS.
+
+        Example Usage:
+            >>> print a.create_subnet()
+            0, {u'name': u'SLAB_aaltman_subnet',
+               u'enable_dhcp': True,
+               u'network_id': u'c42bf975-8ef3-43d3-94a4-fde3251b7cf3',
+               u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac',
+               u'dns_nameservers': [],
+               u'ipv6_ra_mode': None,
+               u'allocation_pools': [{u'start': u'192.168.100.2',
+                                      u'end': u'192.168.100.254'}],
+               u'gateway_ip': u'192.168.100.1',
+               u'ipv6_address_mode': None,
+               u'ip_version': 4,
+               u'host_routes': [],
+               u'cidr': u'192.168.100.0/24',
+               u'id': u'bd738973-2d66-4e19-b67c-1ee261244a91'
+               }
+        """
+        subnet = ""
+        if not name:
+            name = self.create_name_for("subnet")
+            net_name = self.create_name_for("network")
+            returncode, network = self.check_for_network(net_name)
+            if returncode == 0:
+                net_id = network['id']
+            else:
+                openstack_utils_logger.error("Can't attach subnet to network\
+                                             provided because it doesn't exist.")
+                return 1, subnet
+        else:
+            net_name = name.replace("subnet", "network")
+            returncode, network = self.check_for_network(net_name)
+            if returncode == 0:
+                net_id = network['id']
+            else:
+                openstack_utils_logger.error("Can't attach subnet to network\
+                                             provided because it doesn't exist.")
+                return 1, subnet
+
+        returncode2, subnet = self.check_for_subnet(name)
+        if returncode2 == 1:
+            base_cidr, bitmask = cidr.split('/')
+            oct1, oct2, oct3, oct4 = base_cidr.split(".")
+            oct4 = str(int(oct4) + 1)
+            gateway_ip = ".".join([oct1, oct2, oct3, oct4])
+            subnet = {'name': name, 'network_id': net_id, 'ip_version': 4,
+                      'cidr': cidr, 'tenant_id': self.tenant_id, 'gateway_ip':
+                      gateway_ip}
+            self.neutron.create_subnet({'subnet': subnet})
+            returncode3, subnet = self.check_for_subnet(name)
+            if returncode3 == 0:
+                self.write_to_cache(subnet)
+                return 0, subnet
+            else:
+                openstack_utils_logger.error("Failed to create the subnet.")
+                return 1, subnet
+        else:
+            return 0, subnet
+
+    def create_floatingip(self):
+        """Create floating ip in your OS project/tenant.
+
+        Args:
+            None.
+
+        Returns:
+            Returncode:
+                0 - Success
+                1 - Failure
+
+        Example Usage:
+            >>> print a.create_floatingip()
+            0
+        """
+        returncode, external_net_id = self.find_floatnet_id()
+        if returncode > 0:
+            openstack_utils_logger.error("Tried to make the router, but failed\
+                                          b/c can't find public floating network.")
+            return 1
+        floatingip = {'floating_network_id': external_net_id, 'tenant_id': self.tenant.id}
+        floatingip = self.neutron.create_floatingip({'floatingip': floatingip})
+        # TODO: check if success b4 returning 0
+        self.write_to_cache(floatingip)
+        return 0
 
     def find_floatnet_id(self):
         """Find the public floating network by searching all networks by name.
@@ -481,7 +577,7 @@ class SLab_OS(object):
                 1 - Failure
 
         Example Usage:
-            >>> del_in_project(subnet, "bd738973-2d66-4e19-b67c-1ee261244a91")
+            >>> print a.del_in_project(subnet, "bd738973-2d66-4e19-b67c-1ee261244a91")
             0
         """
         if neutron_type == "network":
@@ -532,7 +628,7 @@ class SLab_OS(object):
                 1 - Failure
 
         Example Usage:
-            >>> add_int_to_router(subnet_id: "2a033745-4f29-4eaa-9fff-15a1fa62d8f7")
+            >>> print a.add_int_to_router(subnet_id: "2a033745-4f29-4eaa-9fff-15a1fa62d8f7")
             0
 
         Example port add interface response:
@@ -563,7 +659,7 @@ class SLab_OS(object):
                 1 - Failure
 
         Example Usage:
-            >>> write_to_cache({"this": "is", "a": "dictionary"})
+            >>> print a.write_to_cache({"this": "is", "a": "dictionary"})
             0
 
         TODO: catch exceptions so I can return 1 on failure. Or check to see if
@@ -572,7 +668,7 @@ class SLab_OS(object):
         # Note: write should be a dictionary so we can write as yaml
         self.OS_ids_cachefile = os.path.join(self.path, "cache", "OS_ids.yaml")
         if os.path.exists(self.OS_ids_cachefile):
-            with open(OS_ids_cachefile, 'a') as f:
+            with open(self.OS_ids_cachefile, 'a') as f:
                 f.write(yaml.dump(writeit, default_flow_style=False))
                 return 0
         else:
@@ -599,7 +695,7 @@ class SLab_OS(object):
                 1 - Failure
 
         Example Usage:
-            >>> get_from_cache("subnet", TODO: put maybe interpolated "id" here.)
+            >>> print a.get_from_cache("subnet", TODO: put maybe interpolated "id" here.)
             0, TODO: show example item
         """
 
