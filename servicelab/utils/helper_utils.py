@@ -12,7 +12,7 @@ logging.basicConfig()
 
 
 def find_all_yaml_recurs(full_path):
-    """Find all yaml files in directory structure recursively.
+    """Find all yaml files in given directory structure recursively.
 
     Args:
         full_path (str): Ths is the full path that you want
