@@ -12,6 +12,33 @@ logging.basicConfig()
 
 
 def find_all_yaml_recurs(full_path):
+    """Find all yaml files in directory structure recursively.
+
+    Args:
+        full_path (str): Ths is the full path that you want
+                         recursively explore for yaml files.
+    Returns:
+        Returncode (int):
+            0 -- Success
+            1 -- Failure
+        matches (list): A list of files ending in yaml
+                        with their absolute paths.
+
+    Example Usage:
+        >>> print full_path
+        /Users/aaltman/Git/servicelab/servicelab/.stack/services/ccs-data
+        >>> print find_all_yaml_recurs(full_path)
+        0, [('/Users/aaltman/Git/servicelab/servicelab/.stack/services/ccs-data/utils/\
+             ignition-utils/data-environment.yaml',
+             '/Users/aaltman/Git/servicelab/servicelab/.stack/services/ccs-data/utils/\
+             ignition-utils/rtp10-data-environment.yaml',
+             '/Users/aaltman/Git/servicelab/servicelab/.stack/services/ccs-data/utils/\
+             ignition-utils/rtp10-RH-data-environment.yaml',
+             ...
+
+        A very large list is typically expected when dealing with ccs-data.
+    """
+
     matches = []
     if os.path.exists(full_path):
         for dirpath, dirnames, filenames in os.walk(full_path):
