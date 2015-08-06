@@ -50,9 +50,9 @@ def host_exists_vagrantyaml(file_name, hostname, path):
                     is the path to the root of the servicelab repository.
 
     Returns:
-        (int) The return code::
-        0 -- Success
-        1 -- Failure
+        Returncode (int):
+            0 -- Success
+            1 -- Failure
 
     Example vagrant.yaml format:
             Hosts:
@@ -300,7 +300,10 @@ def get_allips_forsite(path, site):
         # Note: Takes reg. path to .stack and builds rest
         service_utils.build_data(path)
     allips = []
-    yaml_files = helper_utils.find_all_yaml_recurs(full_path)
+    returncode, yaml_files = helper_utils.find_all_yaml_recurs(full_path)
+    if returncode > 0:
+        yaml_utils_logger.error("Failed to get the yamls...exiting")
+        sys.exit(1)
     for yaml_f in yaml_files:
         with open(os.path.join(path, yaml_f), 'r') as f:
             doc = yaml.load(f)
