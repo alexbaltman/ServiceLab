@@ -62,7 +62,7 @@ class TestHelperUtils(unittest.TestCase):
                     TestHelperUtils.YAML_FILE3),
                 "w")
 
-            yaml_dirs = helper_utils.find_all_yaml_recurs(temp_dir)
+            returncode, yaml_dirs = helper_utils.find_all_yaml_recurs(temp_dir)
             self.assertItemsEqual(
                 [yaml_file_1.name, yaml_file_2.name, yaml_file_3.name],
                 yaml_dirs)
