@@ -33,6 +33,7 @@ class TestHelperUtils(unittest.TestCase):
 
     def test_find_all_yaml_recurs(self):
         """ Tests for empty and non-empty yaml directories.
+            checks for return code.
         """
         with temporary_dir() as temp_dir:
             os.makedirs(os.path.join(temp_dir, TestHelperUtils.YAML_FILE1_DIR))
