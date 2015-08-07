@@ -5,34 +5,33 @@
 
 Welcome to ServiceLab
 =====================
-Stack is a ServiceLab command line interface that is designed to automate everyday development tasks. It is created by
-the Cisco Cloud Services' SDLC team to help facilitate various systems processes such as creating repos, listing sites,
-and creating environments.
 
-We recommend that you get started with :ref:Installation' and then head over to :ref:'Quickstart'. Besides the
-*Quickstart*, there is also a more detailed :ref:'Tutorial' that shows how to execute common commands.
+
+Servicelab simplifies and streamlines the developer's workflow.
 
 **Use Cases**
 
-- Development environments are sparase.
-- Developing through the pipeline can be time consuming.
-- Environment stability is low and it's difficult to determine where to code.
-- There needs to be an environment where we can bootstrap a service framework.
+- There needs to be an environment where we can bootstrap a service seamlessly.
 - Manging the processes and artifacts requires too many resources from SDLC.
+- We need to work better together to streamline our operations.
+- We need to automate repetitive tasks like provisioning, testing, and deployment.
+- There is too much complexity for new developers. We need one clear platform to begin work.
 
 **Features**
 
-- Streamlines the development workflow into the command line
-- Automates the deploy of a new environment
-- Creates a repo in Gerrit with the ability to review others
-- Describes sites and environments
-- Spin up Vagrant development environments and test
-- ...much More!
+- Streamlines the development workflow into the Stack CLI.
+- Automates the deployment of a new environment.
+- Creates a repo in Gerrit and allows you to review it.
+- Describes the infrastructure of CCS-data sites and environments.
+- Spins up Vagrant dev environments.
+- ...much more
 
 .. include:: contents.rst.inc
 
 If you can't find the information you're looking for, have a look at the
 index or try to find it using the search function:
 
+
 :ref:`genindex`
+
 :ref:`search`
