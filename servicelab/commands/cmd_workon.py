@@ -21,8 +21,6 @@ import os
 def cli(ctx, interactive, branch, username, service_name):
     current = ""
     if username is None or "":
-        import pdb
-        pdb.set_trace()
         returncode, username = helper_utils.set_user(ctx.path)
     print "##ALMOST"
     if os.path.isfile(os.path.join(ctx.path, "current")):
