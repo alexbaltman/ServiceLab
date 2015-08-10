@@ -9,6 +9,10 @@ from servicelab.utils import ccsbuildtools_utils
 from servicelab.utils import ccsdata_utils
 from servicelab.utils import yaml_utils
 from servicelab.utils.ccsdata_haproxy_utils import *
+import os
+from servicelab.utils import ccsdata_utils
+from servicelab.utils import yaml_utils
+from servicelab.utils.ccsdata_haproxy_utils import *
 
 
 @click.group('create', short_help='Creates pipeline resources to work with.',
@@ -73,38 +77,44 @@ def host_new(ctx, host_name, env):
 
 
 @cli.command('site')
-@click.argument('site_name')
 @click.option('cont', '--continue', help='If you did not finish \
                creating your site and paused midway you can continue it.')
 @click.option('cont', '--abort', help='If you did not finish \
                creating your site and paused midway you can abort it.')
 @click.option('-u', '--username', help='Enter the password for the username')
 @pass_context
-def site_new(ctx, site_name, username, cont):
+def site_new(ctx, username, cont):
     """
     Create a whole new site in ccs-data.
     """
-    click.echo('creating new site directory')
     # Get username
     if username is None or "":
         returncode, username = helper_utils.set_user(ctx.path)
-    print "Retrieving latest ccs-data branch"
+    click.echo("Retrieving latest ccs-data branch")
     service_utils.sync_data(ctx.path, username, "master")
-    print "Retrieving latest ccs-build-tools branch"
+    click.echo("Retrieving latest ccs-build-tools branch")
     service_utils.sync_service(ctx.path, "master", username, "ccs-build-tools")
     # TODO: Make sure I have installed required packages for ccs-build-tools -> add to reqs
-    print "Writing site specs to answer-sample.yaml"
-    ccsbuildtools_utils.overwrite_ansyaml(ctx.path)
-    # print "Building and exporting site to ccs-data"
-    # passed, log = service_utils.run_this('vagrant up', \
-    #                         os.path.join(ctx.path, "services", \
-    #                       "ccs-build-tools", "ignition_rb")
-    #                    )
-    # if log == 1:
-    #  return False
-    # service_utils.run_this('cp ccs-build-tools/ignition_rb/sites/%s ccs-data/sites' \
-    #                        % (site_name) , os.path.join(ctx.path, "services")
-    #                      )
+    click.echo("Retreiving user input for new site's data fields...")
+    returncode, site_name = ccsbuildtools_utils.gather_site_info(ctx.path)
+    click.echo("---Building and Exporting site to ccs-data---")
+    passed, log = service_utils.run_this('vagrant up',
+                                         os.path.join(ctx.path, "services",
+                                                      "ccs-build-tools", "ignition_rb"
+                                                      )
+                                         )
+    click.echo("Printing log of ccs-build-tools...")
+    click.echo(log)
+    if passed == 1:
+        return False
+    service_utils.run_this('cp ccs-build-tools/ignition_rb/sites/%s ccs-data/sites'
+                           % (site_name), os.path.join(ctx.path, "services")
+                           )
+    service_utils.run_this('vagrant destroy -f',
+                           os.path.join(ctx.path, "services",
+                                        "ccs-build-tools", "ignition_rb")
+                           )
+    click.echo("---Site Data Gathered. Check .stack/services/ccs-data for its contents---")
 
 
 @cli.command('env')
