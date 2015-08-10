@@ -70,7 +70,7 @@ def set_user(path):
         >>> print set_user(ctx.path)
         (0, aaltman)
     """
-    matches = []
+    matches = None
     username = ""
 
     path_to_reporoot = os.path.split(path)
@@ -81,8 +81,7 @@ def set_user(path):
     with open(os.path.join(path_to_reporoot, ".git", "config"), 'r') as f:
         for line in f.readlines():
             matches = re.search(regex, line)
-    username = matches.group(1)
-    if not username:
-        return 1, username
-    else:
-        return 0, username
+            if matches:
+                username = matches.group(1)
+                return 0, username
+    return 1, username

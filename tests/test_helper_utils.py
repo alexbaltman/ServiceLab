@@ -19,7 +19,10 @@ class TestHelperUtils(unittest.TestCase):
             YAML_FILE3
             YAML_EMPTY_DIR
             YAML_EMPTY_SUBDIR
-
+            DOTSTACK_PATH
+            GIT_EMPTY_DIR
+            GIT_CONFIG_FILE
+            GIT_USERNAME
     """
 
     YAML_FILE1_DIR = "dir1/subdir1/"
@@ -30,6 +33,10 @@ class TestHelperUtils(unittest.TestCase):
     YAML_FILE3 = "test3.yaml"
     YAML_EMPTY_DIR = "emptydir/"
     YAML_EMPTY_SUBDIR = "emptydir/subdir1"
+    DOTSTACK_PATH = "servicelab/servicelab/.stack"
+    GIT_EMPTY_DIR = "servicelab/.git/"
+    GIT_CONFIG_FILE = "config"
+    GIT_USERNAME = "aaltman"
 
     def test_find_all_yaml_recurs(self):
         """ Tests for empty and non-empty yaml directories.
@@ -71,6 +78,35 @@ class TestHelperUtils(unittest.TestCase):
                 temp_dir + TestHelperUtils.YAML_EMPTY_DIR)
             self.assertItemsEqual(yaml_dirs, [])
 
+    def test_set_user(self):
+        """Test that a user is being grabbed from the .git/config file."""
+
+        with temporary_dir() as temp_dir:
+            os.makedirs(os.path.join(temp_dir, TestHelperUtils.DOTSTACK_PATH))
+            os.makedirs(os.path.join(temp_dir, TestHelperUtils.GIT_EMPTY_DIR))
+
+            content = ("[remote \"origin\"]\n"
+                       "        url = ssh://{0}@ccs-gerrit.cisco.com:"
+                       "29418/servicelab\n"
+                       "        fetch = +refs/heads/*:refs/remotes/origin/*\n"
+                       "[remote \"gerrit\"]\n"
+                       "        url = ssh://{0}@cis-gerrit.cisco.com:29418/servicelab\n"
+                       "        fetch = +refs/heads/*:refs/remotes/gerrit/*\n"
+                       "[submodule \"servicelab/.stack/services/ccs-data\"]\n"
+                       "        url = ssh://{0}@ccs-gerrit.cisco.com:29418/ccs-data\n"
+                       "".format(TestHelperUtils.GIT_USERNAME))
+
+            with open(os.path.join(temp_dir, TestHelperUtils.GIT_EMPTY_DIR,
+                                   TestHelperUtils.GIT_CONFIG_FILE), 'w') as f:
+                f.write(content)
+
+            returncode, username = helper_utils.set_user(
+                                    os.path.join(temp_dir,
+                                                 TestHelperUtils.DOTSTACK_PATH))
+
+        self.assertEqual(returncode, 0)
+        self.assertEqual(username, TestHelperUtils.GIT_USERNAME)
+        self.assertNotEqual(username, None)
 
 if __name__ == '__main__':
     unittest.main()
