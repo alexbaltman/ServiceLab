@@ -1,9 +1,14 @@
+import re
+import yaml
 import click
 from fabric.api import run
 from servicelab.stack import pass_context
 from servicelab.utils import helper_utils
 from servicelab.utils import service_utils
 from servicelab.utils import ccsbuildtools_utils
+from servicelab.utils import ccsdata_utils
+from servicelab.utils import yaml_utils
+from servicelab.utils.ccsdata_haproxy_utils import *
 
 
 @click.group('create', short_help='Creates pipeline resources to work with.',
@@ -137,14 +142,70 @@ def env_new(ctx, env_name, site, cont):
 
 # RFI: is this the right place for this integration w/ haproxy?
 @cli.command('vip')
-# It probably won't take in name
 @click.argument('vip_name')
 @click.argument('env_name')
-# Should be able to create a template for your service and use that too.
+@click.argument('service_entry')
+@click.option('location', '--loc', default="internal", callback=validate_location,
+              help="if the entry has to be put in internal or external haproxy")
+@click.option('ip', '--ip', callback=validate_ip, prompt=True,
+              help="ip associated with the vip")
+@click.option('server_ips', '--server_ips',
+              help="server ips associated with the vip")
+@click.option('server_hostnames', '--server_hostnames',
+              help="servers hostnames associated with the vip")
+@click.option('interactive', '--i', flag_value=True,
+              help="interactive editor")
 @pass_context
-def vip_new(ctx, vip_name, env_name):
+def vip_new(ctx, env_name, vip_name, service_entry, location, ip, server_ips,
+            server_hostnames, interactive):
     """
-    Create a new VIP in a site in ccs-data in order to integrate your
-    service with haproxy at that particular site.
+    Create a new VIP in all the sites having a partical environment env_name in
+    ccs-data. Add this service_entry as  haproxy service.
+
+    The haproxy instance can be internal or external. If the supplied haproxy
+    instance is missing from the environemt yaml file then service is not
+    added.
+
+    By default only certain entries will be generated. For instance:
+        stack create vip vip123 dev internal celiometer
+    will create the following entries in haproxy:
+
+        ccs::proxy_internal::haproxy_instances:
+          ceilometer:
+            port: 62970
+            server_ips: ceilometer
+            ssl: false
+            vip: '%%{}{hiera(''vip123'')}'
+
+    The port number is randomly generated port number and  ssl is always set to false.
+    The ip option specifies the ip associated with the specific vip_name. If supplied
+    then service_ips and service_hostnames are added.
+
+    One can also invoke the command in interactive mode where the haproxy instance
+    options can be specied and build dynamically.
+
     """
-    click.echo('Creating new vip entry in %s for %s' % (env_name, vip_name))
+    for sites in generate_env_for_site(ctx.path, env_name):
+        flag = False
+        for key in search(sites['env'], "%s::haproxy" % (location)):
+            sites['env'][vip_name] = ip
+            try:
+                subkey = next(search(sites['env'][key], service_entry))
+                sites['env'][key][subkey] = generate_tag_value(sites['env'],
+                                                               service_entry,
+                                                               vip_name,
+                                                               server_ips,
+                                                               server_hostnames,
+                                                               interactive)
+            except StopIteration, e:
+                sites['env'][key][service_entry] = generate_tag_value(sites['env'],
+                                                                      service_entry,
+                                                                      vip_name,
+                                                                      server_ips,
+                                                                      server_hostnames,
+                                                                      interactive)
+            save_ccsdata(ctx.path, sites['site'], env_name, sites['env'])
+            flag = True
+        if not flag:
+            click.echo("missing %s::haproxy in environment.yaml file for site %s"
+                       % (location, sites['site']))
