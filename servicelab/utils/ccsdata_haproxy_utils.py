@@ -114,7 +114,17 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
 
     Returns:
         Returns a completed haproxy entry
+        Below is an example of ceilometer entry dictionary created by this api.
 
+        {ceilometer:
+            {
+                port: 59083
+                server_names: u'*ceilometer_hostnames'
+                server_ips: u'*ceilometer_ips'
+                ssl: False
+                vip: u'%%{}{hiera(''my_vip_name'')}'
+            }
+        }
     """
 
     def _get_server_ip_name(complete_dict, entry, interactive):

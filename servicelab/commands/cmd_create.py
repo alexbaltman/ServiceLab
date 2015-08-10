@@ -141,6 +141,29 @@ def env_new(ctx, env_name, site, cont):
 
 
 # RFI: is this the right place for this integration w/ haproxy?
+def validate_location(ctx, param, value):
+    if value is None or value == "internal" or value == "external":
+        return value
+    else:
+        raise click.BadParameter("location can only be internal or extermal")
+
+
+def validate_ip(ctx, param, value):
+    if value is None:
+        return value
+
+    reg_ipv4 = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + \
+               "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + \
+               "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + \
+               "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$"
+    ipv4pat = re.compile(reg_ipv4)
+
+    if not ipv4pat.match(value):
+        raise click.BadParameter("invalid ip address ")
+
+    return value
+
+
 @cli.command('vip')
 @click.argument('vip_name')
 @click.argument('env_name')
