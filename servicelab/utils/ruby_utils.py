@@ -1,6 +1,6 @@
 import service_utils
+import helper_utils
 import logging
-import getpass
 import os
 import re
 
@@ -135,7 +135,7 @@ def setup_ruby(username=None):
         if username:
             pass
         else:
-            username = getpass.getuser()
+            helper_utils.set_user(ctx.path)
     # Add user(s) to rvm group
     # Make sure rvm is in path in .bashrc/.zshrc
     # service_utils.run_this("rvm install ruby-2.0.0-p481")

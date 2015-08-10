@@ -1,7 +1,7 @@
 import subprocess32 as subprocess
 import fileinput
 import logging
-import getpass
+import helper_utils
 import sys
 import os
 import re
@@ -117,7 +117,7 @@ def sync_data(path, username, branch):
     for line in fileinput.input(os.path.join(path_to_reporoot, ".gitmodules"), inplace=True):
         # TODO: replace aaltman --> can prob be more specific w/ the text to find and replace
         # Note: first string after var is search text and username is the replacement text
-        #       current username can be found on win and linux using getpass.getuser()
+        #       current username can be found on win and linux in .git/config
         print line.replace("aaltman", username),
 
     if not os.path.isdir(os.path.join(path, "services", data_reponame)):

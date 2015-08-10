@@ -1,6 +1,7 @@
 from servicelab.utils import service_utils
+from servicelab.utils import vagrant_utils
+from servicelab.utils import helper_utils
 from servicelab.stack import pass_context
-import getpass
 import click
 import sys
 import os
@@ -30,8 +31,8 @@ import os
 def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username,
         # service_name, target):
         target):
-    if username is None or "":
-        username = getpass.getuser()
+    if not username:
+        helper_utils.set_user(ctx.path)
     # TODO: Refactor this b/c duplicated in cmd_workon
     if os.path.isfile(os.path.join(ctx.path, "current")):
         current_file = os.path.join(ctx.path, "current")

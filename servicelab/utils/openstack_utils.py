@@ -1,7 +1,7 @@
 from keystoneclient.exceptions import AuthorizationFailure, Unauthorized
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client
-import getpass
+import helper_utils
 import logging
 import yaml
 import os
@@ -44,7 +44,7 @@ class SLab_OS(object):
             >>> a = SLab_OS(password="donttell", base_url="us-rdu-3")
         """
         if not username:
-            username = getpass.getuser()
+            helper_utils.set_user(ctx.path)
         self.path = path
         self.username = username
         self.password = password

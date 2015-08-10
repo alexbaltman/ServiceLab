@@ -1,7 +1,7 @@
 import click
 from fabric.api import run
-import getpass
 from servicelab.stack import pass_context
+from servicelab.utils import helper_utils
 from servicelab.utils import service_utils
 from servicelab.utils import ccsbuildtools_utils
 
@@ -82,7 +82,7 @@ def site_new(ctx, site_name, username, cont):
     click.echo('creating new site directory')
     # Get username
     if username is None or "":
-        username = getpass.getuser()
+        helper_utils.set_user(ctx.path)
     print "Retrieving latest ccs-data branch"
     service_utils.sync_data(ctx.path, username, "master")
     print "Retrieving latest ccs-build-tools branch"
@@ -119,7 +119,7 @@ def env_new(ctx, env_name, site, cont):
     click.echo('Creating new env yamls in %s for %s' % (site, env_name))
     # Get username
     # if username is None or "":
-    #    username = getpass.getuser()
+    #    helper_utils.set_user(ctx.path)
     # Ensure you have latest ccs-data branch
     # Might need to replace ".' with path to reporoot... from class context?
     # service_utils.sync_data("./servicelab/servicelab/.stack", username, master)
