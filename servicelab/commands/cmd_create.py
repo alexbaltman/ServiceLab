@@ -82,7 +82,7 @@ def site_new(ctx, site_name, username, cont):
     click.echo('creating new site directory')
     # Get username
     if username is None or "":
-        helper_utils.set_user(ctx.path)
+        returncode, username = helper_utils.set_user(ctx.path)
     print "Retrieving latest ccs-data branch"
     service_utils.sync_data(ctx.path, username, "master")
     print "Retrieving latest ccs-build-tools branch"

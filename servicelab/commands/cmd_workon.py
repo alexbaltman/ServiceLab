@@ -1,5 +1,6 @@
 from servicelab.stack import pass_context
 from servicelab.utils import service_utils
+from servicelab.utils import helper_utils
 import click
 import sys
 import os
@@ -20,7 +21,9 @@ import os
 def cli(ctx, interactive, branch, username, service_name):
     current = ""
     if username is None or "":
-        helper_utils.set_user(ctx.path)
+        import pdb
+        pdb.set_trace()
+        returncode, username = helper_utils.set_user(ctx.path)
     print "##ALMOST"
     if os.path.isfile(os.path.join(ctx.path, "current")):
         print "##ONE"

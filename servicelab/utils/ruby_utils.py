@@ -135,7 +135,9 @@ def setup_ruby(username=None):
         if username:
             pass
         else:
-            helper_utils.set_user(ctx.path)
+            returncode, username = helper_utils.set_user(ctx.path)
+            if returncode > 0:
+                ruby_utils_logger.error("Couldn't set user.")
     # Add user(s) to rvm group
     # Make sure rvm is in path in .bashrc/.zshrc
     # service_utils.run_this("rvm install ruby-2.0.0-p481")

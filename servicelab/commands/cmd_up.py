@@ -32,7 +32,7 @@ def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username,
         # service_name, target):
         target):
     if not username:
-        helper_utils.set_user(ctx.path)
+        returncode, username = helper_utils.set_user(ctx.path)
     # TODO: Refactor this b/c duplicated in cmd_workon
     if os.path.isfile(os.path.join(ctx.path, "current")):
         current_file = os.path.join(ctx.path, "current")

@@ -44,7 +44,9 @@ class SLab_OS(object):
             >>> a = SLab_OS(password="donttell", base_url="us-rdu-3")
         """
         if not username:
-            helper_utils.set_user(ctx.path)
+            returncode, username = helper_utils.set_user(ctx.path)
+            if returncode > 0:
+                openstack_utils_logger.error("Couldn't set username.")
         self.path = path
         self.username = username
         self.password = password
