@@ -24,13 +24,20 @@ Tested on CentOS 7::
 
 You should be good-to-go to begin using stack commands::
 
+    $ stack <command> <subcommand> [options and parameters]
+
+    Example:
+
     $ stack workon service-redhouse-tenant
 
 
-.. note::
-   servicelab/servicelab/.stack is the working directory
+The Stack CLI uses a multipart structure on the command line. It starts with the base call to ``stack``. The next part specifies a top-level command. The general CLI options, or the specific parameters for an operation, can be specified on the command line in any order. If an exclusive parameter is specified multiple times, then only the last value applies.
 
-   You must have all of the modules properly installed before you can run the program.
+
+.. note::
+   **servicelab/servicelab/.stack** is the working directory
+
+   **You must have all of the modules properly installed before you can run the program.**
 
    click==4.0
 
@@ -51,6 +58,10 @@ You should be good-to-go to begin using stack commands::
    python-vagrant==0.5.9
 
    cuisine==0.7.10
+
+   python-keystoneclient==1.3.2
+
+   python-neutronclient==2.3.12
 
 
 
