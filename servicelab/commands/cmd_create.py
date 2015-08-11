@@ -1,3 +1,4 @@
+import os
 import re
 import yaml
 import click
@@ -8,6 +9,7 @@ from servicelab.utils import service_utils
 from servicelab.utils import ccsbuildtools_utils
 from servicelab.utils import ccsdata_utils
 from servicelab.utils import yaml_utils
+from servicelab.utils import tc_vm_yaml_create
 from servicelab.utils.ccsdata_haproxy_utils import *
 
 
@@ -63,13 +65,23 @@ def repo_new(ctx, repo_name, kind):
 @click.option('-e', '--env', help='Choose an environment to put your host \
                into - use the list command to see what environments are \
                available.')
+@click.option('--vlan', help='Choose the vlan to add your vm to or default\
+                              is set to 66')
+@click.option('--flavor', help='Choose the flavor for the vm to run or\
+                               default is set to 2cpu.4ram.20-96sas')
 @pass_context
-def host_new(ctx, host_name, env):
+def host_new(ctx, host_name, env, vlan="66"):
     """
     Creates a host.yaml file in an environment so that a vm can then be
     booted.
     """
-    click.echo('creating new host yaml for %s ...' % host_name)
+    flavor = ''
+    role = ''
+    ccs_datapath = os.path.join(ctx.path, "services", "ccs-data")
+    our_sites = ccsdata_utils.list_envs_or_sites(ctx.path)
+    site = ccsdata_utils.get_site_from_env(our_sites, env)
+    # tc_vm_yaml_create.create_vm(ccs_datapath, host_name, site, env, flavor, vlan, role)
+    tc_vm_yaml_create.create_vm(ccs_datapath, host_name, str(site), str(env))
 
 
 @cli.command('site')
