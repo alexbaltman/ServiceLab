@@ -1,28 +1,30 @@
+Encryption
+==========
 
-**README : Generating Self-Signed CERTIFICATE AND PRIVATE ENCRYPTION KEY**
-**======================================================================**
+**Generating Self-Signed Certificate and Private Encryption Key**
 
-If a user would like to obtain an SSL certificate from a certificate authority 
-(CA), user must generate a certificate signing request (CSR). A CSR consists 
-mainly of the public key of a key pair, and some additional information. Both of 
+
+If a user would like to obtain an SSL certificate from a certificate authority
+(CA), user must generate a certificate signing request (CSR). A CSR consists
+mainly of the public key of a key pair, and some additional information. Both of
 these components are inserted into the certificate when it is signed.
 
-A common type of certificate that one can issue oneself is a self-signed 
-certificate that is signed with its own private key. Self-signed certificates 
-can be used to encrypt data just as well as CA-signed certificates, but users 
+A common type of certificate that one can issue oneself is a self-signed
+certificate that is signed with its own private key. Self-signed certificates
+can be used to encrypt data just as well as CA-signed certificates, but users
 of the certificate will be displayed a warning that says that the issuer of the
-certificate is not trusted by their computer or browser. Therefore 
-self-signed certificates should only be used if one does not need to prove ones 
+certificate is not trusted by their computer or browser. Therefore
+self-signed certificates should only be used if one does not need to prove ones
 service's identity to its users (e.g. non-production or non-public servers).
 
-A user can generate a 2048-bit private key and a self signed certificate  from
+A user can generate a 2048-bit private key and a self signed certificate from
 scratch using openssl. The private key is a PEM formatted file.
 
-PEM format is used for several type of data including encryption, authentication 
-and key management. The X.509 certificate is one of them.When viewed it is  DER 
-(distinguished encoding rules) encoded in base 64, stuck between plain-text 
-anchor lines (BEGIN CERTIFICATE and END CERTIFICATE). Below is an example of 
-PEM File:
+PEM format is used for several type of data including encryption, authentication
+and key management. The X.509 certificate is one of them.When viewed it is  DER
+(distinguished encoding rules) encoded in base 64, stuck between plain-text
+anchor lines (BEGIN CERTIFICATE and END CERTIFICATE). Below is an example of a
+PEM File::
 
     -----BEGIN CERTIFICATE-----
     MIIEczCCA1ugAwIBAgIBADANBgkqhkiG9w0BAQQFAD..AkGA1UEBhMCR0Ix
@@ -51,36 +53,46 @@ PEM File:
     7vQMfXdGsRrXNGRGnX+vWDZ3/zWI0joDtCkNnqEpVn..HoX
     -----END CERTIFICATE-----
 
-Data that is not between such lines is ignored, and is sometimes used for 
+Data that is not between such lines is ignored, and is sometimes used for
 comments, or for a human-readable dump of the encoded data.
 
-The following command creates a 2048-bit private key (domain.key) in PEM format 
-and a self-signed certificate (domain.crt) from scratch:
+The following command creates a 2048-bit private key (domain.key) in PEM format
+and a self-signed certificate (domain.crt) from scratch::
 
-openssl req \
-       -newkey rsa:2048 -nodes -keyout domain.key \
-       -x509 -out domain.crt
+    openssl req \
+            -newkey rsa:2048 -nodes -keyout domain.key \
+            -x509 -out domain.crt
 
-The -x509 option tells req to create a self-signed cerificate. 
+The ``-x509`` option tells req to create a self-signed cerificate.
+
 All the information for the certificate can be given in command line or
 input on CSR information prompt like:
 
     ---
     Country Name (2 letter code) [AU]:**US**
+
     State or Province Name (full name) [Some-State]:**North Carolina**
+
     Locality Name (eg, city) []:**RTP**
+
     Organization Name (eg, company) []:**Cisco**
+
     Organizational Unit Name (eg, section) []:**CCS**
+
     Common Name (e.g. server FQDN or YOUR name) []:**servicelab**
+
     Email Address []:**servicelab@cisco.com**
 
 
-                             **Testing the Generated Key**
-                             **-------------------------**
-Run python encryption to test the key and the cerificate as follows a string 
-"alpha" is encrypted and then the encrypted stringis decrypted to get the 
-original string back. Below is the sample:
-    **(env)-bash-4.2$ python encrypt_utils.py**
+Testing the Generated Key
+-------------------------
+
+Run python encryption to test the key and the cerificate as follows a string
+"alpha" is encrypted and then the encrypted stringis decrypted to get the
+original string back. Below is the sample::
+
+    $ python encrypt_utils.py
+
     ENCRYPT['alpha']=MIICAwYJKoZIhvcNAQcDoIIB9DCCAfACAQAxggGrMIIBpwIBADCBjjCBgDE
     LMAkGA1UEBhMCVVMxCzAJBgNVBAgMAk5DMQwwCgYDVQQHDANSVFAxDjAMBgNVBAoMBUNpc2NvMQw
     wCgYDVQQLDANDQ1MxEzARBgNVBAMMCnNlcnZpY2VsYWIxIzAhBgkqhkiG9w0BCQEWFHNlcnZpY2V
