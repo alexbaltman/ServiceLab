@@ -1,9 +1,11 @@
 from servicelab.utils import service_utils
+from servicelab.utils import yaml_utils
 from servicelab.utils import vagrant_utils
 from servicelab.utils import helper_utils
 from servicelab.stack import pass_context
 import click
 import sys
+import os
 
 
 @click.option('--ha', is_flag=True, default=False, help='Enables HA for core OpenStack components \
@@ -64,8 +66,28 @@ def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username,
     # ## write host
     # ## if it's not in
 
-    if os.path.isfile(os.path.join(path, xxx)):
+    # MIN WORKFLOW ======================================
+    if not os.path.isfile(os.path.join(ctx.path, "vagrant.yaml")):
+        with open(os.path.join(ctx.path, "vagrant.yaml"), 'w') as f:
+            f.write("")
 
-        yaml_utils.host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
-                                        box='http://cis-kickstart.cisco.com/ccs-rhel-7.box',
-                                        role=None, profile=None, domain=1, storage=0)
+    path_to_utils = os.path.split(path)
+    path_to_utils = os.path.join(path_to_utils[0], "utils")
+    pathto_vagrantyaml_template = os.path.join(path_to_utils, "vagrant.yaml")
+    returncode, allmin_vms = yaml_utils.getmin_OS_vms(pathto_vagrantyaml_template, ctx.path)
+    try:
+        for k in allmin_vms:
+            yaml_utils.host_add_vagrantyaml(ctx.path,
+                                            "vagrant.yaml",
+                                            k,
+                                            "ccs-dev-1",
+                                            memory=allmin_vms[k]['memory']
+                                            box=allmin_vms[k]['box']
+                                            role=allmin_vms[k]['role']
+                                            profile=allmin_vms[k]['profile']
+                                            domain=allmin_vms[k]['domain']
+                                            storage=allmin_vms[k]['storage']
+                                            )
+    except IOError as e:
+        ctx.logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
+        sys.exit(1)
