@@ -62,26 +62,40 @@ def repo_new(ctx, repo_name, kind):
 
 @cli.command('host')
 @click.argument('host_name')
-@click.option('-e', '--env', help='Choose an environment to put your host \
-               into - use the list command to see what environments are \
-               available.')
-@click.option('--vlan', help='Choose the vlan to add your vm to or default\
+@click.argument('env_name')
+@click.option('--vlan', default="66", help='Choose the vlan to add your vm to or default\
                               is set to 66')
-@click.option('--flavor', help='Choose the flavor for the vm to run or\
-                               default is set to 2cpu.4ram.20-96sas')
+@click.option('--flavor', default="2cpu.4ram.20-96sas", help='Choose the flavor for the vm.\
+                          Default is set to 2cpu.4ram.20-96sas')
+@click.option('--role', default='none', help='Choose the role of the vm if needed, or the\
+                          default is "none"')
+@click.option('--group', help='Choose the group, default is virtual')
+@click.option('--sec-groups', help='Choose the security groups, comma delimited')
 @pass_context
-def host_new(ctx, host_name, env, vlan="66"):
+def host_new(ctx, host_name, env_name, vlan, flavor, role, group, sec_groups):
     """
     Creates a host.yaml file in an environment so that a vm can then be
     booted.
+
+    HOST_NAME can be the service name and number - my-service-001
+
+    ENV_NAME is the name of the tenant cloud.  Use 'stack list envs' to show all tenants
     """
-    flavor = ''
-    role = ''
+    import pprint
+    pp = pprint.PrettyPrinter(indent=2)
     ccs_datapath = os.path.join(ctx.path, "services", "ccs-data")
     our_sites = ccsdata_utils.list_envs_or_sites(ctx.path)
-    site = ccsdata_utils.get_site_from_env(our_sites, env)
-    # tc_vm_yaml_create.create_vm(ccs_datapath, host_name, site, env, flavor, vlan, role)
-    tc_vm_yaml_create.create_vm(ccs_datapath, host_name, str(site), str(env))
+    site = ccsdata_utils.get_site_from_env(our_sites, env_name)
+    # all_ips = yaml_utils.get_allips_forsite(ctx.path, site)
+    # pp.pprint(all_ips)
+    groups = ['virtual', str(group)]
+    if sec_groups:
+        sec_groups = 'default,' + sec_groups
+    else:
+        sec_groups = 'default'
+        tc_vm_yaml_create.create_vm(ccs_datapath, host_name, str(site), str(env_name),
+                                    str(flavor), str(vlan), str(role), groups,
+                                    str(sec_groups))
 
 
 @cli.command('site')
