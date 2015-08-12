@@ -85,3 +85,40 @@ def set_user(path):
                 username = matches.group(1)
                 return 0, username
     return 1, username
+
+
+def get_current_service(path):
+    """Get the service last set by the user if it exists.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+    Returns:
+        Returncode (int):
+            0 -- Success
+            1 -- Failure
+        current_service (str): Return the current service as a string that
+                               represents the last service set by the user.
+                               It's found through the working directory file
+                               called current, which should have a single
+                               one word string.
+
+    Example Usage:
+        >>> print ctx.path
+        /Users/aaltman/Git/servicelab/servicelab/.stack
+        >>> print get_current_service(ctx.path)
+        (0, service-redhouse-tenant)
+    """
+
+    if os.path.isfile(os.path.join(path, "current")):
+            current_file = os.path.join(path, "current")
+            f = open(current_file, 'r')
+            # TODO: verify that current is set to something sane.
+            current = f.readline()
+            if current == "":
+                helper_utils_logger.error("No service set.")
+                return 1, current
+            else:
+                helper_utils_logger.debug("Working on %s" % (current))
+                return 0, current

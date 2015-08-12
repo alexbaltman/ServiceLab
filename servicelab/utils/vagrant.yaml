@@ -7,6 +7,7 @@ hosts:
     mac: "000027000030"
     memory: 1024
     box: "http://cis-kickstart.cisco.com/ccs-rhel7.box"
+    min: True
   infra-002:
     role: build
     domain: 1
@@ -16,6 +17,7 @@ hosts:
     memory: 1024
     box: "http://cis-kickstart.cisco.com/ccs-rhel7.box"
   keystonectl-001:
+    min: True
     role: tenant_keystone_ctl
     domain: 1
     profile: tenant
@@ -160,6 +162,7 @@ hosts:
     memory: 1024
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   proxyinternal-001:
+    min: True
     role: tenant_proxy_internal
     domain: 1
     profile: tenant
@@ -176,6 +179,7 @@ hosts:
     memory: 512
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   proxyexternal-001:
+    min: True
     role: tenant_proxy_external
     domain: 1
     profile: tenant
@@ -215,6 +219,7 @@ hosts:
     mac: "000027000012"
     memory: 512
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
+    min: True
   db-002:
     role: tenant_db
     domain: 1

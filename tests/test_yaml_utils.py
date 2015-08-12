@@ -91,13 +91,11 @@ class TestYamlUtils(unittest.TestCase):
         """
         self.assertEquals(
             yaml_utils.host_exists_vagrantyaml(
-                TestYamlUtils.VAGRANT_YAML,
                 TestYamlUtils.HOSTNAME,
-                TestYamlUtils.VAGRANT_YAML_DIR),
+                os.path.join(TestYamlUtils.VAGRANT_YAML_DIR, "tests")),
             0)
         self.assertEquals(
             yaml_utils.host_exists_vagrantyaml(
-                TestYamlUtils.VAGRANT_YAML,
                 TestYamlUtils.NONEXISTING_HOSTNAME,
                 TestYamlUtils.VAGRANT_YAML_DIR),
             1)
@@ -123,7 +121,6 @@ class TestYamlUtils(unittest.TestCase):
                 0)
             self.assertEquals(
                 yaml_utils.host_exists_vagrantyaml(
-                    TestYamlUtils.VAGRANT_YAML_FILE,
                     TestYamlUtils.ADD_HOSTNAME,
                     temp_dir),
                 0)
@@ -156,7 +153,6 @@ class TestYamlUtils(unittest.TestCase):
                 0)
             self.assertEquals(
                 yaml_utils.host_exists_vagrantyaml(
-                    TestYamlUtils.VAGRANT_YAML,
                     TestYamlUtils.ADD_HOSTNAME,
                     temp_dir),
                 1)
