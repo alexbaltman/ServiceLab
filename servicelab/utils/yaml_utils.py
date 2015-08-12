@@ -21,6 +21,7 @@ def validate_syntax(file_name):
 
     Args:
         file_name (str): pathway to file to validate
+
     Returns:
         0 -- Success
         1 -- failure, possibly because
@@ -42,18 +43,17 @@ def validate_syntax(file_name):
     return 0
 
 
-def host_exists_vagrantyaml(file_name, hostname, path):
+def host_exists_vagrantyaml(hostname, pathto_yaml):
     """Check if provided host is in vagrant.yaml file.
 
     Args:
-        file_name (str): Typically vagrant.yaml, but can be any yaml file
-                         containing host definitions that follows the
-                         structure {host: {hostname_here: {etc.
         hostname (str): The name of the host you would like added to the
                         yaml file.
-        path (str): The path to your working .stack directory. Typically,
+        pathto_yaml (str): The path to your working .stack directory. Typically,
                     this looks like ./servicelab/servicelab/.stack where "."
                     is the path to the root of the servicelab repository.
+                    But, it can be to the ./servicelab/servicelab/Utils
+                    where the reference vagrant.yaml file is.
 
     Returns:
         Returncode (int):
@@ -74,17 +74,17 @@ def host_exists_vagrantyaml(file_name, hostname, path):
                 etc.
 
     Example Usage:
-        >>> print host_exists_vagrantyaml("vagrant.yaml", "proxyinternal-001",
+        >>> print host_exists_vagrantyaml( "proxyinternal-001",
                                           "/Users/aaltman/Git/servicelab/servicelab/.stack")
         0
     """
-    retcode = validate_syntax(os.path.join(path, file_name))
+    retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
     if retcode > 0:
         yaml_utils_logger.error("Invalid yaml file")
         return 1
     # Note: load vagrant yaml file
     try:
-        with open(os.path.join(path, file_name), 'r') as f:
+        with open(os.path.join(pathto_yaml, "vagrant.yaml"), 'r') as f:
             doc = yaml.load(f)
 
             # EXP: Prints top lvl, aka d = "hosts", doc = dictofyaml
@@ -98,6 +98,129 @@ def host_exists_vagrantyaml(file_name, hostname, path):
     except IOError as error:
         yaml_utils_logger.error('File error: ' + str(error))
         return 1
+
+
+def gethost_byname(hostname, pathto_yaml):
+    """Return a vagrant.yaml single host values dictionary from
+       the long dictionary of hostnames.
+
+    Args:
+        hostname (str): The name of the host you would like grabbed from the
+                        yaml file.
+        pathto_yaml (str): The path to your the yaml file directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+    Returns:
+        Returncode (int):
+            0 -- Success
+            1 -- Failure
+        Host key values (dict): See the example usage for the data structure
+                                that is returned.
+
+    Example Usage:
+        >>> print path
+        /Users/aaltman/Git/servicelab/servicelab/utils/
+        >>> print gethost_byname("vagrant.yaml", "aio-001",
+                                  path)
+        0, {'aio-001': {'profile': 'aio',
+                        'box': 'http://cis-kickstart.cisco.com/ccs-rhel-7.box',
+                        'domain': 1,
+                        'role': 'aio',
+                        'memory': 1024,
+                        'ip': '192.168.100.21',
+                        'mac': '000027000021'}
+           }
+    """
+    retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
+    if retcode > 0:
+        yaml_utils_logger.error("Invalid yaml file")
+        return 1
+    # Note: load vagrant yaml file
+    try:
+        with open(os.path.join(pathto_yaml, "vagrant.yaml"), 'r') as f:
+            doc = yaml.load(f)
+            yourdict = doc['hosts'][hostname]
+            if not yourdict:
+                yaml_utils_logger.debug("Found host:" + hostname)
+                return 1, yourdict
+            else:
+                yourdict = {hostname: yourdict}
+                return 0, yourdict
+    except IOError as error:
+        yaml_utils_logger.error('File error: ' + str(error))
+        return 1, yourdict
+
+
+def getmin_OS_vms(pathto_yaml, path):
+    """Return a list of host dictionaries that have min set to True in the vagrant.yaml
+
+       This is the minimum set of hosts required to have a working ccs platform
+       Openstack environment running. Only a few hosts have min: True set in the
+       vagrant.yaml.
+
+    Args:
+        pathto_yaml (str): The path to your the yaml file directory. This should
+                           really be your template vagrant.yaml file where we have
+                           already set the expected values for a given host.
+    Returns:
+        Returncode (int):
+            0 -- Success
+            1 -- Failure
+        Hosts (list): This is a list of dictionaries. See the example usage for
+                      the data structure that is returned.
+
+    Example Usage:
+        >>> print getmin_OS_vms('/Users/aaltman/Git/servicelab/servicelab/utils')
+        0, [{'aio-001': {'profile': 'aio',
+                         'box': 'http://cis-kickstart.cisco.com/ccs-rhel-7.box',
+                         'domain': 1,
+                         'role': 'aio',
+                         'memory': 1024,
+                         'ip': '192.168.100.21',
+                         'mac': '000027000021'},
+            }
+            {'db-001': { 'role': 'tenant_db'
+                         'domain': 1
+                         'profile': 'tenant'
+                         'ip': '192.168.100.12'
+                         'mac': '000027000012'
+                         'memory': 512
+                         'box': 'http://cis-kickstart.cisco.com/ccs-rhel-7.box'
+                         'min': True
+            }
+            ...
+           ]
+
+    RFI: min: True the true is boolean/string?
+    """
+    host_list = []
+    retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
+    if retcode > 0:
+        yaml_utils_logger.error("Invalid yaml file")
+        return 1, host_list
+    # Note: load vagrant yaml file
+    try:
+        with open(os.path.join(pathto_yaml, "vagrant.yaml"), 'r') as f:
+            doc = yaml.load(f)
+            for host in doc['hosts']:
+                for k in doc['hosts'][host]:
+                    if k == "min":
+                        returncode, host_dict = gethost_byname(host, pathto_yaml)
+                        if returncode == 0:
+                            host_list.append(host_dict)
+                        else:
+                            yaml_utils_logger.error('failed to retrieve a host from\
+                                                    vagrant.yaml')
+                            return 1, host_list
+
+        if not host_list:
+            yaml_utils_logger.error('No hosts in host_list')
+            return 1, host_list
+        else:
+            return 0, host_list
+    except IOError as error:
+        yaml_utils_logger.error('File error: ' + str(error))
+        return 1, host_list
 
 
 def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
@@ -193,7 +316,7 @@ def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
             storage -= 1
 
     memory *= 512
-    if host_exists_vagrantyaml(file_name, hostname, path):
+    if host_exists_vagrantyaml(hostname, path):
         # Note: load vagrant yaml file
         try:
             with open(os.path.join(path, file_name), 'r') as f:
@@ -253,7 +376,7 @@ def host_del_vagrantyaml(path, file_name, hostname):
                                     "/Users/aaltman/Git/servicelab/servicelab/.stack")
         0
     """
-    if not host_exists_vagrantyaml(file_name, hostname, path):
+    if not host_exists_vagrantyaml(hostname, path):
         try:
             with open(os.path.join(path, file_name), 'r') as f:
                 doc = yaml.load(f)

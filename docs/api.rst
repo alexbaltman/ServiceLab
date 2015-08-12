@@ -70,8 +70,11 @@ Utilities
 .. automodule:: servicelab.utils.vagrant_utils
    :members:
 
-.. automodule:: servicelab.utils.vagrantfile_utils
+.. automodule:: servicelab.utils.Vagrantfile_utils
    :members:
 
 .. automodule:: servicelab.utils.yaml_utils
+   :members:
+
+.. automodule:: servicelab.utils.openstack_utils
    :members:
