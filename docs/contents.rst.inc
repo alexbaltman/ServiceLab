@@ -6,11 +6,12 @@ Stack Documentation
 
    installation
    overview
+   examples
    commands
    encryption
 
-Stack API
----------
+Stack Packages
+--------------
 .. toctree::
    :maxdepth: 2
 
