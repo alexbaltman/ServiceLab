@@ -33,6 +33,7 @@ def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username,
         returncode, username = helper_utils.set_user(ctx.path)
 
     returncode, current_service = helper_utils.get_current_service(ctx.path)
+    # RFI: may not matter if returns 1 if we aren't using current_service
     if returncode > 0:
         ctx.error("Failed to get the current service")
         sys.exit(1)
@@ -62,21 +63,36 @@ def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username,
     # if not in profile
     # #check if host exists
     # # if not
-    # ## read host from template
+    # ## read host from templ
     # ## write host
     # ## if it's not in
 
-    # MIN WORKFLOW ======================================
+    # ALL ===============================================
     if not os.path.isfile(os.path.join(ctx.path, "vagrant.yaml")):
         with open(os.path.join(ctx.path, "vagrant.yaml"), 'w') as f:
             f.write("")
 
     path_to_utils = os.path.split(path)
     path_to_utils = os.path.join(path_to_utils[0], "utils")
-    pathto_vagrantyaml_template = os.path.join(path_to_utils, "vagrant.yaml")
-    returncode, allmin_vms = yaml_utils.getmin_OS_vms(pathto_vagrantyaml_template, ctx.path)
+    pathto_vagrantyaml_templ = os.path.join(path_to_utils, "vagrant.yaml")
+
+    # MIN WORKFLOW ======================================
+    returncode, allmin_vms = yaml_utils.getmin_OS_vms(pathto_vagrantyaml_templ)
+    if returcode > 0:
+        ctx.logger.error("Couldn't get the vms for the min OS env")
+        sys.exit(1)
     try:
+        ha_vms = []
         for k in allmin_vms:
+            if ha:
+                ha_vm = k.replace("001", "002")
+                returncode, ha_vm_dict = yaml_utils.gethost_byname(ha_vm,
+                                                                   pathto_vagrantyaml_templ)
+                if returncode > 0:
+                    ctx.logger.error("Couldn't get the vm {0} for HA".format(ha_vm))
+                    sys.exit(1)
+                else:
+                    allmin_vms.append(ha_vm_dict)
             yaml_utils.host_add_vagrantyaml(ctx.path,
                                             "vagrant.yaml",
                                             k,
@@ -88,6 +104,19 @@ def cli(ctx, ha, full, osp_aio, interactive, branch, rhel7, username,
                                             domain=allmin_vms[k]['domain']
                                             storage=allmin_vms[k]['storage']
                                             )
+
     except IOError as e:
         ctx.logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
         sys.exit(1)
+
+    # FULL WORKFLOW ================================
+    returncode, all_OS_vms = yaml_utils.getfull_OS_vms(pathto_vagrantyaml_templ, "001")
+    if returcode > 0:
+        ctx.logger.error("Couldn't get the vms for the full OS env")
+
+    # Added FULL HA =============================
+    returncode, all_OS_havms = yaml_utils.getfull_OS_vms(pathto_vagrantyaml_templ, "002")
+    if returcode > 0:
+        ctx.logger.error("Couldn't get the vms for the full OS env")
+
+    # RHEL7 WORKFLOW ===============================

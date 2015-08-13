@@ -151,7 +151,7 @@ def gethost_byname(hostname, pathto_yaml):
         return 1, yourdict
 
 
-def getmin_OS_vms(pathto_yaml, path):
+def getmin_OS_vms(pathto_yaml):
     """Return a list of host dictionaries that have min set to True in the vagrant.yaml
 
        This is the minimum set of hosts required to have a working ccs platform
@@ -205,6 +205,82 @@ def getmin_OS_vms(pathto_yaml, path):
             for host in doc['hosts']:
                 for k in doc['hosts'][host]:
                     if k == "min":
+                        returncode, host_dict = gethost_byname(host, pathto_yaml)
+                        if returncode == 0:
+                            host_list.append(host_dict)
+                        else:
+                            yaml_utils_logger.error('failed to retrieve a host from\
+                                                    vagrant.yaml')
+                            return 1, host_list
+
+        if not host_list:
+            yaml_utils_logger.error('No hosts in host_list')
+            return 1, host_list
+        else:
+            return 0, host_list
+    except IOError as error:
+        yaml_utils_logger.error('File error: ' + str(error))
+        return 1, host_list
+
+
+def getfull_OS_vms(pathto_yaml, vmname_ending_in):
+    """Return a list of host dictionaries where the vm's name ends in 001 or 002.
+
+       This is the set of hosts required for a full CCS platform Openstack
+       environment. They're being discovered dynamically from our template
+       vagrant.yaml. We allow 001 or 002 becuase 002s are needed for HA and
+       it's essentially the same operation.
+
+    Args:
+        pathto_yaml (str): The path to your the yaml file directory. This should
+                           really be your template vagrant.yaml file where we have
+                           already set the expected values for a given host.
+        vmname_ending_in (int/string): Is a number, but will be set to a string before
+                                       being operated on. This is the number that the
+                                       vms name ends in.
+
+    Returns:
+        Returncode (int):
+            0 -- Success
+            1 -- Failure
+        Hosts (list): This is a list of dictionaries. See the example usage for
+                      the data structure that is returned.
+
+    Example Usage:
+        >>> print getfull_OS_vms('/Users/aaltman/Git/servicelab/servicelab/utils')
+        0, [{'aio-001': {'profile': 'aio',
+                         'box': 'http://cis-kickstart.cisco.com/ccs-rhel-7.box',
+                         'domain': 1,
+                         'role': 'aio',
+                         'memory': 1024,
+                         'ip': '192.168.100.21',
+                         'mac': '000027000021'},
+            }
+            {'db-001': { 'role': 'tenant_db'
+                         'domain': 1
+                         'profile': 'tenant'
+                         'ip': '192.168.100.12'
+                         'mac': '000027000012'
+                         'memory': 512
+                         'box': 'http://cis-kickstart.cisco.com/ccs-rhel-7.box'
+                         'min': True
+            }
+            ...
+           ]
+    """
+    host_list = []
+    vmname_ending_in = str(vmname_ending_in)
+    retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
+    if retcode > 0:
+        yaml_utils_logger.error("Invalid yaml file")
+        return 1, host_list
+    try:
+        with open(os.path.join(pathto_yaml, "vagrant.yaml"), 'r') as f:
+            doc = yaml.load(f)
+            for host in doc['hosts']:
+                    # RFI: probably want to compile something more specific here like -001/2$
+                    #      as regex
+                    if vmname_ending_in in host:
                         returncode, host_dict = gethost_byname(host, pathto_yaml)
                         if returncode == 0:
                             host_list.append(host_dict)
