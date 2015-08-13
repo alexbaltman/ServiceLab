@@ -267,6 +267,71 @@ def _load_vagrantyaml(path):
 # Ruby: File.open(".ccs_vagrant_hosts", "w") {|f| f.write(host_entries.join("\n")) }
 
 
+def _vbox_os_provider_env_vars(float_net, tenant_nets):
+    '''Function will accept a float_net string and a tenant_nets list of dicts.
+        The dicts are of the format {'name':'network_name', 'ip':True}.
+        The ip key will be true if vagrant.yaml has an ip for the host.
+        It will return a dict with the OpenStack username, password,
+        tenant_name, auth_url, network_url, image_url, floating_ip_pool and networks
+        to be used for developing the Vagrant file'''
+    env_vars = {}
+    env_vars['username'] = os.environ.get('OS_USERNAME')
+    env_vars['password'] = os.environ.get('OS_PASSWORD')
+    env_vars['openstack_auth_url'] = os.environ.get('OS_AUTH_URL')
+    env_vars['tenant_name'] = os.environ.get('OS_TENANT_NAME')
+    env_vars['floating_ip_pool'] = str(float_net)
+    networks = _vbox_os_provider_parse_multiple_networks(tenant_nets)
+    env_vars['networks'] = networks
+    openstack_network_url = None
+    openstack_image_url = None
+    if (env_vars.get('openstack_auth_url')):
+        proto, baseurl, port = env_vars.get('openstack_auth_url').split(':')
+        openstack_network_url = proto + baseurl + ":9696/v2.0"
+        openstack_image_url = proto + baseurl + ":9292/v2/"
+    env_vars['openstack_network_url'] = openstack_network_url
+    env_vars['openstack_image_url'] = openstack_image_url
+    return env_vars
+
+
+def _vbox_os_provider_parse_multiple_networks(tenant_nets):
+    '''Function accepts a list of dicts with each dict containing
+       the tenant network name and a boolean to indicate if there is an ip in
+       the vagrant.yaml. It will return a string of networks to be used in
+       the construction of the Vagrantfile'''
+    stl_without_ip = "{name: '%s'},"
+    stl_with_ip = "{name: '%s', address: ho['ip']},"
+    vagrant_network = ''
+    for net in tenant_nets:
+        if not net['ip']:
+            vagrant_network = vagrant_network + stl_without_ip % net['name']
+        if net['ip']:
+            vagrant_network = vagrant_network + stl_with_ip % net['name']
+    vagrant_network = '[' + vagrant_network[:-1] + ']'
+    return vagrant_network
+
+
+def _vbox_os_provider_host_vars(path, host):
+    '''Function will except a path to the .stack directory and the host being
+        booted. It will navigate to the ccs-devel directory, find the
+        corresponding host.yaml file, parse it and return a dict with flavor,
+        and image used for the host'''
+    host_vars = {}
+    relpath_to_yaml = 'services/ccs-data/sites/ccs-dev-1/environments/dev-tenant/hosts.d/'
+    if (os.path.exists(path)):
+        path = os.path.join(path, relpath_to_yaml)
+        if (os.path.exists(path)):
+            path = os.path.join(path, host.lower()+'.yaml')
+            if os.path.exists(path):
+                try:
+                    with open(path) as host_yaml:
+                        host_data = yaml.load(host_yaml)
+                        host_vars['image'] = host_data.get('deploy_args').get('image')
+                        host_vars['flavor'] = host_data.get('deploy_args').get('flavor')
+                        return host_vars
+                except:
+                    return None
+
+
 def _vbox_provider_configure():
     """Returns configuration for Vagrantfile with the VirtualBox provider
 
