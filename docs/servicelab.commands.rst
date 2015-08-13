@@ -42,7 +42,7 @@ cmd_list module
     :show-inheritance:
 
 cmd_nuclear module
--------------------
+------------------
 
 .. automodule:: servicelab.commands.cmd_nuclear
     :members:

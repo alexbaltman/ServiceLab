@@ -11,33 +11,37 @@ $ stack
 Quick start
 -----------
 
-    $ yum install python-devel
+::
+        $ yum install python-devel
 
-    $ git clone ssh://ccs-gerrit.cisco.com:29418/servicelab
+        $ git clone ssh://ccs-gerrit.cisco.com:29418/servicelab
 
-    $ cd servicelab
+        $ cd servicelab
 
-    $ virtualenv venv
+        $ virtualenv venv
 
-    $ . venv/bin/activate
+        $ . venv/bin/activate
 
-    $ pip install -e .
+        $ pip install -e .
 
-    $ pip install -r requirements.txt
+        $ pip install -r requirements.txt
 
 
 Afterwards, your CLI should be available:
 
-    $ stack
+::
+        $ stack
 
 Making the Documentation
 ------------------------
 
 The Servicelab docs use Sphinx to generate documentation. All of the docs are located in the docs/ directory. To generate the html documentation, cd into the docs directory and run make html::
 
-    $ cd docs
-    $ make html
 
-The generated documentation will be in the docs/_build/html directory. The source for the documentation is located in docs/source directory, and uses restructured text for the markup language.
+        $ cd docs
+        $ make html
 
-    $ firefox _build/html/index.html
+
+The generated documentation will be in the docs/_build/html directory. The source for the documentation is located in docs/source directory, and uses restructured text for the markup language.::
+
+        $ firefox _build/html/index.html

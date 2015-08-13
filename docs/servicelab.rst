@@ -1,9 +1,6 @@
 servicelab package
 ==================
 
-Submodules
-----------
-
 servicelab.errors module
 ------------------------
 

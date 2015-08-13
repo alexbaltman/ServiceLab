@@ -38,7 +38,8 @@ extensions = ['jinjaext',
               'sphinx.ext.doctest',
               'sphinx.ext.todo',
               'sphinx.ext.coverage',
-              'sphinx.ext.intersphinx']
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

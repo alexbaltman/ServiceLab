@@ -1,7 +1,9 @@
 Workflow
 ========
 
-``>>> stack``
+Input::
+
+    $ stack
 
 Output::
 
@@ -33,8 +35,9 @@ Output::
     validate  Validate resources.
     workon    Call a service that you would like to              work on.
 
+Input::
 
-``>>> stack find repo bdaas``
+   $ stack find repo bdaas
 
 Output::
 
@@ -45,8 +48,9 @@ Output::
     service-ccs-portal-bdaas
     service-ccs-portal-bdaas-backend
 
+Input::
 
-``>>> stack workon ccs-portal-bdaas``
+ $ stack workon ccs-portal-bdaas 
 
 Output::
 
@@ -57,16 +61,22 @@ Output::
     Receiving objects: 100% (1390/1390), 3.91 MiB | 324.00 KiB/s, done.
     Resolving deltas: 100% (680/680), done.
 
+Input::
 
-``>>> cd ccs-portal-bdas``
+ $ cd ccs-portal-bdas 
 
 *Make edits.*
 
-``>>> stack review``
+
+Input::
+
+ $ stack review 
+
 
 
 **Other Examples**
 
-```>>> stack up --full --env <envname> --deploy-to <env to deploy to> --project <project name>```
+
+ $ stack up --full --env <envname> --deploy-to <env to deploy to> --project <project name>
 
 

@@ -18,7 +18,7 @@ ccsdata_haproxy_utils module
     :show-inheritance:
 
 ccsdata_utils module
--------------------------------------
+--------------------
 
 .. automodule:: servicelab.utils.ccsdata_utils
     :members:
@@ -26,7 +26,7 @@ ccsdata_utils module
     :show-inheritance:
 
 encrypt_utils module
--------------------------------------
+--------------------
 
 .. automodule:: servicelab.utils.encrypt_utils
     :members:
@@ -35,7 +35,7 @@ encrypt_utils module
 
 
 helper_utils module
-------------------------------------
+-------------------
 
 .. automodule:: servicelab.utils.helper_utils
     :members:
@@ -43,7 +43,7 @@ helper_utils module
     :show-inheritance:
 
 openstack_utils module
----------------------------------------
+----------------------
 
 .. automodule:: servicelab.utils.openstack_utils
     :members:
@@ -51,7 +51,7 @@ openstack_utils module
     :show-inheritance:
 
 ruby_utils module
-----------------------------------
+-----------------
 
 .. automodule:: servicelab.utils.ruby_utils
     :members:
@@ -59,7 +59,7 @@ ruby_utils module
     :show-inheritance:
 
 service_utils module
--------------------------------------
+--------------------
 
 .. automodule:: servicelab.utils.service_utils
     :members:
@@ -75,7 +75,7 @@ tc_vm_yaml_create module
     :show-inheritance:
 
 vagrant_utils module
--------------------------------------
+--------------------
 
 .. automodule:: servicelab.utils.vagrant_utils
     :members:
@@ -83,7 +83,7 @@ vagrant_utils module
     :show-inheritance:
 
 Vagrantfile_utils module
------------------------------------------
+------------------------
 
 .. automodule:: servicelab.utils.Vagrantfile_utils
     :members:
@@ -91,7 +91,7 @@ Vagrantfile_utils module
     :show-inheritance:
 
 yaml_utils module
-----------------------------------
+-----------------
 
 .. automodule:: servicelab.utils.yaml_utils
     :members:

@@ -5,7 +5,7 @@ This is the holy grail. The collection of key/value pairs that describes all the
 
 Clone it::
 
-    >>> git clone ssh://ccs-gerrit.cisco.com:29418/ccs-data
+    $ git clone ssh://ccs-gerrit.cisco.com:29418/ccs-data
 
 Overview
 --------

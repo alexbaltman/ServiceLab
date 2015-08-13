@@ -30,7 +30,7 @@ create
 
 ex::
 
-   >>> stack create site rtp42-svc-test
+   $ stack create site rtp42-svc-test
 
 destroy
 -------
@@ -49,7 +49,7 @@ destroy
 
 ex::
 
-   >>> stack destroy repo service-test
+   $ stack destroy repo service-test
 
 
 enc
@@ -60,7 +60,7 @@ Encrypts a value to be put into ccs-data.
 
 ex::
 
-   >>> stack enc
+   $ stack enc
 
 
 find
@@ -89,7 +89,7 @@ Helps you search for resources in the SDLC pipeline.
 
 ex::
 
-   >>> stack find repo service
+   $ stack find repo service
 
 
 list
@@ -114,7 +114,7 @@ Listing sites and services of ccs-data
 
 ex::
 
-   >>> stack list sites
+   $ stack list sites
 
 nuclear
 -------
@@ -144,7 +144,7 @@ Helps you work with Gerrit.
 
 ex::
 
-   >>> stack review
+   $ stack review
 
 
 show
@@ -178,7 +178,7 @@ Helps you show the details of resources in the SDLC pipeline.
 
 ex::
 
-   >>> stack show repo
+   $ stack show repo
 
 
 status
@@ -188,7 +188,7 @@ Shows the status of your working servicelab environment.
 
 ex::
 
-   >>> stack status
+   $ stack status
 
 
 up
@@ -215,7 +215,7 @@ Options:
 
 Example::
 
-   >>> stack up --full
+   $ stack up --full
 
 validate
 --------
@@ -224,7 +224,7 @@ Validates a yaml file's syntax.
 
 ex::
 
-   >>> stack validate test.yml
+   $ stack validate test.yml
 
 
 workon
@@ -248,4 +248,4 @@ Args:
 
 ex::
 
-   >>> stack workon service-redhouse-tenant
+   $ stack workon service-redhouse-tenant
