@@ -233,7 +233,7 @@ Calls a service that you would like to work on. Inits the repo, links it, create
 
 If it doesn't work, change the username = getpass.getuser()
 
-Use a userid that matches yoru CEC
+Use a userid that matches your CEC
 
 Options:
    ``-i, --interactive``: Walk through booting VMs

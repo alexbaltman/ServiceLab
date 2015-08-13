@@ -135,3 +135,22 @@ def list_envs_or_sites(path):
                 pass
 
     return our_sites
+
+
+def get_site_from_env(our_sites, env):
+    """Given our_sites data structure find the parent site to the given environment.
+
+    Args:
+    our_sites (dict of dict of list):
+    env (string):
+
+    Returns:
+        blah
+
+    Example Usage:
+        >>>
+    """
+    for k in our_sites:
+        for x in our_sites[k]:
+            if x == env:
+                return k

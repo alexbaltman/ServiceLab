@@ -1,15 +1,23 @@
 servicelab.utils package
 ========================
 
-servicelab.utils.Vagrantfile_utils module
------------------------------------------
+ccsbuildtools_utils module
+--------------------------
 
-.. automodule:: servicelab.utils.Vagrantfile_utils
+.. automodule:: servicelab.utils.ccsbuildtools_utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-servicelab.utils.ccsdata_utils module
+ccsdata_haproxy_utils module
+----------------------------
+
+.. automodule:: servicelab.utils.ccsdata_haproxy_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ccsdata_utils module
 -------------------------------------
 
 .. automodule:: servicelab.utils.ccsdata_utils
@@ -17,7 +25,7 @@ servicelab.utils.ccsdata_utils module
     :undoc-members:
     :show-inheritance:
 
-servicelab.utils.encrypt_utils module
+encrypt_utils module
 -------------------------------------
 
 .. automodule:: servicelab.utils.encrypt_utils
@@ -25,15 +33,8 @@ servicelab.utils.encrypt_utils module
     :undoc-members:
     :show-inheritance:
 
-servicelab.utils.engine module
-------------------------------
 
-.. automodule:: servicelab.utils.engine
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-servicelab.utils.helper_utils module
+helper_utils module
 ------------------------------------
 
 .. automodule:: servicelab.utils.helper_utils
@@ -41,7 +42,7 @@ servicelab.utils.helper_utils module
     :undoc-members:
     :show-inheritance:
 
-servicelab.utils.openstack_utils module
+openstack_utils module
 ---------------------------------------
 
 .. automodule:: servicelab.utils.openstack_utils
@@ -49,7 +50,7 @@ servicelab.utils.openstack_utils module
     :undoc-members:
     :show-inheritance:
 
-servicelab.utils.ruby_utils module
+ruby_utils module
 ----------------------------------
 
 .. automodule:: servicelab.utils.ruby_utils
@@ -57,7 +58,7 @@ servicelab.utils.ruby_utils module
     :undoc-members:
     :show-inheritance:
 
-servicelab.utils.service_utils module
+service_utils module
 -------------------------------------
 
 .. automodule:: servicelab.utils.service_utils
@@ -65,7 +66,15 @@ servicelab.utils.service_utils module
     :undoc-members:
     :show-inheritance:
 
-servicelab.utils.vagrant_utils module
+tc_vm_yaml_create module
+------------------------
+
+.. automodule:: servicelab.utils.tc_vm_yaml_create
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+vagrant_utils module
 -------------------------------------
 
 .. automodule:: servicelab.utils.vagrant_utils
@@ -73,7 +82,15 @@ servicelab.utils.vagrant_utils module
     :undoc-members:
     :show-inheritance:
 
-servicelab.utils.yaml_utils module
+Vagrantfile_utils module
+-----------------------------------------
+
+.. automodule:: servicelab.utils.Vagrantfile_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+yaml_utils module
 ----------------------------------
 
 .. automodule:: servicelab.utils.yaml_utils

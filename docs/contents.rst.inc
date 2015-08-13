@@ -6,16 +6,18 @@ Stack Documentation
 
    installation
    overview
+   examples
    commands
+   encryption
 
-Stack API
----------
+Stack Packages
+--------------
 .. toctree::
    :maxdepth: 2
 
+   servicelab
    servicelab.utils.rst
    servicelab.commands.rst
-
 
 
 CCS-Data Documentation
