@@ -77,8 +77,7 @@ def save_ccsdata(path, site, env, data):
     """
     yaml_file = ccsdata_utils.get_environment_yaml_file(path, site, env)
     with open(yaml_file, "w") as yaml_file:
-        # note we can't dump arbitary yaml object. need to install a new dumper
-        yaml_file.write(yaml.safe_dump(data, default_flow_style=False))
+        ccsdata_utils.ordered_dump(data, Dumper=yaml.SafeDumper)
 
 
 def console_print(data):

@@ -1,7 +1,7 @@
 import logging
 import sys
 import os
-import yaml
+import ordered_yaml
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -58,7 +58,7 @@ def get_env_settings_for_site(path, site, env):
                        "data.d",
                        "environment.yaml")
     with open(fnm) as yaml_file:
-        return yaml.load(yaml_file)
+        return ordered_yaml.load(yaml_file)
     return None
 
 
