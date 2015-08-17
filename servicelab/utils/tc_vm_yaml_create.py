@@ -50,10 +50,10 @@ def write_file(yaml_data, output_file):
         print '%s already exists.  Aborting host create.' % output_file
         return 1
     # Write the constructed data to file
-    # with open(output_file, 'w') as outfile:
-    #    outfile.write(yaml.dump(yaml_data, default_flow_style=False))
+    with open(output_file, 'w') as outfile:
+        outfile.write(yaml.dump(yaml_data, default_flow_style=False))
     print output_file
-    print yaml.dump(yaml_data, default_flow_style=False)
+    # print yaml.dump(yaml_data, default_flow_style=False)
 
 
 def find_ip(env_path, vlan):
