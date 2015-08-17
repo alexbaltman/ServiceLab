@@ -289,8 +289,8 @@ def _vbox_os_provider_env_vars(float_net, tenant_nets):
     openstack_image_url = None
     if (env_vars.get('openstack_auth_url')):
         proto, baseurl, port = env_vars.get('openstack_auth_url').split(':')
-        openstack_network_url = proto + baseurl + ":9696/v2.0"
-        openstack_image_url = proto + baseurl + ":9292/v2/"
+        openstack_network_url = proto + ':' + baseurl + ":9696/v2.0"
+        openstack_image_url = proto + ':' + baseurl + ":9292/v2/"
     env_vars['openstack_network_url'] = openstack_network_url
     env_vars['openstack_image_url'] = openstack_image_url
     return env_vars
