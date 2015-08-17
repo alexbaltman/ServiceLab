@@ -77,7 +77,7 @@ def save_ccsdata(path, site, env, data):
     """
     yaml_file = ccsdata_utils.get_environment_yaml_file(path, site, env)
     with open(yaml_file, "w") as yaml_file:
-        ccsdata_utils.ordered_dump(data, Dumper=yaml.SafeDumper)
+        ccsdata_utils.ordered_yaml.dump(data, Dumper=yaml.SafeDumper)
 
 
 def console_print(data):
