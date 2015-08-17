@@ -11,10 +11,6 @@ from servicelab.utils import ccsdata_utils
 from servicelab.utils import yaml_utils
 from servicelab.utils import tc_vm_yaml_create
 from servicelab.utils.ccsdata_haproxy_utils import *
-import os
-from servicelab.utils import ccsdata_utils
-from servicelab.utils import yaml_utils
-from servicelab.utils.ccsdata_haproxy_utils import *
 
 
 @click.group('create', short_help='Creates pipeline resources to work with.',
@@ -85,21 +81,20 @@ def host_new(ctx, host_name, env_name, vlan, flavor, role, group, sec_groups):
 
     ENV_NAME is the name of the tenant cloud.  Use 'stack list envs' to show all tenants
     """
-    import pprint
-    pp = pprint.PrettyPrinter(indent=2)
     ccs_datapath = os.path.join(ctx.path, "services", "ccs-data")
     our_sites = ccsdata_utils.list_envs_or_sites(ctx.path)
     site = ccsdata_utils.get_site_from_env(our_sites, env_name)
-    # all_ips = yaml_utils.get_allips_forsite(ctx.path, site)
-    # pp.pprint(all_ips)
+    if site is None:
+        print '%s is an invalid env.  Please select one from "stack list envs"' % env_name
+        return 1
     groups = ['virtual', str(group)]
     if sec_groups:
         sec_groups = 'default,' + sec_groups
     else:
         sec_groups = 'default'
-        tc_vm_yaml_create.create_vm(ccs_datapath, host_name, str(site), str(env_name),
-                                    str(flavor), str(vlan), str(role), groups,
-                                    str(sec_groups))
+    tc_vm_yaml_create.create_vm(ccs_datapath, host_name, str(site), str(env_name),
+                                str(flavor), str(vlan), str(role), groups,
+                                str(sec_groups))
 
 
 @cli.command('site')

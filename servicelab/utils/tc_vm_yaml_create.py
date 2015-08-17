@@ -26,7 +26,7 @@ def open_yaml(filename):
             return(yaml.load(stream))
     except IOError:
         print 'Unable to open %s' % filename
-        return None
+        return 1
 
 
 def write_file(yaml_data, output_file):
@@ -130,6 +130,9 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
     # import pdb
     # pdb.set_trace()
     pp = pprint.PrettyPrinter(indent=2)
+    if sc_name == tc_name:
+        print 'Please select a tenant cloud within %s' % sc_name
+        return 1
     source_data = {'repo_path': repo_path,
                    'hostname': str(hostname),
                    'sc_name': sc_name,
@@ -141,6 +144,8 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
                    'sec_groups': sec_groups,
                    }
     source_data = extract_env_data(source_data)
+    if source_data == 1:
+        return 1
     if not re.search(source_data['tc_region'], source_data['hostname']):
         source_data['hostname'] = source_data['tc_region'] + '-' + source_data['hostname']
     source_data['az'] = source_data['sc_region'] + determine_az(hostname)
@@ -256,6 +261,8 @@ def extract_env_data(source_data):
     source_data['tc_path'] = os.path.join(env_path, source_data['tc_name'])
     env_file = os.path.join(sc_path, 'data.d', 'environment.yaml')
     env_data = open_yaml(env_file)
+    if env_data == 1:
+        return 1
     if 'domain_name' in env_data:
         source_data['domain'] = env_data['domain_name']
     if 'region' in env_data:
@@ -276,6 +283,8 @@ def extract_env_data(source_data):
     # Open the tenant cloud environment.yaml
     env_file = os.path.join(source_data['tc_path'], 'data.d', 'environment.yaml')
     env_data = open_yaml(env_file)
+    if env_data == 1:
+        return 1
     if 'tc_region' in env_data:
         source_data['tc_region'] = env_data['tc_region']
     else:
