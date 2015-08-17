@@ -68,17 +68,17 @@ def find_ip(env_path, vlan):
        ip {str}: First unused / unassigned IP from vlan
 
     Example Usage:
-        find_ip(source_data, ipaddress.IPv4Network(unicode(10.11.12.0/24))
+        find_ip('<environments path>, ipaddress.IPv4Network(unicode(10.11.12.0/24))
     """
     pp = pprint.PrettyPrinter(indent=2)
     # Create list of ipaddress module objects
     all_ips = list(vlan.hosts())
     # Remove the first 10 IPs.  They *should* be reserved in AM anyway.
     del all_ips[0:10]
-    # Find all the clouds within the service cloud
+    # Find all the clouds within the site
     for env in os.listdir(env_path):
         hosts_path = os.path.join(env_path, env, 'hosts.d')
-        # Find all the hosts within the cloud
+        # Find all the hosts within the env
         files = os.listdir(hosts_path)
         for f in files:
             hostfile = os.path.join(hosts_path, f)
@@ -97,13 +97,7 @@ def find_ip(env_path, vlan):
             # Host lookup
             socket.gethostbyaddr(str(ip))
         except socket.herror:
-            return ip
-            # continue  # Next loop
-        # remove_ips.append(ip)
-    # for ip in remove_ips:
-        # all_ips.remove(ip)
-
-    # return str(all_ips[0])
+            return str(ip)
 
 
 def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, groups,
@@ -152,7 +146,7 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
     source_data['az'] = source_data['sc_region'] + determine_az(hostname)
     source_data['vlan_id'] = str(source_data['vlan_prefix']) + source_data['vlan_id']
     vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
-    source_data['ip'] = find_ip(source_data, vlan)
+    source_data['ip'] = find_ip(source_data['env_path'], vlan)
     yaml_data = build_yaml_data(source_data, vlan)
     output_file = os.path.join(source_data['tc_path'], 'hosts.d',
                                str(source_data['hostname'] + '.yaml'))
