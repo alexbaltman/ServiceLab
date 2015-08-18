@@ -4,6 +4,9 @@ import click
 import logging
 from servicelab.stack import pass_context
 from servicelab.utils import ccsdata_utils
+import requests
+from requests.auth import HTTPBasicAuth
+from BeautifulSoup import BeautifulSoup
 
 
 @click.group('list', short_help='You can list available pipeline objects',
@@ -100,11 +103,38 @@ def list_artifact(ctx):
     click.echo('Listing artifacts in Artifactory.')
 
 
-# RFI: should there be more intelligence here than a blankey list?
 @cli.command('pipes', short_help='List Go deployment pipelines')
+@click.option(
+    '-g',
+    '--gouser',
+    help='Provide go server username',
+    required=True)
+@click.option(
+    '-h',
+    '--gopass',
+    help='Provide go server password',
+    required=True)
+@click.option(
+    '-s',
+    '--goserver',
+    help='Provide the go server ip address.',
+    required=True)
 @pass_context
-def list_pipe(ctx):
+def list_pipe(ctx, gouser, gopass, goserver):
     """
     Lists piplines using GO's API.
     """
-    click.echo('Listing pipeliness in GO.')
+    serverURL = "http://{0}:8153/go/api/pipelines.xml".format(goserver)
+    serverStringPrefix = "http://{0}:8153/go/api/pipelines/".format(goserver)
+    serverStringSuffix = "/stages.xml"
+
+    # Find latest run info
+    res = requests.get(serverURL, auth=HTTPBasicAuth(gouser, gopass))
+    soup = BeautifulSoup(res.content)
+    pipelines = soup.findAll('pipeline')
+    for pipeline in pipelines:
+        r = re.compile(serverStringPrefix + '(.*?)' + serverStringSuffix)
+        m = r.search(pipeline['href'])
+        if m:
+            pipelineName = m.group(1)
+            print pipelineName
