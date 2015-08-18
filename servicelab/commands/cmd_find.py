@@ -1,5 +1,9 @@
 import click
+import re
 from servicelab.stack import pass_context
+import requests
+from requests.auth import HTTPBasicAuth
+from BeautifulSoup import BeautifulSoup
 
 
 @click.group('find', short_help='Helps you search \
@@ -66,11 +70,40 @@ def find_artifact(ctx, search_term):
 
 @cli.command('pipe', short_help='Find a Go deploy pipeline')
 @click.argument('search_term')
+@click.option(
+    '-g',
+    '--gouser',
+    help='Provide go server username',
+    required=True)
+@click.option(
+    '-h',
+    '--gopass',
+    help='Provide go server password',
+    required=True)
+@click.option(
+    '-s',
+    '--goserver',
+    help='Provide the go server ip address.',
+    required=True)
 @pass_context
 # RFI: how do we take fancy input like grep? aka grep -ie "this|that"
 #      see pipe in search term.
-def find_pipe(ctx, search_term):
+def find_pipe(ctx, search_term, gouser, gopass, goserver):
     """
     Searches through GO's API for pipelines using your search term.
     """
-    click.echo('Searching for %s pipeline in GO' % search_term)
+
+    serverURL = "http://{0}:8153/go/api/pipelines.xml".format(goserver)
+    serverStringPrefix = "http://{0}:8153/go/api/pipelines/".format(goserver)
+    serverStringSuffix = "/stages.xml"
+
+    # Find latest run info
+    res = requests.get(serverURL, auth=HTTPBasicAuth(gouser, gopass))
+    soup = BeautifulSoup(res.content)
+    pipelines = soup.findAll('pipeline')
+    for pipeline in pipelines:
+        r = re.compile(serverStringPrefix + search_term + serverStringSuffix)
+        m = r.search(pipeline['href'])
+        if m:
+            pipelineName = m.group(1)
+            print pipelineName
