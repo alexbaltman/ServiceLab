@@ -1,0 +1,3 @@
+# Not a real env.yaml file.  Basic keys needed for tc_vm_create_yaml provided
+domain_name: cisco.com
+region: csm
