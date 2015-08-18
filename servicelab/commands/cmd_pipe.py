@@ -35,13 +35,12 @@ def cli(ctx):
     required=True)
 @pass_context
 def display_pipeline_log(ctx, pipeline_name, gouser, gopass, goserver):
-
+    stagesURL = "http://{0}:8153/go/api/pipelines/{1}/stages.xml"
     # Find latest run info
-    res = requests.get(
-        "http://{0}:8153/go/api/pipelines/test/stages.xml".format(goserver),
-        auth=HTTPBasicAuth(
-            gouser,
-            gopass))
+    res = requests.get(stagesURL.format(goserver, pipeline_name),
+                       auth=HTTPBasicAuth(
+        gouser,
+        gopass))
     soup = BeautifulSoup(res.content)
     latestJobInfoURL = soup.findAll('entry')[0].findAll('link')[0]['href']
 
@@ -73,3 +72,33 @@ def display_pipeline_log(ctx, pipeline_name, gouser, gopass, goserver):
         print soup
         print "\n\n-------------------End of job log for pipeline : ",\
             logURL, "-------------------------"
+
+
+@cli.command('status', short_help='Display pipeline status')
+@click.argument('pipeline_name', required=True)
+@click.option(
+    '-g',
+    '--gouser',
+    help='Provide go server username',
+    required=True)
+@click.option(
+    '-h',
+    '--gopass',
+    help='Provide go server password',
+    required=True)
+@click.option(
+    '-s',
+    '--goserver',
+    help='Provide the go server ip address.',
+    required=True)
+@pass_context
+def display_pipeline_status(ctx, pipeline_name, gouser, gopass, goserver):
+
+    serverURL = "http://{0}:8153/go/api/pipelines/{1}/status"
+    # Find latest run info
+    res = requests.get(serverURL.format(goserver, pipeline_name),
+                       auth=HTTPBasicAuth(
+        gouser,
+        gopass))
+    soup = BeautifulSoup(res.content)
+    print soup
