@@ -49,7 +49,7 @@ def write_file(yaml_data, output_file):
     if os.path.isfile(output_file):
         print '%s already exists.  Aborting host create.' % output_file
         return 1
-    # Write the constructed data to file
+    # default_flow_style=False breaks lists into individual lines with leading '-'
     with open(output_file, 'w') as outfile:
         outfile.write(yaml.dump(yaml_data, default_flow_style=False))
     print output_file
@@ -71,11 +71,11 @@ def find_ip(env_path, vlan):
         find_ip('<environments path>, ipaddress.IPv4Network(unicode(10.11.12.0/24))
     """
     pp = pprint.PrettyPrinter(indent=2)
-    # Create list of ipaddress module objects
+    # Create list of ipaddress module objects of all valid IPs in the subnet
     all_ips = list(vlan.hosts())
     # Remove the first 10 IPs.  They *should* be reserved in AM anyway.
     del all_ips[0:10]
-    # Find all the clouds within the site
+    # Find all the envs within the site
     for env in os.listdir(env_path):
         hosts_path = os.path.join(env_path, env, 'hosts.d')
         # Find all the hosts within the env
@@ -96,6 +96,7 @@ def find_ip(env_path, vlan):
         try:
             # Host lookup
             socket.gethostbyaddr(str(ip))
+        # socket.herror means there was no DNS reservation found
         except socket.herror:
             return str(ip)
 
@@ -127,9 +128,6 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
                                     role=<none, typically>, groups=<['default', 'other']>,
                                     sec_groups='default,something,somethingelse,maybe')
     """
-    # import pdb
-    # pdb.set_trace()
-    pp = pprint.PrettyPrinter(indent=2)
     if sc_name == tc_name:
         print 'Please select a tenant cloud within %s' % sc_name
         return 1
