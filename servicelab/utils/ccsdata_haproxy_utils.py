@@ -76,8 +76,7 @@ def save_ccsdata(path, site, env, data):
         The data dictionary saved as yaml file.
     """
     yaml_file = ccsdata_utils.get_environment_yaml_file(path, site, env)
-    with open(yaml_file, "w") as yaml_file:
-        ccsdata_utils.ordered_yaml.dump(data, Dumper=yaml.SafeDumper)
+    ccsdata_utils.ordered_yaml.dump(data, yaml_file, Dumper=yaml.SafeDumper)
 
 
 def console_print(data):
@@ -109,7 +108,8 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
         ip (ip) : The virtual ip address.
         server_ips: Server ips
         server_hostname: Server hostnames.
-        interactive: True or False. If true user can input data through console.
+        interactive: True or False. If true user can input data through
+                     console.
 
     Returns:
         Returns a completed haproxy entry
@@ -126,46 +126,65 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
         }
     """
 
-    def _get_server_ip_name(complete_dict, entry, interactive):
+    def _get_server_ip_name(complete_dict, ipslst, interactive):
         data = {}
         if not interactive:
-            data["server_ips"] = entry
+            data["server_ips"] = ipslst
             return data
 
         # as interactive is enabled so prompt and get the results
-        server_ip_name = "*%s_servr_ips" % (entry)
-        server_ip_name = click.prompt("server_ips", default=server_ip_name)
-        while server_ip_name[0:1] == '?':
-            ip_lst = {}
-            for ip_name in search(complete_dict, server_ip_name[1:]):
-                ip_lst[ip_name] = complete_dict[ip_name]
-            click.echo("all available ips are :")
-            console_print(ip_lst)
-            server_ip_name = "*%s_serevr_ips" % (entry)
-            server_ip_name = click.prompt("server_ips", default=server_ip_name)
-        data["server_ips"] = "*" + server_ip_name
+        iplst = []
+        while True:
+            server_ipname = click.prompt("server_ips", default="")
+            if server_ipname[0:1] == '?':
+                possible_iplst = {}
+                for ip_name in search(complete_dict, server_ip_name[1:]):
+                    possible_iplst[ip_name] = complete_dict[ip_name]
+                click.echo("all available ips are :")
+                console_print(possible_iplst)
+                continue
+
+            if server_ipname == "":
+                break
+            iplst.append(server_ipname)
+
+        if iplst:
+            data["server_ips"] = iplst
         return data
 
-    def _get_server_hostnames(complete_dict, entry, interactive):
+    def _get_server_hostnames(complete_dict, hostlst, interactive):
         data = {}
+        nlst = []
         if not interactive:
-            data["server_ips"] = entry
+            for name in hostlst:
+                if name in complete_dict.keys():
+                    nlst.append(complete_dict[name])
+                else:
+                    nlst.append(name)
+
+            data["server_hostnames"] = nlst
             return data
 
         # as interactive is enabled so prompt and get the results
-        server_hostnames = "%s_hostnames" % (entry)
-        server_hostnames = click.prompt("server_hostnames",
-                                        default=server_hostnames)
-        while server_hostnames[0:1] == "?":
-            hostname_lst = {}
-            for hostname in search(complete_dict, "hostnames"):
-                hostname_lst[hostname] = complete_dict[hostname]
-            print "all available host names are :"
-            console_print(hostname_lst)
-            server_hostnames = "*%s_hostnames" % (entry)
-            server_hostnames = click.prompt("server_names",
-                                            default=server_hostnames)
-        data["server_hostnames"] = server_hostnames
+        hostlst = []
+        while True:
+            server_hostname = click.prompt("server_hostnames", default="")
+            if server_hostname[0:1] == "?":
+                hostname_lst = {}
+                for hostname in search(complete_dict, "hostnames"):
+                    hostname_lst[hostname] = complete_dict[hostname]
+                console.echo("all available host names are :")
+                console_print(hostname_lst)
+                continue
+
+            if server_hostname == "":
+                break
+            if server_hostname in complete_dict.keys():
+                server_hostname = complete_dict[server_hotsname]
+            hostlst.append(server_hostname)
+
+        if hostlst:
+            data["server_hostnames"] = hostlst
         return data
 
     def _get_port(complete_dict, interactive):
@@ -246,11 +265,11 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
     data["vip"] = "%%{}{hiera('" + ip + "')}"
     data = _merge(data,
                   _get_server_ip_name(complete_dict,
-                                      entry or server_ips,
+                                      server_ips or entry,
                                       interactive))
     data = _merge(data,
                   _get_server_hostnames(complete_dict,
-                                        entry or server_hostnames,
+                                        server_hostnames or entry,
                                         interactive))
     data = _merge(data,
                   _get_port(complete_dict, interactive))

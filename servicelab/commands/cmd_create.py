@@ -144,7 +144,7 @@ def site_new(ctx, username, cont):
     service_utils.sync_service(ctx.path, "master", username, "ccs-data")
     click.echo("Retrieving latest ccs-build-tools branch")
     service_utils.sync_service(ctx.path, "master", username, "ccs-build-tools")
-    # TODO: Make sure I have installed required packages for ccs-build-tools -> add to reqs
+    # TODO:Make sure I have installed required packages for ccs-build-tools->add to reqs
     click.echo("Retreiving user input for new site's data fields...")
     returncode, site_dictionary = ccsbuildtools_utils.gather_site_info(ctx.path, cont)
     if returncode > 0:
@@ -296,9 +296,9 @@ def validate_ip(ctx, param, value):
               help="if the entry has to be put in internal or external haproxy")
 @click.option('ip', '--ip', callback=validate_ip, prompt=True,
               help="ip associated with the vip")
-@click.option('server_ips', '--server_ips',
+@click.option('server_ips', '--server_ips', multiple=True,
               help="server ips associated with the vip")
-@click.option('server_hostnames', '--server_hostnames',
+@click.option('server_hostnames', '--server_hostnames', multiple=True,
               help="servers hostnames associated with the vip")
 @click.option('interactive', '--i', flag_value=True,
               help="interactive editor")
@@ -337,19 +337,22 @@ def vip_new(ctx, env_name, vip_name, service_entry, location, ip, server_ips,
         for key in search(sites['env'], "%s::haproxy" % (location)):
             sites['env'][vip_name] = ip
             try:
+                lst_ips = list(server_ips)
+                lst_hostnames = list(server_hostnames)
+
                 subkey = next(search(sites['env'][key], service_entry))
                 sites['env'][key][subkey] = generate_tag_value(sites['env'],
                                                                service_entry,
                                                                vip_name,
-                                                               server_ips,
-                                                               server_hostnames,
+                                                               lst_ips,
+                                                               lst_hostnames,
                                                                interactive)
             except StopIteration, e:
                 sites['env'][key][service_entry] = generate_tag_value(sites['env'],
                                                                       service_entry,
                                                                       vip_name,
-                                                                      server_ips,
-                                                                      server_hostnames,
+                                                                      lst_ips,
+                                                                      lst_hostnames,
                                                                       interactive)
             save_ccsdata(ctx.path, sites['site'], env_name, sites['env'])
             flag = True
