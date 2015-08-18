@@ -1,28 +1,10 @@
+import re
 import yaml
 from collections import OrderedDict
 
 """
 based on the stack overflow discussin
 http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
-
-
-Observations:
-Tried with ruamel.yaml implementation but found that it was converting the double quote
-hierra strings to a pair of single quote strings.
-
-Not sure if this was a good approach even though in addition to the order it preserved
-the comments also. I do not like formatting to be changed as double quotes and single
-quotes have distinct meaning in yaml.
-
-Till the complete ruamel.yaml solution is found discarding the below implementation:
-import ruamel.yaml as yaml
-def ordered_load(stream):
-    data = yaml.load(stream, Loader=yaml.RoundTripLoader)
-    return  data
-
-
-def ordered_dump(stream, data):
-    stream.write(yaml.dump(data, Dumper=yaml.RoundTripDumper))
 
 """
 
@@ -41,7 +23,8 @@ def load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
     return yaml.load(stream, OrderedLoader)
 
 
-def dump(data, stream=None, Dumper=yaml.Dumper, **kwds):
+def dump(data, fname, Dumper=yaml.Dumper):
+    # this dumps the data as it was read in by load
     class OrderedDumper(Dumper):
         pass
 
@@ -50,15 +33,40 @@ def dump(data, stream=None, Dumper=yaml.Dumper, **kwds):
             yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
             data.items())
 
-    OrderedDumper.add_representer(OrderedDict, _dict_representer)
-    return yaml.dump(data, stream, OrderedDumper, **kwds)
+    with open(fname, "w") as stream:
+        OrderedDumper.add_representer(OrderedDict, _dict_representer)
+        yaml.dump(data, stream, OrderedDumper, default_flow_style=False)
 
+    # massaging the data with correct anchor names rather than m/c names
+    # assumption is the key name is the anchor name
+    data = ""
+    with open(fname) as rstream:
+        data = rstream.read()
+
+    p = re.compile("([A-Za-z0-9_]+):[ \t]*&(id[0-9]{3})")
+    for m in p.finditer(data):
+        repl = m.group(1)
+        srch = m.group(2)
+        data = re.sub(srch, repl, data)
+
+    with open(fname, "w") as stream:
+        stream.write(data)
+
+
+"""
+def load(stream):
+    return yaml.load(stream)
+
+
+def dump(data, stream):
+    yaml.dump(data, stream, default_flow_style=False)
+
+"""
 
 # test driver
 if __name__ == '__main__':
     fnm = "./example.yaml"
     dict = {}
     with open(fnm) as f:
-        dict = ordered_load(f)
-    with open(fnm + ".new", "w") as f:
-        ordered_dump(dict, f)
+        dict = load(f)
+    dump(dict, fnm+".new")
