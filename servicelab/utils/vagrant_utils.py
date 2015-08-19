@@ -52,7 +52,7 @@ class Connect_to_vagrant(object):
         # Note: The quiet is so we know what's happening during
         #       vagrant commands in the term.
         # Note: Setup vagrant client.
-        vagrant_dir = os.path.join(path, "services", "current_service")
+        vagrant_dir = os.path.join(path, "current_service")
         self.v = vagrant.Vagrant(
             root=vagrant_dir,
             quiet_stdout=False,

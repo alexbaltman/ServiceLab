@@ -23,7 +23,7 @@ import os
               help='Boot into an OS environment')
 @click.option('--ha', is_flag=True, default=False, help='Enables HA for core OpenStack components \
               by booting the necessary extra VMs.')
-@click.option('-b', '--branch', help='Choose a branch to run against \
+@click.option('-b', '--branch', default="master", help='Choose a branch to run against \
               for ccs-data.')
 @click.option('-u', '--username', help='Enter the password for the username')
 @click.option('-i', '--interactive', help='Walk through booting VMs')
@@ -49,13 +49,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                 ctx.logger.debug("Still couldn't set username. Exiting.")
                 sys.exit(1)
 
-    if not os.path.isfile(os.path.join(ctx.path, "vagrant.yaml")):
-        with open(os.path.join(ctx.path, "vagrant.yaml"), 'w') as f:
-            # Note: we could pass here or just close it, either way
-            #       we'll get an empty file
-            f.write("")
+    service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
+    service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
 
-    if not any(full, mini, rhel7, target, service):
+    if not any([full, mini, rhel7, target, service]):
         returncode, service = helper_utils.get_current_service(ctx.path)
     # RFI: may not matter if returns 1 if we aren't using current_service
         if returncode > 0:
@@ -69,9 +66,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
     # RHEL7 WORKFLOW ===============================
     if rhel7:
         for i in xrange(1, 100):
-            if len(i) == 1:
+            if len(str(i)) == 1:
                 i = "00" + str(i)
-            elif len(i) == 2:
+            elif len(str(i)) == 2:
                 i = "0" + str(i)
             hostname = "rhel7-" + i
             returncode = yaml_utils.host_exists_vagrantyaml(os.path.join(ctx.path,
@@ -96,17 +93,24 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         # TODO: Make sure infra001 is up and running or else make it so.
         #       This is for the vagrant ssh heighliner deploy stage at the end.
         for i in xrange(1, 100):
-            hostname = service + i
+            if len(str(i)) == 1:
+                i = "00" + str(i)
+            elif len(str(i)) == 2:
+                i = "0" + str(i)
+
+            hostname = service + "-" + i
             returncode = yaml_utils.host_exists_vagrantyaml(os.path.join(ctx.path,
                                                                          "vagrant.yaml"),
                                                             hostname)
             if returncode == 1:
                 with open(os.path.join(ctx.path, "vagrant.yaml"), 'w') as f:
                     yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
-
+                    yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
+                                                    "ccs-dev-1")
+                Vagrantfile_utils.overwrite_vagrantfile(ctx.path)
                 a = vagrant_utils.Connect_to_vagrant(vmname=hostname,
                                                      path=ctx.path)
-                a.v.up(vmname=hostname)
+                a.v.up(vm_name=hostname)
                 returncode, myinfo = service_utils.run_this('vagrant hostmanager')
                 if returncode > 0:
                     ctx.logger.error("Could not run vagrant hostmanager because\

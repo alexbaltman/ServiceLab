@@ -28,11 +28,13 @@ class TestVagrantUtils(unittest.TestCase):
         with temporary_dir() as temp_dir:
             self.vagrant_dir = temp_dir
             self.connect_to_vagrant = Connect_to_vagrant(
-                TestVagrantUtils.VM_NAME, temp_dir)
+                TestVagrantUtils.VM_NAME, os.path.join(self.vagrant_dir, "services"))
             self.vagrantfile_dir = os.path.join(
                 self.vagrant_dir, "services", "current_service")
+            self.vagrantfileservices_dir = os.path.join(
+                self.vagrant_dir, "services")
             self.v = vagrant.Vagrant(
-                root=self.vagrantfile_dir,
+                root=self.vagrantfileservices_dir,
                 quiet_stdout=False,
                 quiet_stderr=False)
 
@@ -42,7 +44,7 @@ class TestVagrantUtils(unittest.TestCase):
         self.assertEquals(
             self.connect_to_vagrant.vmname,
             TestVagrantUtils.VM_NAME)
-        self.assertEquals(self.connect_to_vagrant.path, self.vagrant_dir)
+        self.assertEquals(self.connect_to_vagrant.path, self.vagrantfileservices_dir)
         self.assertEquals(
             self.connect_to_vagrant.provider,
             TestVagrantUtils.DEFAULT_PROVIDER)
@@ -69,7 +71,7 @@ class TestVagrantUtils(unittest.TestCase):
         """ Tests creation of Vagrantfile.
         """
         self.connect_to_vagrant.add_box()
-        self.connect_to_vagrant.create_Vagrantfile(self.vagrant_dir)
+        self.connect_to_vagrant.create_Vagrantfile(self.vagrantfileservices_dir)
         self.assertEquals(
             os.path.isfile(
                 os.path.join(

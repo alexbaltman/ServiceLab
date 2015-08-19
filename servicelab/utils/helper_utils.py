@@ -122,3 +122,25 @@ def get_current_service(path):
             else:
                 helper_utils_logger.debug("Working on %s" % (current))
                 return 0, current
+
+
+def get_path_to_utils(path):
+    """Given the path to servicelab/servicelab/.stack return where the utils
+       folder is expected.
+
+    Args:
+        path (str): Absolute path to .stack in servicelab repo.
+                    '/Users/aaltman/Git/servicelab/servicelab/.stack'
+
+    Returns:
+        path (str): Absolute path to utils folder within servicelab.
+
+    Example Usage:
+        >>> print ctx.path
+            '/Users/aaltman/Git/servicelab/servicelab/.stack'
+        >>> print path_to_utils(ctx.path)
+            '/Users/aaltman/Git/servicelab/servicelab/utils'
+    """
+    split_path = os.path.split(path)
+    path_to_utils = os.path.join(split_path[0], "utils")
+    return path_to_utils

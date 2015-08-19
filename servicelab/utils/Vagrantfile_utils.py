@@ -44,7 +44,6 @@ def overwrite_vagrantfile(path):
         f.write(h1)
         f.write(h2)
         f.write(h3)
-        f.write("\n")
         returncode, ruby_modules = _required_ruby_modules(path)
         if returncode > 0:
             return 1
@@ -54,12 +53,12 @@ def overwrite_vagrantfile(path):
         if returncode > 0:
             return 1
         else:
-            f.write(str(vagrant_plugins))
+            for i in vagrant_plugins:
+                f.write(i)
         users = _set_vagrant_user_and_group()
         f.write(users)
         set_current_service = _set_current_service(path)
-        for item in set_current_service:
-            f.write(item)
+        f.write(set_current_service)
         load_vagrantyaml = _load_vagrantyaml(path)
         f.write(load_vagrantyaml)
         vbox_config = _vbox_provider_configure()
@@ -78,9 +77,9 @@ def _set_vagrantfile_header():
         >>> print _set_vagrantfile_header()
         ("# -*- mode: ruby -*-", "# vi: set ft=ruby :", "VAGRANTFILE_API_VERSION = \"2\"")
     """
-    h1 = "# -*- mode: ruby -*-"
-    h2 = "# vi: set ft=ruby :"
-    h3 = "VAGRANTFILE_API_VERSION = \"2\""
+    h1 = "# -*- mode: ruby -*-\n"
+    h2 = "# vi: set ft=ruby :\n"
+    h3 = "VAGRANTFILE_API_VERSION = \"2\"\n"
     return h1, h2, h3
 
 
@@ -110,8 +109,7 @@ def _required_ruby_modules(path):
         >>> print _required_ruby_modules("/Users/aaltman/Git/servicelab/servicelab/.stack")
         (0, " require 'a.rb'\n require 'b.rb'\n require 'c.rb'\n ")
     """
-    path_to_utils = os.path.join(path, "utils")
-    path_to_ruby_modules = os.path.join(path_to_utils, "ruby_modules.yaml")
+    path_to_ruby_modules = os.path.join(path, "provision", "ruby_modules.yaml")
     returncode = yaml_utils.validate_syntax(path_to_ruby_modules)
     s = ""
     if returncode == 0:
@@ -156,10 +154,8 @@ def _required_vagrant_plugins(path):
           " system \"vagrant plugin install #{plugin}\" unless Vagrant.has_plugin? plugin",
           "end")
     """
-
-    path_to_utils = os.path.join(path, "utils")
     path_to_vagrant_plugins = os.path.join(
-        path_to_utils, "vagrant_plugins.yaml")
+        path, "provision", "vagrant_plugins.yaml")
     returncode = yaml_utils.validate_syntax(path_to_vagrant_plugins)
     if returncode == 0:
         stream = file(path_to_vagrant_plugins, 'r')
@@ -170,13 +166,13 @@ def _required_vagrant_plugins(path):
         #       plugin requirements in vagrantfile for vagrant up to consume
         #       or check for vagrant plugins in local env and then do 1 or 2.
 
-        s = "required_plugins = %w( " + vagrant_plugin_string + ")"
+        s = "required_plugins = %w( " + vagrant_plugin_string + ")\n"
         # Note: in the vagrant file we need to do "something" in ruby with the
         # plugins
-        s2 = "required_plugins.each do |plugin|"
+        s2 = "required_plugins.each do |plugin|\n"
         s3 = ("  system \"vagrant plugin install #{plugin}\" "
-              "unless Vagrant.has_plugin? plugin")
-        s4 = "end"
+              "unless Vagrant.has_plugin? plugin\n")
+        s4 = "end\n"
         all_strings = [s, s2, s3, s4]
         return 0, all_strings
     else:
@@ -203,7 +199,7 @@ def _set_vagrant_user_and_group(user="vagrant", group="vagrant"):
         >>> print _set_vagrant_user_and_group()
         $data = {:user => 'vagrant', :group => 'vagrant'}
     """
-    s = "$data = {:user => '%s', :group => '%s'}" % (user, group)
+    s = "$data = {:user => '%s', :group => '%s'}\n" % (user, group)
     return s
 
 
@@ -227,6 +223,7 @@ def _set_current_service(path):
     f = open(current_file, 'r')
     # TODO: verify that current is set to something sane.
     current_service = f.readline()
+    current_service = "service = '{0}'\n".format(current_service)
     return current_service
 
 
@@ -263,7 +260,7 @@ def _load_vagrantyaml(path):
     """
     # Note: This should be the vagrant.yaml in the working directory
     vagrantyaml = os.path.join(path, "vagrant.yaml")
-    s = "$envyaml = YAML::load_file('{0}')".format(vagrantyaml)
+    s = "$envyaml = YAML::load_file('{0}')\n".format(vagrantyaml)
     return s
 # Ruby: "$envyaml['hosts'].each do |name, h|"
 # Ruby: File.open(".ccs_vagrant_hosts", "w") {|f|
@@ -368,7 +365,7 @@ def _vbox_provider_configure():
     # Private Networking
     net = ("      h.vm.network 'private_network', "
            "ip: ho['ip'], mac: ho['mac']\n"
-           "      h.vm.host_name = '#{name}.cis.local'\n"
+           "      h.vm.host_name = \"#{name}.cis.local\"\n"
            "      h.vm.synced_folder './services/ccs-data/out/ccs-dev-1"
            "/dev/etc/ccs/data/', '/etc/ccs/data/environments/dev'\n"
            "      h.vm.synced_folder './services/ccs-data/out/ccs-dev-1"
@@ -413,10 +410,10 @@ def _vbox_provider_configure():
         "     end\n")
 
     # Provision
-    p = ("h.vm.provision :shell, inline: echo 'role=#{ho['role']} > "
-         "/etc/facter/facts.d/role.txt'\n"
-         "      if name = 'infra-001' or name = 'infra-002'\n"
+    p = ("      if name == 'infra-001' or name == 'infra-002'\n"
          "        config.vm.define 'infra-001' do |node|\n"
+         "          h.vm.provision :shell, inline: \"echo role=#{ho['role']} > "
+         "/etc/facter/facts.d/role.txt\"\n"
          "          h.vm.provision :hostmanager\n"
          "          h.vm.provision :file, source: './provision/ssh-config', "
          "destination: '/home/vagrant/.ssh/config'\n"
@@ -430,11 +427,11 @@ def _vbox_provider_configure():
          # h.vm.synced_folder './services/ccs-data/out/ccs-dev-1/dev/etc/ \
          # ansible/group_vars', '/etc/ansible/group_vars'
          "        end\n"
-         "      else:\n"
+         "      else\n"
          "        h.vm.provision :shell, path: './provision/node.sh'\n"
-         "        h.vm.provision :shell, inline: 'ansible-playbook /opt/ccs/"
+         "        h.vm.provision :shell, inline: \"ansible-playbook /opt/ccs/"
          "services/redhouse-svc/dev/provision.yml -e"
-         " hostname=#{name}.cis.local'\n"
+         " hostname=#{name}.cis.local\"\n"
          "      end\n"
          "    end\n"
          "  end\n\n"
