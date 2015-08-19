@@ -95,10 +95,36 @@ def display_pipeline_log(ctx, pipeline_name, gouser, gopass, goserver):
 def display_pipeline_status(ctx, pipeline_name, gouser, gopass, goserver):
 
     serverURL = "http://{0}:8153/go/api/pipelines/{1}/status"
-    # Find latest run info
     res = requests.get(serverURL.format(goserver, pipeline_name),
                        auth=HTTPBasicAuth(
         gouser,
         gopass))
+    soup = BeautifulSoup(res.content)
+    print soup
+
+
+@cli.command('run', short_help='Trigger a pipeline')
+@click.argument('pipeline_name', required=True)
+@click.option(
+    '-g',
+    '--gouser',
+    help='Provide go server username',
+    required=True)
+@click.option(
+    '-h',
+    '--gopass',
+    help='Provide go server password',
+    required=True)
+@click.option(
+    '-s',
+    '--goserver',
+    help='Provide the go server ip address.',
+    required=True)
+@pass_context
+def trigger_pipeline(ctx, pipeline_name, gouser, gopass, goserver):
+
+    serverURL = "http://{0}:8153/go/api/pipelines/{1}/schedule"
+    res = requests.post(serverURL.format(goserver, pipeline_name),
+                        auth=HTTPBasicAuth(gouser, gopass))
     soup = BeautifulSoup(res.content)
     print soup
