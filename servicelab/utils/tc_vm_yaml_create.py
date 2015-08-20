@@ -148,6 +148,10 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
         source_data['hostname'] = source_data['tc_region'] + '-' + source_data['hostname']
     source_data['az'] = source_data['sc_region'] + determine_az(hostname)
     source_data['vlan_id'] = str(source_data['vlan_prefix']) + source_data['vlan_id']
+    if not str(vlan_id) in source_data:
+        print('Vlan%s was not found within %s.  Please try a different vlan'
+              % (vlan_id, source_data['tc_name']))
+        return 1
     vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
     source_data['ip'] = find_ip(source_data['env_path'], vlan)
     yaml_data = build_yaml_data(source_data, vlan)
