@@ -1,9 +1,0 @@
----
-service_cloud:
-  site_name: iad10-svc-1
-  az: csm
-  domain: cloud.cisco.com
-  controller_count: 3
-  cloud_nodes:
-    num_nova2: 5
-    num_nova3: 10

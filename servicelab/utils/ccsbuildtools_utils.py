@@ -70,7 +70,7 @@ def gather_site_info(path, cont):
         with open(path_to_temp_file) as f:
             site_dictionary = yaml.load(f)
     else:
-        site_dictionary = _get_input_requirements_for_ccsbuildtools()
+        site_dictionary = get_input_requirements_for_ccsbuildtools()
     # These if clauses are skipped if they've already been completed by user
     # (i.e.) loaded from the temp_site_data.yaml file
     # Program exits and gathered data stored to yaml file as per user request
@@ -78,19 +78,19 @@ def gather_site_info(path, cont):
         print "--- Retreiving site data for service cloud ---"
         resume = _input_cloud_info(site_dictionary['service_cloud'], True)
         if resume > 0:
-            _exit_input(site_dictionary, path_to_temp_file)
+            exit_input(site_dictionary, path_to_temp_file, True)
             return 1, {}
     if site_dictionary['tenant_cloud']['site_name'] is None:
         print "--- Retrieving site data for tenant cloud ---"
         resume = _input_cloud_info(site_dictionary['tenant_cloud'], False)
         if resume > 0:
-            _exit_input(site_dictionary, path_to_temp_file)
+            exit_input(site_dictionary, path_to_temp_file, True)
             return 1, {}
     # Always confirm ip ranges
     print "--- Retrieving site data for ip_ranges ---\n"
     resume = _edit_ip_ranges(site_dictionary['ip_ranges'])
     if resume > 0:
-        _exit_input(site_dictionary, path_to_temp_file)
+        exit_input(site_dictionary, path_to_temp_file, True)
         return 1, {}
     if site_dictionary['bom'] is None:
         print "--- Retreiving site data for BOM ---"
@@ -114,9 +114,7 @@ def gather_site_info(path, cont):
     if not os.path.isdir(path_to_ignition):
         print "ignition_rb directory does not exist."
         return 2, {}
-    with open(os.path.join(path_to_ignition, "answer-sample.yaml"), 'w') as f:
-        f.write("---\n")
-        yaml.dump(site_dictionary, f, default_flow_style=False)
+    exit_input(site_dictionary, os.path.join(path_to_ignition, "answer-sample.yaml"), False)
     return 0, site_dictionary
 
 
@@ -218,13 +216,11 @@ def gather_env_info(path):
     path_to_ansyaml = os.path.join(path, "services", "ccs-build-tools",
                                    "ignition_rb", "answer-sample.yaml"
                                    )
-    with open(path_to_ansyaml, 'w') as f:
-        f.write("---\n")
-        yaml.dump(site_dictionary, f, default_flow_style=False)
+    exit_input(site_dictionary, path_to_ansyaml, False)
     return 0, site_dictionary
 
 
-def _get_input_requirements_for_ccsbuildtools():
+def get_input_requirements_for_ccsbuildtools():
     """Returns a dictionary of all the keys required by the ccsbuildtools repo to properly
     build a site. All values are set to None, except for the ip ranges, which are given
     default values.
@@ -264,13 +260,14 @@ def _get_input_requirements_for_ccsbuildtools():
             }
 
 
-def _exit_input(site_dictionary, path_to_temp_file):
+def exit_input(site_dictionary, path_to_dump, exit):
     """exit input
     """
-    print "Data input for site terminated. use continue option to resume where you " \
-          "left off. If you do another stack create site without the --continue option" \
-          " your data will get deleted."
-    with open(path_to_temp_file, 'w') as f:
+    if exit:
+        print "Data input for site terminated. use continue option to resume where you " \
+              "left off. If you do another stack create site without the --continue option" \
+              " your data will get deleted."
+    with open(path_to_dump, 'w') as f:
         f.write("---\n")
         yaml.dump(site_dictionary, f, default_flow_style=False)
     return
