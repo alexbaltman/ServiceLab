@@ -6,7 +6,7 @@ hosts:
     ip: 192.168.100.30
     mac: "000027000030"
     memory: 1024
-    box: "http://cis-kickstart.cisco.com/ccs-rhel7.box"
+    box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
     min: True
   infra-002:
     role: build
@@ -15,7 +15,7 @@ hosts:
     ip: 192.168.100.31
     mac: "000027000031"
     memory: 1024
-    box: "http://cis-kickstart.cisco.com/ccs-rhel7.box"
+    box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   keystonectl-001:
     min: True
     role: tenant_keystone_ctl
