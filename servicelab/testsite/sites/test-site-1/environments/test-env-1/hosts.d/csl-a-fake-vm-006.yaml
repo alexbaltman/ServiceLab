@@ -1,4 +1,0 @@
-interfaces:
-  eth0:
-    ip_address: 10.12.14.145
-type: virtual
