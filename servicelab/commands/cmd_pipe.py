@@ -7,6 +7,9 @@ import os
 import requests
 from requests.auth import HTTPBasicAuth
 from BeautifulSoup import BeautifulSoup
+import xml.etree.ElementTree as ET
+import copy
+from servicelab.utils import gocd_utils
 
 
 @click.group('pipe', short_help='Pipeline to work with.',
@@ -128,3 +131,50 @@ def trigger_pipeline(ctx, pipeline_name, gouser, gopass, goserver):
                         auth=HTTPBasicAuth(gouser, gopass))
     soup = BeautifulSoup(res.content)
     print soup
+
+
+@cli.command('clone', short_help='Clone a pipeline')
+@click.argument('pipeline_name', required=True)
+@click.argument('new_pipeline_name', required=True)
+@click.option(
+    '-g',
+    '--gouser',
+    help='Provide go server username',
+    required=True)
+@click.option(
+    '-h',
+    '--gopass',
+    help='Provide go server password',
+    required=True)
+@click.option(
+    '-s',
+    '--goserver',
+    help='Provide the go server ip address.',
+    required=True)
+@pass_context
+def clone_pipeline(
+        ctx,
+        pipeline_name,
+        new_pipeline_name,
+        gouser,
+        gopass,
+        goserver):
+
+    configXMLURL = "http://{0}:8153/go/api/admin/config/current.xml".format(
+        goserver)
+    postConfigXMLURL = "http://{0}:8153/go/api/admin/config.xml".format(
+        goserver)
+    res = requests.post(configXMLURL,
+                        auth=HTTPBasicAuth(gouser, gopass))
+
+    # Retrieve xml config from server
+    (md5, root) = gocd_utils._get_config(configXMLURL, (gouser, gopass))
+    new_xml = copy.deepcopy(root)
+
+    new_xml = gocd_utils._create_pipeline(new_xml,
+                                          pipeline_name,
+                                          new_pipeline_name)
+
+    # Upload results
+    new_xmls = ET.tostring(new_xml, encoding='utf-8', method='xml')
+    gocd_utils._push_config(postConfigXMLURL, md5, new_xmls, (gouser, gopass))
