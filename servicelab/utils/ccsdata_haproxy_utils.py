@@ -141,7 +141,7 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
             server_ipname = click.prompt("server_ips", default="")
             if server_ipname[0:1] == '?':
                 possible_iplst = {}
-                for ip_name in search(complete_dict, server_ip_name[1:]):
+                for ip_name in search(complete_dict, "ip"):
                     possible_iplst[ip_name] = complete_dict[ip_name]
                 click.echo("all available ips are :")
                 console_print(possible_iplst)
@@ -177,16 +177,18 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
             server_hostname = click.prompt("server_hostnames", default="")
             if server_hostname[0:1] == "?":
                 hostname_lst = {}
-                for hostname in search(complete_dict, "hostnames"):
+                for hostname in search(complete_dict, "hostname"):
                     hostname_lst[hostname] = complete_dict[hostname]
-                console.echo("all available host names are :")
+                click.echo("all available host names are :")
                 console_print(hostname_lst)
+                import pdb
+                pdb.set_trace()
                 continue
 
             if server_hostname == "":
                 break
             if server_hostname in complete_dict.keys():
-                server_hostname = complete_dict[server_hotsname]
+                server_hostname = complete_dict[server_hostname]
             hostlst.append(server_hostname)
 
         if hostlst:
