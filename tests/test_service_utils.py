@@ -16,7 +16,6 @@ class TestServiceUtils(unittest.TestCase):
     def setUp(self):
         pass
 
-    # TODO (Alex Altman): getpass.getuser may be brittle--maybe pickup user from git config?
     def test_sync_service(self):
         with temporary_dir() as temp_dir:
             out = service_utils.sync_service(path=temp_dir,
@@ -30,18 +29,6 @@ class TestServiceUtils(unittest.TestCase):
                                              username=getpass.getuser(),
                                              service_name='service-heighliner')
             self.assertEqual(out, True)
-
-    # def test_sync_data(self):
-    #     with temporary_dir() as temp_dir:
-    #         out = service_utils.sync_data(path=temp_dir,
-    #                                       username=getpass.getuser(),
-    #                                       branch='master')
-    #
-    #         self.assertEqual(out, True)
-    #         out = service_utils.sync_data(path=temp_dir,
-    #                                       username=getpass.getuser(),
-    #                                       branch='master')
-    #         self.assertEqual(out, True)
 
     def test_build_data(self):
         pass
