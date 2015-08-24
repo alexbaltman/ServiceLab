@@ -47,7 +47,7 @@ def sync_service(path, branch, username, service_name):
     # Note: Branch defaults to master in the click application
     check_for_git_output, myinfo = _check_for_git()
     if not check_for_git_output == 0:
-        print "Could not find git executable."
+        service_utils_logger.error("Could not find git executable.")
         return False
     else:
         # TODO: refactor this back in -->or os.listdir(os.path.join(path,
@@ -55,23 +55,23 @@ def sync_service(path, branch, username, service_name):
         #       we'll want to rm the dir if it's there but empty b/c this
         #       isn't handling that.
         if os.path.isdir(os.path.join(path, "services/%s" % (service_name))):
-            print "Sync'ing service."
-            print "Fast forward pull."
+            service_utils_logger.debug("Sync'ing service.")
+            service_utils_logger.debug("Fast Forward Pull.")
             returncode, myinfo = _git_pull_ff(path, branch, service_name)
             if returncode != 0:
                 service_utils_logger.error(myinfo)
                 return False
             else:
-                print "Service has been sync'ed."
+                service_utils_logger.debug("Service has been sync'ed.")
                 return True
         else:
-            print "Trying clone"
+            service_utils_logger.debug("Trying clone.")
             returncode, myinfo = _git_clone(path, branch, username, service_name)
             if returncode != 0:
                 service_utils_logger.error(myinfo)
                 return False
             else:
-                print "Clone successful."
+                service_utils_logger.debug("Clone successful.")
                 return True
 
 
@@ -96,9 +96,8 @@ def build_data(path):
         (0,"")
 
     """
-
     data_reponame = "ccs-data"
-    print "Building the data."
+    service_utils_logger.debug("Building the data.")
     returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml\
                                   --site ccs-dev-1 && cd ..',
                                   cwd=os.path.join(path, "services",
@@ -129,7 +128,6 @@ def _git_clone(path, branch, username, service_name):
         (0, "")
 
     """
-
     # Note: Branch defaults to master in the click application
     # DEBUG: print "Executing subprocess for git clone"
     # DEBUG: print 'git clone -b %s ssh://%s@cis-gerrit.cisco.com:29418/%s
@@ -142,7 +140,6 @@ def _git_clone(path, branch, username, service_name):
                                   ssh://%s@cis-gerrit.cisco.com:29418/%s \
                                   %s/services/%s' % (branch, username, service_name, path,
                                   service_name))
-    # DEBUG: print "clone returncode: " + str(output.returncode)
     return(returncode, myinfo)
 
 
@@ -171,7 +168,6 @@ def _git_pull_ff(path, branch, service_name):
         (0, "")
 
     """
-
     # Note: Branch defaults to master in the click application
     service_path = os.path.join(path, "services", service_name)
     # TODO: Do more error checking here --> after debugging, definitely
@@ -201,7 +197,6 @@ def _submodule_pull_ff(path, branch):
                                      .stack", "master")
         (0, "")
     """
-
     # Note: Branch defaults to master in the click application
     # TODO: Do more error checking here --> after debugging, definitely
     # TODO: checkout a branch ifexists in origin only--> not replacing git
@@ -224,7 +219,6 @@ def _check_for_git():
         >>> print _check_for_git()
         (0, "")
     """
-
     # Note: Using type git here to establish if posix system has a binary
     #       called git instead of which git b/c which often doesn't return
     #       proper 0 or 1 exit status' and type does. Which blah on many
@@ -261,7 +255,6 @@ def setup_vagrant_sshkeys(path):
                                   "master", "ccs-data")
         (0, "")
     """
-
     if not os.path.isfile(os.path.join(path, "id_rsa")):
         returncode, myinfo = run_this('ssh-keygen -q -t rsa -N "" -f %s/id_rsa' % (path))
         return (returncode, myinfo)
@@ -289,7 +282,6 @@ def link(path, service_name, branch, username):
         >>> print link("/Users/aaltman/Git/servicelab/servicelab/.stack", "ccs-data",
                        "master", "aaltman"")
     """
-
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
             f = open(os.path.join(path, "current"), 'r')
@@ -377,7 +369,6 @@ def check_service(path, service_name):
         >>> check_service("/Users/aaltman/Git/servicelab/servicelab/.stack", "ccs-data")
         0
     """
-
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
             f = open(os.path.join(path, "current"), 'r')
