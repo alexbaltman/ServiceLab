@@ -133,7 +133,10 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
             return data
 
         # as interactive is enabled so prompt and get the results
-        iplst = []
+        if ipslst != []:
+            click.echo("Supplied ip's are : " + str(ipslst))
+        else:
+            ipslst = []
         while True:
             server_ipname = click.prompt("server_ips", default="")
             if server_ipname[0:1] == '?':
@@ -146,10 +149,10 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
 
             if server_ipname == "":
                 break
-            iplst.append(server_ipname)
+            ipslst.append(server_ipname)
 
-        if iplst:
-            data["server_ips"] = iplst
+        if ipslst:
+            data["server_ips"] = ipslst
         return data
 
     def _get_server_hostnames(complete_dict, hostlst, interactive):
@@ -166,7 +169,10 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
             return data
 
         # as interactive is enabled so prompt and get the results
-        hostlst = []
+        if hostlst != []:
+            click.echo("Supplied hostnames are : " + str(hostlst))
+        else:
+            hostlst = []
         while True:
             server_hostname = click.prompt("server_hostnames", default="")
             if server_hostname[0:1] == "?":
