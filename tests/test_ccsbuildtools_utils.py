@@ -53,14 +53,9 @@ class TestCCsBuildToolsUtils(unittest.TestCase):
            -> ensure that all keys of both dictionary inputs match
         """
         site_by_user = ccsbuildtools_utils.get_input_requirements_for_ccsbuildtools()
-        path_to_ignition = os.path.join(self.ctx.path, "services", "ccs-build-tools",
-                                        "ignition_rb"
-                                        )
-        with open(os.path.join(path_to_ignition, "answer-sample.yaml"), 'r') as f:
+        path_to_repo = os.path.join(self.ctx.path, "services", "ccs-build-tools")
+        with open(os.path.join(path_to_repo, "answer-sample.yaml"), 'r') as f:
             site_by_repo = yaml.load(f)
-        print site_by_user
-        print "---"
-        print site_by_repo
         self.assertEqual(_compare_dicts(site_by_user, site_by_repo), 0)
 
     def test_needed_directories_and_files_exist(self):
