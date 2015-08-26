@@ -38,7 +38,7 @@ def cli(ctx):
     required=True)
 @pass_context
 def display_pipeline_log(ctx, pipeline_name, gouser, gopass, goserver):
-    stagesURL = "http://{0}:8153/go/api/pipelines/{1}/stages.xml"
+    stagesURL = "http://{0}/go/api/pipelines/{1}/stages.xml"
     # Find latest run info
     res = requests.get(stagesURL.format(goserver, pipeline_name),
                        auth=HTTPBasicAuth(
@@ -92,12 +92,12 @@ def display_pipeline_log(ctx, pipeline_name, gouser, gopass, goserver):
 @click.option(
     '-s',
     '--goserver',
-    help='Provide the go server ip address.',
+    help='Provide the go server ip address and port no <ip:port>.',
     required=True)
 @pass_context
 def display_pipeline_status(ctx, pipeline_name, gouser, gopass, goserver):
 
-    serverURL = "http://{0}:8153/go/api/pipelines/{1}/status"
+    serverURL = "http://{0}/go/api/pipelines/{1}/status"
     res = requests.get(serverURL.format(goserver, pipeline_name),
                        auth=HTTPBasicAuth(
         gouser,
@@ -121,12 +121,12 @@ def display_pipeline_status(ctx, pipeline_name, gouser, gopass, goserver):
 @click.option(
     '-s',
     '--goserver',
-    help='Provide the go server ip address.',
+    help='Provide the go server ip address and port <ip:port>.',
     required=True)
 @pass_context
 def trigger_pipeline(ctx, pipeline_name, gouser, gopass, goserver):
 
-    serverURL = "http://{0}:8153/go/api/pipelines/{1}/schedule"
+    serverURL = "http://{0}/go/api/pipelines/{1}/schedule"
     res = requests.post(serverURL.format(goserver, pipeline_name),
                         auth=HTTPBasicAuth(gouser, gopass))
     soup = BeautifulSoup(res.content)
@@ -149,7 +149,7 @@ def trigger_pipeline(ctx, pipeline_name, gouser, gopass, goserver):
 @click.option(
     '-s',
     '--goserver',
-    help='Provide the go server ip address.',
+    help='Provide the go server ip address and port <ip:port>.',
     required=True)
 @pass_context
 def clone_pipeline(
@@ -160,9 +160,9 @@ def clone_pipeline(
         gopass,
         goserver):
 
-    configXMLURL = "http://{0}:8153/go/api/admin/config/current.xml".format(
+    configXMLURL = "http://{0}/go/api/admin/config/current.xml".format(
         goserver)
-    postConfigXMLURL = "http://{0}:8153/go/api/admin/config.xml".format(
+    postConfigXMLURL = "http://{0}/go/api/admin/config.xml".format(
         goserver)
     res = requests.post(configXMLURL,
                         auth=HTTPBasicAuth(gouser, gopass))

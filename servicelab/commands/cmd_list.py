@@ -105,6 +105,13 @@ def list_artifact(ctx):
 
 @cli.command('pipes', short_help='List Go deployment pipelines')
 @click.option(
+    '-l',
+    '--localrepo',
+    help='If provided stack will filter pipelines by services \
+          listed in local .stack directory.',
+    is_flag=True,
+    required=False)
+@click.option(
     '-g',
     '--gouser',
     help='Provide go server username',
@@ -117,16 +124,19 @@ def list_artifact(ctx):
 @click.option(
     '-s',
     '--goserver',
-    help='Provide the go server ip address.',
+    help='Provide the go server ip address and port no in format <ip:portno>.',
     required=True)
 @pass_context
-def list_pipe(ctx, gouser, gopass, goserver):
+def list_pipe(ctx, localrepo, gouser, gopass, goserver):
     """
     Lists piplines using GO's API.
     """
-    serverURL = "http://{0}:8153/go/api/pipelines.xml".format(goserver)
-    serverStringPrefix = "http://{0}:8153/go/api/pipelines/".format(goserver)
+    serverURL = "http://{0}/go/api/pipelines.xml".format(goserver)
+    serverStringPrefix = "http://{0}/go/api/pipelines/".format(goserver)
     serverStringSuffix = "/stages.xml"
+    servicesdirs = []
+    if os.path.isdir(os.path.join(ctx.path, "services")):
+        servicesdirs = os.listdir(os.path.join(ctx.path, "services"))
 
     # Find latest run info
     res = requests.get(serverURL, auth=HTTPBasicAuth(gouser, gopass))
@@ -137,4 +147,11 @@ def list_pipe(ctx, gouser, gopass, goserver):
         m = r.search(pipeline['href'])
         if m:
             pipelineName = m.group(1)
-            print pipelineName
+            if localrepo:
+                for sdir in servicesdirs:
+                    if sdir.startswith("service-"):
+                        service = sdir.split("service-", 1)[1]
+                        if service == pipelineName:
+                            print pipelineName
+            else:
+                print pipelineName

@@ -1,5 +1,6 @@
 import click
 import re
+import os
 from servicelab.stack import pass_context
 import requests
 from requests.auth import HTTPBasicAuth
@@ -71,6 +72,13 @@ def find_artifact(ctx, search_term):
 @cli.command('pipe', short_help='Find a Go deploy pipeline')
 @click.argument('search_term')
 @click.option(
+    '-l',
+    '--localrepo',
+    help='If provided stack will filter pipelines by services \
+          listed in local .stack directory.',
+    is_flag=True,
+    required=False)
+@click.option(
     '-g',
     '--gouser',
     help='Provide go server username',
@@ -83,19 +91,22 @@ def find_artifact(ctx, search_term):
 @click.option(
     '-s',
     '--goserver',
-    help='Provide the go server ip address.',
+    help='Provide the go server ip address and port number \
+          in format <ipaddress:portnumber>.',
     required=True)
 @pass_context
 # RFI: how do we take fancy input like grep? aka grep -ie "this|that"
 #      see pipe in search term.
-def find_pipe(ctx, search_term, gouser, gopass, goserver):
+def find_pipe(ctx, search_term, localrepo, gouser, gopass, goserver):
     """
     Searches through GO's API for pipelines using your search term.
     """
-
-    serverURL = "http://{0}:8153/go/api/pipelines.xml".format(goserver)
-    serverStringPrefix = "http://{0}:8153/go/api/pipelines/".format(goserver)
+    serverURL = "http://{0}/go/api/pipelines.xml".format(goserver)
+    serverStringPrefix = "http://{0}/go/api/pipelines/".format(goserver)
     serverStringSuffix = "/stages.xml"
+    servicesdirs = []
+    if os.path.isdir(os.path.join(ctx.path, "services")):
+        servicesdirs = os.listdir(os.path.join(ctx.path, "services"))
 
     # Find latest run info
     res = requests.get(serverURL, auth=HTTPBasicAuth(gouser, gopass))
@@ -103,7 +114,20 @@ def find_pipe(ctx, search_term, gouser, gopass, goserver):
     pipelines = soup.findAll('pipeline')
     for pipeline in pipelines:
         r = re.compile(serverStringPrefix + search_term + serverStringSuffix)
-        m = r.search(pipeline['href'])
-        if m:
-            pipelineName = m.group(1)
-            print pipelineName
+        searchString = pipeline['href']
+        splitString = searchString.split('/')
+        searchString = search_term
+        searchObj = re.search(
+            "^" + searchString + "$",
+            splitString[
+                len(splitString) - 2],
+            re.M | re.I)
+        if searchObj:
+            if localrepo:
+                for sdir in servicesdirs:
+                    if sdir.startswith("service-"):
+                        service = sdir.split("service-", 1)[1]
+                        if service == searchObj.group():
+                            print searchObj.group()
+            else:
+                print searchObj.group()
