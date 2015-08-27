@@ -241,7 +241,8 @@ def get_input_requirements_for_ccsbuildtools():
                               'domain': None,
                               'controller_count': 3,
                               'cloud_nodes': {'num_nova2': None,
-                                              'num_nova3': None
+                                              'num_nova3': None,
+                                              'num_ceph': None,
                                               }
                               },
             'tenant_cloud': {'site_name': None,
