@@ -23,7 +23,7 @@ class Connect_to_vagrant(object):
 
     def __init__(
             self,
-            vmname,
+            vm_name,
             path,
             provider="virtualbox",
             default_vbox="Cisco/rhel-7",
@@ -44,7 +44,7 @@ class Connect_to_vagrant(object):
             default_vbox        -- default virtualbox, defaults to "Cisco/Rhel7"
             default_vbox_url    -- hyperlink to the default_vbox
         """
-        self.vmname = vmname
+        self.vm_name = vm_name
         self.provider = provider
         self.default_vbox = default_vbox
         self.default_vbox_url = default_vbox_url
@@ -52,7 +52,7 @@ class Connect_to_vagrant(object):
         # Note: The quiet is so we know what's happening during
         #       vagrant commands in the term.
         # Note: Setup vagrant client.
-        vagrant_dir = os.path.join(path, "current_service")
+        vagrant_dir = path
         self.v = vagrant.Vagrant(
             root=vagrant_dir,
             quiet_stdout=False,
@@ -127,38 +127,38 @@ class Connect_to_vagrant(object):
             os.rename(vagrant_file + '.bak', vagrant_file + '.stack')
 
     @staticmethod
-    def rename_vmname_in_vagrantfile(vagrant_file, vmname):
+    def rename_vm_name_in_vagrantfile(vagrant_file, vm_name):
         """
         Member function which renames the virtual machine name. Replaces all
         old names in the Vagrantfile with the new inputted one.
 
         Args:
             vagrant_file    -- Path to the existing Vagrantfile.
-            vmname          -- new name to assign to VM
+            vm_name          -- new name to assign to VM
         """
         # EXP: Execute a touch of ruby to rename vm to vname
         with open(vagrant_file, 'w') as vfile:
             with open(vagrant_file+'.bak', 'r') as bfile:
                 for line in bfile:
                     if (line.rfind('config.vm.box = "%s"' % (default_vbox)) != -1):
-                        line = ' %s.vm.box = "%s"' % (vmname, default_vbox)
+                        line = ' %s.vm.box = "%s"' % (vm_name, default_vbox)
                         # Note: Need the space before config.
-                        line = str(' config.vm.define "%s" do |%s|\n%s' % (vmname,
-                                   vmname + "vm", line))
+                        line = str(' config.vm.define "%s" do |%s|\n%s' % (vm_name,
+                                   vm_name + "vm", line))
                         line = str(line + '\n end')
                         vfile.write(line)
 
-    def setup_vagrant_vm(vmname):
+    def setup_vagrant_vm(vm_name):
         """
         Member function which sets up the VM.
 
-        Opens up host port to vmname, sets file name and disables known hosts.
+        Opens up host port to vm_name, sets file name and disables known hosts.
 
         Args:
-            vmname  --  name to assign to VM
+            vm_name  --  name to assign to VM
         """
-        env.hosts = [v.user_hostname_port(vm_name='%s' % (vmname))]
-        env.key_filename = v.keyfile(vm_name='%s' % (vmname))
+        env.hosts = [v.user_hostname_port(vm_name='%s' % (vm_name))]
+        env.key_filename = v.keyfile(vm_name='%s' % (vm_name))
         env.disable_known_hosts = True
 
     # Note: Requires fabric env.hosts to be set
@@ -186,7 +186,7 @@ class Connect_to_vagrant(object):
 # execute(configure_cloud_init)
 
 
-def export_vm(path, vmname):
+def export_vm(path, vm_name):
     """
     Exports the virtualmachine to Virtualbox.
 
@@ -194,12 +194,12 @@ def export_vm(path, vmname):
         path  --  The path to your working .stack directory. Typically,
                   this looks like ./servicelab/servicelab/.stack where "."
                   is the path to the root of the servicelab repository.
-        vmname  --  name of virtualmachine
+        vm_name  --  name of virtualmachine
     """
     vbox = virtualbox.VirtualBox()
     machines = [machine for machine
                 in vbox.machines
                 if machine.name.rfind('MyTest') != -1]
     vm = machines[0]
-    run_this("VBoxManage export vm.name -o %s.ova --ovf10" % (vmname))
-    ovf_path = os.path.join(path, vmname + ".ova")
+    run_this("VBoxManage export vm.name -o %s.ova --ovf10" % (vm_name))
+    ovf_path = os.path.join(path, vm_name + ".ova")

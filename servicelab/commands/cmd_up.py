@@ -5,6 +5,7 @@ from servicelab.utils import Vagrantfile_utils
 from servicelab.utils import openstack_utils
 from servicelab.utils import helper_utils
 from servicelab.stack import pass_context
+from subprocess import CalledProcessError
 import multiprocessing
 import click
 import sys
@@ -15,7 +16,7 @@ import os
               unless --ha flag is set. You can not use the min flag with the full flag')
 @click.option('--mini', is_flag=True, default=False, help='Boot min openstack stack without ha, \
               unless --ha flag is set. You can not use min flag with the full flag')
-@click.option('--rhel7', help='Boot a rhel7 vm.')
+@click.option('--rhel7', is_flag=True, default=False, help='Boot a rhel7 vm.')
 @click.option('--target', '-t', help='pick an OSP target vm to boot.')
 @click.option('--service', '-s', default="", help='This is a service you would like to boot\
               a vm for. e.g. service-sonarqube')
@@ -24,7 +25,7 @@ import os
 @click.option('--ha', is_flag=True, default=False, help='Enables HA for core OpenStack components \
               by booting the necessary extra VMs.')
 @click.option('-b', '--branch', default="master", help='Choose a branch to run against \
-              for ccs-data.')
+              for service redhouse tenant and svc.')
 @click.option('-u', '--username', help='Enter the password for the username')
 @click.option('-i', '--interactive', help='Walk through booting VMs')
 # @click.option('--osp-aio', help='Boot a full CCS implementation of the \
@@ -49,9 +50,6 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                 ctx.logger.debug("Still couldn't set username. Exiting.")
                 sys.exit(1)
 
-    service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
-    service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
-
     if not any([full, mini, rhel7, target, service]):
         returncode, service = helper_utils.get_current_service(ctx.path)
     # RFI: may not matter if returns 1 if we aren't using current_service
@@ -65,59 +63,51 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
 
     # RHEL7 WORKFLOW ===============================
     if rhel7:
-        for i in xrange(1, 100):
-            if len(str(i)) == 1:
-                i = "00" + str(i)
-            elif len(str(i)) == 2:
-                i = "0" + str(i)
-            hostname = "rhel7-" + i
-            returncode = yaml_utils.host_exists_vagrantyaml(os.path.join(ctx.path,
-                                                                         "vagrant.yaml"),
-                                                            hostname)
-            if returncode == 1:
-                with open(os.path.join(ctx.path, "vagrant.yaml"), 'w') as f:
-                    yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
-
-                a = vagrant_utils.Connect_to_vagrant(vmname=hostname,
-                                                     path=ctx.path)
-                a.v.up(vmname=hostname)
-                returncode, myinfo = service_utils.run_this('vagrant hostmanager')
-                if returncode > 0:
-                    ctx.logger.error("Could not run vagrant hostmanager because\
-                                    {0}".format(myinfo))
-                    sys.exit(1)
-                else:
-                    sys.exit(0)
+        hostname = name_vm("rhel7", ctx.path)
+        # Note: Reserve the ip jic other vms are booted from this
+        #       servicelab env.
+        yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
+        yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
+                                        "ccs-dev-1")
+        Vagrantfile_utils.overwrite_vagrantfile(ctx.path)
+        a = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
+                                             path=ctx.path)
+        a.v.up(vm_name=hostname)
+        returncode, myinfo = service_utils.run_this('vagrant hostmanager')
+        if returncode > 0:
+            ctx.logger.error("Could not run vagrant hostmanager because\
+                            {0}".format(myinfo))
+            sys.exit(1)
+        else:
+            sys.exit(0)
     # SERVICE VM WORKFLOW ==========================
     elif service:
-        # TODO: Make sure infra001 is up and running or else make it so.
-        #       This is for the vagrant ssh heighliner deploy stage at the end.
-        for i in xrange(1, 100):
-            if len(str(i)) == 1:
-                i = "00" + str(i)
-            elif len(str(i)) == 2:
-                i = "0" + str(i)
+        returncode = infra_ensure_up(path=ctx.path)
+        if returncode == 1:
+            ctx.logger.error("Could not boot infra-001")
+            sys.exit(1)
 
-            hostname = service + "-" + i
-            returncode = yaml_utils.host_exists_vagrantyaml(os.path.join(ctx.path,
-                                                                         "vagrant.yaml"),
-                                                            hostname)
-            if returncode == 1:
-                with open(os.path.join(ctx.path, "vagrant.yaml"), 'w') as f:
-                    yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
-                    yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
-                                                    "ccs-dev-1")
-                Vagrantfile_utils.overwrite_vagrantfile(ctx.path)
-                a = vagrant_utils.Connect_to_vagrant(vmname=hostname,
-                                                     path=ctx.path)
-                a.v.up(vm_name=hostname)
-                returncode, myinfo = service_utils.run_this('vagrant hostmanager')
-                if returncode > 0:
-                    ctx.logger.error("Could not run vagrant hostmanager because\
-                                    {0}".format(myinfo))
-                    sys.exit(1)
-                else:
-                    sys.exit(0)
+        hostname = name_vm(service, ctx.path)
+        a = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
+                                             path=ctx.path)
+        returncode = yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
+        if returncode == 1:
+            ctx.logger.error("Couldn't write vm yaml to ccs-dev-1 for " + hostname)
+            sys.exit(1)
+        returncode = yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml",
+                                                     hostname, "ccs-dev-1")
+        if returncode == 1:
+            ctx.logger.error("Couldn't write vm to vagrant.yaml in " + ctx.path)
+            sys.exit(1)
+        Vagrantfile_utils.overwrite_vagrantfile(ctx.path)
+        a.v.up(vm_name=hostname)
+        returncode, myinfo = service_utils.run_this('vagrant hostmanager')
+        if returncode > 0:
+            ctx.logger.error("Could not run vagrant hostmanager because\
+                            {0}".format(myinfo))
+            sys.exit(1)
+        else:
+            sys.exit(0)
         # TODO: Figure out a better way to execute this. The ssh can be very
         #       fragile.
         service_utils.run_this('vagrant ssh infra-001 -c cp "/etc/ansible"; \
@@ -129,16 +119,18 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             ctx.logger.error("Could not run vagrant hostmanager because\
                              {0}".format(myinfo))
     elif target:
+        service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
+        service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
         # TODO: Got to ensure service-redhouse-tenant/svc are here to be
         # addressed. No need for an infra node here.
         # RFI: if the infra node is up should we add to authorized_keys?
         click.echo("vagrant up %s" % (target))
-        a = vagrant_utils.Connect_to_vagrant(vmname=target,
+        a = vagrant_utils.Connect_to_vagrant(vm_name=target,
                                              path=ctx.path)
         # Note: from python-vagrant up function (self, no_provision=False,
         #                                        provider=None, vm_name=None,
         #                                        provision=None, provision_with=None)
-        a.v.up(vmname=target)
+        a.v.up(vm_name=target)
         returncode, myinfo = service_utils.run_this('vagrant hostmanager')
         if returncode > 0:
             ctx.logger.error("Could not run vagrant hostmanager because\
@@ -147,39 +139,43 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         else:
             sys.exit(0)
 
-    path_to_utils = os.path.split(ctx.path)
-    path_to_utils = os.path.join(path_to_utils[0], "utils")
-    pathto_vagrantyaml_templ = os.path.join(path_to_utils, "vagrant.yaml")
+    service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
+    service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
 
     if mini:
-        returncode, allmy_vms = yaml_utils.getmin_OS_vms(pathto_vagrantyaml_templ)
+        returncode, allmy_vms = yaml_utils.getmin_OS_vms(ctx.path)
     elif full:
-        returncode, allmy_vms = yaml_utils.getfull_OS_vms(pathto_vagrantyaml_templ)
+        returncode, allmy_vms = yaml_utils.getfull_OS_vms(ctx.path)
     if returncode > 0:
         ctx.logger.error("Couldn't get the vms from the vagrant.yaml.")
         sys.exit(1)
     try:
-        for k in allmy_vms:
+        for i in allmy_vms:
             if ha:
-                ha_vm = k.replace("001", "002")
-                returncode, ha_vm_dict = yaml_utils.gethost_byname(ha_vm,
-                                                                   pathto_vagrantyaml_templ)
+                ha_vm = i.replace("001", "002")
+                returncode, ha_vm_dicts = yaml_utils.gethost_byname(ha_vm,
+                                                                    pathto_vagrantyaml_templ)
                 if returncode > 0:
                     ctx.logger.error("Couldn't get the vm {0} for HA".format(ha_vm))
                     sys.exit(1)
                 else:
-                    allmy_vms.append(ha_vm_dict)
-            yaml_utils.host_add_vagrantyaml(ctx.path,
-                                            "vagrant.yaml",
-                                            k,
-                                            "ccs-dev-1",
-                                            memory=allmy_vms[k]['memory'],
-                                            box=allmy_vms[k]['box'],
-                                            role=allmy_vms[k]['role'],
-                                            profile=allmy_vms[k]['profile'],
-                                            domain=allmy_vms[k]['domain'],
-                                            storage=allmy_vms[k]['storage'],
-                                            )
+                    allmy_vms.append(ha_vm_dicts)
+            for host in i:
+                retcode = yaml_utils.host_add_vagrantyaml(path=ctx.path,
+                                                          file_name="vagrant.yaml",
+                                                          hostname=host,
+                                                          site='ccs-dev-1',
+                                                          memory=(i[host]['memory'] / 512),
+                                                          box=i[host]['box'],
+                                                          role=i[host]['role'],
+                                                          profile=i[host]['profile'],
+                                                          domain=i[host]['domain'],
+                                                          mac_nocolon=i[host]['mac'],
+                                                          ip=i[host]['ip'],
+                                                          )
+                if retcode > 0:
+                    ctx.logger.error("Failed to add host" + host)
+                    ctx.logger.error("Continuing despite failure...")
     except IOError as e:
         ctx.logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
         sys.exit(1)
@@ -230,14 +226,16 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         # Write out local provider Vagrantfile
         Vagrantfile_utils.overwrite_vagrantfile(ctx.path)
 
-    a = vagrant_utils.Connect_to_vagrant(vmname=target, path=ctx.path)
+    a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=ctx.path)
     if os.name == "posix":
         for k in allmy_vms:
-            a.v.up(vmname=k, no_provision=True)
+            for i in k:
+                a.v.up(vm_name=i, no_provision=True)
     # Provision VMS using 4 CPUs from a pool
         pool = multiprocessing.Pool(4)
         for k in allmy_vms:
-            pool.map(a.v.provision(vmname=k))
+            for i in k:
+                pool.map(a.v.provision(vm_name=i))
         pool.close()
         returncode, myinfo = service_utils.run_this('vagrant hostmanager')
         if returncode > 0:
@@ -247,9 +245,77 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         sys.exit(0)
     elif os.name == "nt":
         for k in allmy_vms:
-            a.v.up(vmname=k)
+            for i in k:
+                a.v.up(vm_name=i)
         if returncode > 0:
             ctx.logger.error("Could not run vagrant hostmanager because\
                              {0}".format(myinfo))
             sys.exit(1)
         sys.exit(0)
+
+
+def name_vm(name, path):
+    for i in xrange(1, 100):
+        i = str(i)
+        if len(i) == 1:
+            i = "00" + i
+        elif len(i) == 2:
+            i = "0" + i
+        hostname = name + "-" + i
+        returncode = yaml_utils.host_exists_vagrantyaml(hostname, path)
+        if returncode == 1:
+            return hostname
+
+
+def infra_ensure_up(hostname="infra-001", path=None):
+    '''
+    #Out[3]: [Status(name='rhel7-001', state='running', provider='virtualbox')]
+    #CalledProcessError
+    '''
+    infra_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra-001",
+                                                        path=path)
+    try:
+        returncode = vm_isrunning(hostname=hostname, path=path)
+        if returncode == 1:
+            infra_connection.v.up(vm_name=hostname)
+            returncode = vm_isrunning(hostname=hostname, path=ctx.path)
+            if returncode == 0:
+                return 0
+            else:
+                ctx.logger.error("Could not boot " + hostname)
+                return 1
+    except CalledProcessError as e:
+        path_to_utils = helper_utils.get_path_to_utils(path)
+        returncode, idic = yaml_utils.gethost_byname(hostname, path_to_utils)
+        if returncode == 1:
+            ctx.logger.error("Couldn't get the templated host details\
+                             in vagrant.yaml.")
+
+        retcode = yaml_utils.host_add_vagrantyaml(path=path,
+                                                  file_name="vagrant.yaml",
+                                                  hostname=hostname,
+                                                  memory=(idic[hostname]['memory'] / 512),
+                                                  box=idic[hostname]['box'],
+                                                  role=idic[hostname]['role'],
+                                                  profile=idic[hostname]['profile'],
+                                                  domain=idic[hostname]['domain'],
+                                                  mac_nocolon=idic[hostname]['mac'],
+                                                  ip=idic[hostname]['ip'],
+                                                  site='ccs-dev-1')
+        if retcode == 0:
+            infra_connection.v.up(vm_name=hostname)
+            return 0
+        else:
+            # Not defined yet b/c not @pass_context to sub function
+            # ctx.logger.error("Failed to bring up " + hostname)
+            return 1
+
+
+def vm_isrunning(hostname, path):
+    vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
+                                                     path=path)
+    status = vm_connection.v.status()
+    if status[0][1] == "running":
+        return 0
+    else:
+        return 1

@@ -181,8 +181,6 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
                     hostname_lst[hostname] = complete_dict[hostname]
                 click.echo("all available host names are :")
                 console_print(hostname_lst)
-                import pdb
-                pdb.set_trace()
                 continue
 
             if server_hostname == "":
