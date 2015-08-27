@@ -121,12 +121,31 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
     elif target:
         service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
         service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
-        # TODO: Got to ensure service-redhouse-tenant/svc are here to be
-        # addressed. No need for an infra node here.
+        # Note: os.link(src, dst)
+        if not os.path.islink(os.path.join(ctx.path,
+                                           "services",
+                                           "service-redhouse-tenant",
+                                           "dev",
+                                           "ccs-data")):
+            ctx.logger.debug('WARNING: Linking ' + os.path.join(ctx.path, "services",
+                             "service-redhouse-tenant") + "with " +
+                             os.path.join(ctx.path, "services", "ccs-data"))
+            os.link(os.path.join(ctx.path,
+                                 "services",
+                                 "ccs-data"
+                                 ),
+                    os.path.join(ctx.path,
+                                 "services",
+                                 "service-redhouse-tenant",
+                                 "dev",
+                                 "ccs-data"))
         # RFI: if the infra node is up should we add to authorized_keys?
         click.echo("vagrant up %s" % (target))
+        # TODO: Make a decision here on service-redhouse-tenant vs -svc
         a = vagrant_utils.Connect_to_vagrant(vm_name=target,
-                                             path=ctx.path)
+                                             path=os.path.join(ctx.path,
+                                                               "services",
+                                                               "service-redhouse-tenant"))
         # Note: from python-vagrant up function (self, no_provision=False,
         #                                        provider=None, vm_name=None,
         #                                        provision=None, provision_with=None)

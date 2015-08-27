@@ -12,14 +12,15 @@ wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.rpm -O vagran
 sudo yum -y localinstall vagrant_1.7.2_x86_64.rpm
 fi
 
-sudo pip install -r requirements.txt
 sudo pip install -r test-requirements.txt
-sudo pip install -e .
 
 pep8 --max-line=93 servicelab/stack.py
 pep8 --max-line=93 servicelab/commands/*.py
 pep8 --max-line=93 servicelab/utils/*.py
 pep8 --max-line=93 tests/*.py
+
+sudo pip install -r requirements.txt
+sudo pip install -e .
 
 stack workon ccs-data
 python -m unittest discover .
