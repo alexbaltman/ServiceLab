@@ -306,7 +306,7 @@ def _vbox_os_provider_parse_multiple_networks(tenant_nets):
             vagrant_network = vagrant_network + stl_without_ip % net['name']
         if net['ip']:
             vagrant_network = vagrant_network + stl_with_ip % net['name']
-    vagrant_network = '[' + vagrant_network[:-1] + ']'
+    vagrant_network = '[' + vagrant_network.strip(",") + ']'
     return vagrant_network
 
 
