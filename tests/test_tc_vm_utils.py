@@ -68,7 +68,7 @@ class TestVMYamlCreate(unittest.TestCase):
             yaml_data = {
                 'interfaces': {
                     'eth0': {
-                        'ip_address': str(self.subnet.network_address + 10 + i),
+                        'ip_address': str(self.subnet.network_address + 4 + i),
                     },
                 },
                 'type': 'virtual',
@@ -86,7 +86,7 @@ class TestVMYamlCreate(unittest.TestCase):
         print 'Expected file was found'
         with open(self.filename, 'r') as yaml_file:
             yaml_data = yaml.load(yaml_file)
-            ipaddr = str(self.subnet.network_address + 31)
+            ipaddr = str(self.subnet.network_address + 25)
         self.assertTrue(yaml_data['interfaces']['eth0']['ip_address'] == ipaddr)
         print 'Expected IP was found'
 

@@ -1,6 +1,8 @@
+import tc_vm_yaml_create
 import service_utils
 import helper_utils
 import subprocess32 as subprocess
+import ipaddress
 import logging
 import yaml
 import sys
@@ -659,26 +661,30 @@ def next_macip_for_devsite(path, site):
     """
     # Note: We're assuming a pre-sorted list here from
     #       get_allips_forsite, otherwise we'd have to here.
-    l = get_allips_forsite(path, site)
+    # l = get_allips_forsite(path, site)
+    env_path = os.path.join(path, 'services', 'ccs-data', 'sites', 'ccs-dev-1',
+                            'environments')
+    subnet = ipaddress.IPv4Network(unicode('192.168.100.0/24'))
+    l = [tc_vm_yaml_create.find_ip(env_path, subnet)]
     # [i.split(".")[0] for i in l]
     for ip in l:
         # Note: oct, meaning octet of an ip.
-        oct1, oct2, oct3, oct4 = ip.split(".")
-        if int(oct1) == 192 and int(oct2) == 168 and int(oct3) == 100:
+        # oct1, oct2, oct3, oct4 = ip.split(".")
+        # if int(oct1) == 192 and int(oct2) == 168 and int(oct3) == 100:
             # Note: oct4 is str so to add 1 need to make int and then
             #       to compare to list need to make str again.
-            oct4 = str(int(oct4)+1)
+            # oct4 = str(int(oct4)+1)
             # Note: Recreate string w/ new oct 4 for list comparison.
-            ip = ".".join([oct1, oct2, oct3, oct4])
-            if ip == "192.168.100.1":
+            # ip = ".".join([oct1, oct2, oct3, oct4])
+            # if ip == "192.168.100.1":
                 # Note: Don't want to match the gateway.
-                continue
-            elif ip == "192.168.100.255":
-                yaml_utils_logger.error("No ips remaining on the \
-                                         192.168.100.0/24 block.")
-                return 1
+                # continue
+            # elif ip == "192.168.100.255":
+                # yaml_utils_logger.error("No ips remaining on the \
+                                        # 192.168.100.0/24 block.")
+                # return 1
 
-            if ip not in l:
+            # if ip not in l:
                 returncode, mac_colon, mac_nocolon = gen_mac_from_ip(ip)
                 if returncode == 0:
                     return 0, ip, mac_colon, mac_nocolon
