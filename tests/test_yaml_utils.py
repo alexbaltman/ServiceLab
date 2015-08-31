@@ -33,8 +33,6 @@ class TestYamlUtils(unittest.TestCase):
         '10.202.44.100',
         '10.202.165.147',
         '10.202.165.148',
-        '10.202.165.174',
-        '10.202.165.211',
         '64.102.6.247',
         '171.70.168.183',
         '173.36.131.10',
@@ -167,6 +165,10 @@ class TestYamlUtils(unittest.TestCase):
                 "master",
                 getpass.getuser(),
                 "ccs-data")
+            print yaml_utils.get_allips_forsite(
+                    temp_dir,
+                    TestYamlUtils.SITE_NAME)
+            print " .......", self.site_ips
             self.assertItemsEqual(
                 yaml_utils.get_allips_forsite(
                     temp_dir,

@@ -38,6 +38,9 @@ def cli(ctx):
     required=True)
 @pass_context
 def display_pipeline_log(ctx, pipeline_name, gouser, gopass, goserver):
+    """
+    Displays a pipeline log.
+    """
     stagesURL = "http://{0}/go/api/pipelines/{1}/stages.xml"
     # Find latest run info
     res = requests.get(stagesURL.format(goserver, pipeline_name),
@@ -96,7 +99,9 @@ def display_pipeline_log(ctx, pipeline_name, gouser, gopass, goserver):
     required=True)
 @pass_context
 def display_pipeline_status(ctx, pipeline_name, gouser, gopass, goserver):
-
+    """
+    Displays a pipeline status.
+    """
     serverURL = "http://{0}/go/api/pipelines/{1}/status"
     res = requests.get(serverURL.format(goserver, pipeline_name),
                        auth=HTTPBasicAuth(
@@ -125,7 +130,9 @@ def display_pipeline_status(ctx, pipeline_name, gouser, gopass, goserver):
     required=True)
 @pass_context
 def trigger_pipeline(ctx, pipeline_name, gouser, gopass, goserver):
-
+    """
+    Runs a pipeline.
+    """
     serverURL = "http://{0}/go/api/pipelines/{1}/schedule"
     res = requests.post(serverURL.format(goserver, pipeline_name),
                         auth=HTTPBasicAuth(gouser, gopass))
@@ -159,7 +166,9 @@ def clone_pipeline(
         gouser,
         gopass,
         goserver):
-
+    """
+    Clones a pipeline and assigns it the new name.
+    """
     configXMLURL = "http://{0}/go/api/admin/config/current.xml".format(
         goserver)
     postConfigXMLURL = "http://{0}/go/api/admin/config.xml".format(

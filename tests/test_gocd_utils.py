@@ -27,7 +27,8 @@ class TestGoCdUtils(unittest.TestCase):
     ENDING_LOG = "-------------------End of job log for pipeline"
 
     """
-    TestGoCdUtils class is a unittest class for yaml_utils.
+    TestGoCdUtils class is a unittest class for testing go cd commands.
+    This sets up with a test pipeline.
     Attributes:
         ctx:  Context object of servicelab module.
     """
@@ -52,7 +53,7 @@ class TestGoCdUtils(unittest.TestCase):
             data=payload)
 
     def test_cmd_pipeline_status(self):
-        """ Tests run command.
+        """ Tests pipeline status command.
         """
         runner = CliRunner()
         result = runner.invoke(cmd_pipe.cli,
@@ -95,7 +96,7 @@ class TestGoCdUtils(unittest.TestCase):
             TestGoCdUtils.F_SCHED)
 
     def test_cmd_list(self):
-        """ Tests run command.
+        """ Tests pipeline list command.
         """
         runner = CliRunner()
         result = runner.invoke(cmd_list.cli,
@@ -109,7 +110,7 @@ class TestGoCdUtils(unittest.TestCase):
         self.assertTrue(TestGoCdUtils.PIPELINE_NAME in result.output.strip())
 
     def test_cmd_find(self):
-        """ Tests run command.
+        """ Tests find command.
         """
         runner = CliRunner()
         result = runner.invoke(cmd_find.cli,
@@ -126,7 +127,7 @@ class TestGoCdUtils(unittest.TestCase):
             TestGoCdUtils.PIPELINE_NAME)
 
     def test_cmd_log(self):
-        """ Tests run command.
+        """ Tests log command.
         """
         runner = CliRunner()
         result = runner.invoke(cmd_pipe.cli,

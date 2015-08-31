@@ -95,8 +95,6 @@ def find_artifact(ctx, search_term):
           in format <ipaddress:portnumber>.',
     required=True)
 @pass_context
-# RFI: how do we take fancy input like grep? aka grep -ie "this|that"
-#      see pipe in search term.
 def find_pipe(ctx, search_term, localrepo, gouser, gopass, goserver):
     """
     Searches through GO's API for pipelines using your search term.

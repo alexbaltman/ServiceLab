@@ -37,9 +37,6 @@ def _push_config(configXMLURL, md5, xmlfile, auth=None):
         'xmlFile': xmlfile
     }
 
-    print "this is xmlfile : "
-    print xmlfile
-
     if auth:
         p = requests.post(configXMLURL,
                           auth=auth, data=payload)
@@ -52,6 +49,17 @@ def _push_config(configXMLURL, md5, xmlfile, auth=None):
 
 
 def _create_pipeline(root, name, new_name):
+    """Creates a pipeline.
+
+    Args:
+        name (str): Name of existing name
+        new_name(str): Name of the new pipeline
+
+    Returns:
+    Example Usage:
+        >>> print _create_pipeline(root,
+        name, new_name)
+    """
     pipeline = root.find('.//pipeline[@name="%s"]' % name)
     pipeline_parent = root.find('.//pipeline[@name="%s"]/..' % name)
 
