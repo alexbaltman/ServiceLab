@@ -225,6 +225,7 @@ def get_input_requirements_for_ccsbuildtools():
     default values.
     """
     return {'bom': None,
+            'ucs_inventory': None,
             'ucs_password': None,
             'ip_ranges': {'vlan2': '10.202.64.0/25',
                           'vlan4': '10.202.64.128/28',

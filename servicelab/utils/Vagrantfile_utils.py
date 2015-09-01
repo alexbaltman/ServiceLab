@@ -10,7 +10,7 @@ Vagrantfile_utils_logger = logging.getLogger('click_application')
 logging.basicConfig()
 
 
-def overwrite_vagrantfile(path):
+def overwrite_vagrantfile(path, provider="vbox", envvar_dict='', flav_img='', host=''):
     """Overwrites Vagrantfile
 
     The following attributes are written into/over the Vagrantfile:
@@ -26,6 +26,9 @@ def overwrite_vagrantfile(path):
         path (str): The path to your working .stack directory. Typically,
                     this looks like ./servicelab/servicelab/.stack where "."
                     is the path to the root of the servicelab repository.
+        provider (str): What provider is going to host the VMs that are
+                        booting. Right now there are two known/tested
+                        options: vbox or OS (openstack).
 
     Returns:
         (int) The return code::
@@ -61,8 +64,12 @@ def overwrite_vagrantfile(path):
         f.write(set_current_service)
         load_vagrantyaml = _load_vagrantyaml(path)
         f.write(load_vagrantyaml)
-        vbox_config = _vbox_provider_configure()
-        f.write(vbox_config)
+        if provider == 'vbox':
+            vbox_config = _vbox_provider_configure()
+            f.write(vbox_config)
+        elif provider == 'OS':
+            f.write(_vbox_provider_configure(OS=True, host=host, envars_dict=envvars_dict,
+                                             flav_img=flav_img))
 
 
 def _set_vagrantfile_header():
@@ -302,10 +309,13 @@ def _vbox_os_provider_parse_multiple_networks(tenant_nets):
     stl_with_ip = "{name: '%s', address: ho['ip']},"
     vagrant_network = ''
     for net in tenant_nets:
-        if not net['ip']:
+        try:
+            if net['ip']:
+                vagrant_network = vagrant_network + stl_with_ip % net['name']
+            else:
+                vagrant_network = vagrant_network + stl_without_ip % net['name']
+        except KeyError:
             vagrant_network = vagrant_network + stl_without_ip % net['name']
-        if net['ip']:
-            vagrant_network = vagrant_network + stl_with_ip % net['name']
     vagrant_network = '[' + vagrant_network.strip(",") + ']'
     return vagrant_network
 
@@ -332,8 +342,34 @@ def _vbox_os_provider_host_vars(path, host):
                     return None
 
 
-def _vbox_provider_configure():
+def _vbox_provider_configure(OS=False, envars_dict='', flav_img='', host=''):
     """Returns configuration for Vagrantfile with the VirtualBox provider
+
+    Args:
+        OS (boolean): OS defaults to false, but if needed can be set to true and then the
+                      caller will get back an additional configuration for using OS
+        envvars_dict (dict): A dictionary, expected to be provided by
+                             _vbox_os_provider_env_vars(float_net, tenant_networks). Here's
+                             an example dictionary with the password sanitized.
+
+            {'username': 'aaltman',
+             'openstack_auth_url': 'https://us-rdu-3.cisco.com:5000/v2.0',
+             'tenant_name': 'ServiceLab',
+             'floating_ip_pool': 'public-floating-602',
+             'openstack_image_url': 'https://us-rdu-3.cisco.com:9292/v2/',
+             'openstack_network_url': 'https://us-rdu-3.cisco.com:9696/v2.0',
+             'password': 'XXXXX',
+             'networks': u"[{name: 'SLAB_aaltman_mgmt_network'},
+                            {name: 'SLAB_aaltman_network'}]
+
+        flav_img (dict): This is a dictionary, expected to be provided by
+                         _vbox_os_provider_host_vars(path, host)
+                         Here is an example dict that is returned:
+
+                        {'image': 'RHEL-7',
+                        'flavor': '4cpu.8ram.20-96sas'}
+
+        host (string): This is a string of a host that can be found in ccs-dev-1.
 
     Returns:
         Returns a single string outlining configuration specs that are applied to every host
@@ -344,10 +380,11 @@ def _vbox_provider_configure():
             *hw   --  hardware configuration: sets up hardware specs of VBox
             *p    --  provisioning configuration: provisioner shell scripts to run ansible
                       playbooks on VMs
+            *os    --  OS provider configuration
 
     Example Usage:
         >>> print _vbox_provider_configure()
-        --see code for outputted string--
+        --see code below for outputted string--
     """
     # Init. Config.
     s = (
@@ -424,7 +461,7 @@ def _vbox_provider_configure():
          "          h.vm.synced_folder './services', '/opt/ccs/services'\n"
          "          h.vm.provision 'shell', path: './provision/infra.sh'\n"
          # There is no out ansible group_vars
-         # h.vm.synced_folder './services/ccs-data/out/ccs-dev-1/dev/etc/ \
+         # h.vm.synced_folder './services/ccs-data/out/ccs-dev-1/dev/etc/
          # ansible/group_vars', '/etc/ansible/group_vars'
          "        end\n"
          "      else\n"
@@ -438,4 +475,26 @@ def _vbox_provider_configure():
          "end"
          )
 
-    return s + net + hw + p
+    if OS is False:
+        return s + net + hw + p
+
+        os = ("      config.ssh.username = 'cloud-user'\n"
+              "      h.vm.provider :openstack do |os, override|\n"
+              "        os.openstack_auth_url   = " + envvars_dict['openstack_auth_url'] +
+              '/tokens\n'
+              "        os.username             = " + envvars_dict['username'] + "\n"
+              "        os.password             = " + envvars_dict['password'] + "\n"
+              "        os.tenant_name          = " + envvars_dict['tenant_name'] + "\n"
+              "        os.flavor               = " + flav_img['flavor'] + "\n"
+              "        os.image                = " + flav_img['image'] + "\n"
+              "        os.floating_ip_pool     = " + envvars_dict['floating_ip_pool'] + "\n"
+              "        os.floating_network_url = " + envvars_dict['openstack_network_url'] +
+              "\n"
+              "        os.floating_image_url   = " + envvars_dict['openstack_image_url'] +
+              "\n"
+              "        os.networks             = " + envvars_dict['networks'] + "\n"
+              "        override.vm.box         = openstack\n"
+              "      end\n"
+              )
+
+        return s + net + os + hw + p
