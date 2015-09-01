@@ -296,9 +296,10 @@ def _input_cloud_info(cloud, is_svc):
                         '# Nova Nodes for Nova Ctl #3',
                         '# Net Nodes', ' # Haproxy Nodes', '# Ceph Nodes'
                         ]
-    svc_nodes = ['num_nova2', 'num_nova3']
+    svc_nodes = ['num_nova2', 'num_nova3', 'num_ceph']
     svc_nodes_prompts = ['# Nova Nodes for Nova Ctl #2',
-                         '# Nova Nodes for Nova Ctl #3'
+                         '# Nova Nodes for Nova Ctl #3',
+                         '# Ceph Nodes'
                          ]
     _user_input_for_list(cloud_input_fields, cloud_input_fields_prompts, cloud, False)
     cloud['controller_count'] = 3
