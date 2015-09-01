@@ -13,13 +13,12 @@ sudo yum -y localinstall vagrant_1.7.2_x86_64.rpm
 sudo yum -y install java-1.7.0-openjdk
 sudo yum -y install git
 sudo yum -y install httpd-tools
-wget http://dl.bintray.com/gocd/gocd-rpm/go-server-15.2.0-2248.noarch.rpm
+wget http://download.go.cd/gocd-rpm/go-server-15.2.0-2248.noarch.rpm
 wget http://dl.bintray.com/gocd/gocd-rpm/go-agent-15.2.0-2248.noarch.rpm
 sudo yum -y install procps
 sudo htpasswd -cbs  /tmp/passwd raju badger
 sudo yum -y localinstall go-server-15.2.0-2248.noarch.rpm
 sudo yum -y localinstall go-agent-15.2.0-2248.noarch.rpm
-#sudo echo "export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.85-2.6.1.2.el7_1.x86_64/jre" >> /etc/default/go-agent
 sudo cp cruise-config.xml /etc/go
 sudo /etc/init.d/go-server restart
 sudo /etc/init.d/go-agent restart
@@ -28,6 +27,13 @@ sleep 60
 echo "Accessing Go : "
 curl http://localhost:8153
 curl 'http://localhost:8153/go/api/pipelines.xml'   -u 'raju:badger'
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]
+then
+cd osx
+./checkosx.sh
+cd ..
 fi
 
 sudo pip install -r requirements.txt
