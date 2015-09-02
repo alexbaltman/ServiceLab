@@ -1,5 +1,5 @@
-Frequently Asked Questions
-==========================
+FAQ
+===
 
 This page answers some of the often asked questions about Stack.
 

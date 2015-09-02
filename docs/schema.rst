@@ -1,7 +1,7 @@
 .. _schema:
 
-Schema Documentation
-====================
+Schema
+======
 
 service_cloud
 -------------

@@ -1,4 +1,4 @@
-Intro to SDLC
+Introduction
 =============
 
 **The goal of the SDLC Process is to create an SDLC tool chain to enable:**

@@ -189,21 +189,7 @@ def gather_env_info(path):
                           ):
             all_sites.append(i)
     all_sites.sort()
-    table = PrettyTable(['Number', 'Site Name'])
-    x = 1
-    for i in all_sites:
-        table.add_row([x, i])
-        x = x + 1
-    print table
-    valid_opts = range(1, x)
-    for i in valid_opts:
-        i = repr(i)
-    site_num = _get_valid_input_or_option("Enter site number: ", 0, valid_opts)
-    table.header = False
-    table.border = False
-    site_name = table.get_string(fields=['Site Name'], start=int(site_num)-1,
-                                 end=int(site_num)
-                                 ).strip()
+    site_name = table_selection(all_sites, 'Site_Name')
     with open(os.path.join(path_to_ccs_data, "sites",
                            site_name, "data.d", "answer-%s.yaml" % (site_name)
                            )
@@ -217,6 +203,28 @@ def gather_env_info(path):
                                    )
     exit_input(site_dictionary, path_to_ansyaml, False)
     return 0, site_dictionary
+
+
+def table_selection(options, topic_name):
+    """Table selection, return option that was selected
+    """
+    table = PrettyTable(['#', topic_name])
+    table.align['#'] = 'r'
+    table.align[topic_name] = 'l'
+    x = 1
+    for i in options:
+        table.add_row([x, i])
+        x = x + 1
+    print table
+    valid_opts = range(1, x)
+    for i in valid_opts:
+        i = repr(i)
+    num = _get_valid_input_or_option("Enter number: ", 0, valid_opts)
+    table.header = False
+    table.border = False
+    return table.get_string(fields=[topic_name], start=int(num)-1,
+                            end=int(num)
+                            ).strip()
 
 
 def get_input_requirements_for_ccsbuildtools():

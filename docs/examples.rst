@@ -1,4 +1,4 @@
-Workflow
+Examples
 ========
 
 Input::

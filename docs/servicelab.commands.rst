@@ -1,5 +1,5 @@
-servicelab.commands package
-===========================
+servicelab.commands
+===================
 
 cmd_create module
 -----------------

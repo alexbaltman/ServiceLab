@@ -1,5 +1,5 @@
-CCS Data
-========
+CCSData
+=======
 
 This is the holy grail. The collection of key/value pairs that describes all the sites and environments in CCS. One could look at it as a giant Python hash piped through Jinja templates. Everything begins and ends here. If you have an issue, most of the time, your answer lies here.
 

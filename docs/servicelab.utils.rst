@@ -1,5 +1,5 @@
-servicelab.utils package
-========================
+servicelab.utils
+================
 
 ccsbuildtools_utils module
 --------------------------

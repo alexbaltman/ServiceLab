@@ -1,5 +1,5 @@
-servicelab package
-==================
+servicelab
+==========
 
 servicelab.errors module
 ------------------------
