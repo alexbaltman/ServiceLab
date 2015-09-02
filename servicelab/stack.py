@@ -47,6 +47,14 @@ class Context(object):
         # Add handlers to the logger
         self.logger.addHandler(self.file_handler)
         self.logger.addHandler(self.console_handler)
+        self.__gerrit_test_info = {"hostname": "ccs-gerrit-stg.cisco.com", "port": 29418}
+        self.__gerrit_info = {"hostname": "ccs-gerrit.cisco.com", "port": 29418}
+
+    def get_gerrit_server(self):
+        if self.debug:
+            return self.__gerrit_test_info
+        else:
+            return self.__gerrit_info
 
     def reporoot_path(self):
         path_to_reporoot = os.path.split(self.path)

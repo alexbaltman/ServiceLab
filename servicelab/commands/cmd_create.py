@@ -2,7 +2,6 @@ import os
 import re
 import yaml
 import click
-from fabric.api import run
 from servicelab.stack import pass_context
 from servicelab.utils import helper_utils
 from servicelab.utils import service_utils
@@ -23,40 +22,33 @@ def cli(ctx):
 
 @cli.command('repo', short_help='Create repo')
 @click.argument('repo_name', required=True)
-@click.option('--kind', prompt='Which type of repo? '
-                               'Standard, Ansible, or Puppet')
+@click.option('--kind', prompt=True, default='ansible',
+              type=click.Choice(['project', 'ansible', 'puppet', "empty"]))
 @pass_context
 def repo_new(ctx, repo_name, kind):
     """Creates a repository in gerrit production, does 1st commit,
-    sets up directory structure, and creates nimbus.yml by leveraging
-    Fabric's Pythonic remote execution.
+    sets up directory structure, and creates nimbus.yml.
 
     Sets up service automation dir structure when init a gerrit repo.
 
     For instance if it's puppet, setup that directory structure
-
-    If it's Ansible have user commit it.
 
     Add .nimbus.yml file to repo
 
     Add an interactive mode so they can choose options.
 
     :param repo_name:    The name of the repository
-    :param kind:         The type of repo (Standard, Ansible, Puppet)
-
-    .. note::
-        Work to be done to keep up with DRY principles and
-        folder structure setup. Needs prompt validation if user did not input
-        correct type of repo.
+    :param kind:         The type of repo (Project, Ansible, Puppet)
+                         Project will craete a project of normal type.
+                         Ansible will create a service repo of ansible type.
+                         Puppet will create a service repo of ansible type.
     """
-    kind_lower = kind.lower()
-    click.echo('Creating Project: {}'.format(kind_lower))
-    if kind_lower == 'standard':
-        run('fab create_standard')
-    elif kind_lower == 'ansible':
-        run('fab create_ansible')
-    elif kind_lower == 'puppet':
-        run('fab create_puppet')
+    # the next line should be removed in actual test environment
+    ctx.debug = True
+    kinds = dict(project="Project", ansible="Ansible",
+                 puppet="Puppet", empty="EmptyProject")
+    repo = Repo.construct(kinds[kind], ctx, repo_name)
+    repo.construct()
     return
 
 
