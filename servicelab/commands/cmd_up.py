@@ -8,6 +8,7 @@ from servicelab.stack import pass_context
 from subprocess import CalledProcessError
 import multiprocessing
 import click
+import time
 import sys
 import os
 
@@ -26,7 +27,7 @@ import os
               by booting the necessary extra VMs.')
 @click.option('-b', '--branch', default="master", help='Choose a branch to run against \
               for service redhouse tenant and svc.')
-@click.option('-u', '--username', help='Enter the password for the username')
+@click.option('-u', '--username', help='Enter the desired username')
 @click.option('-i', '--interactive', help='Walk through booting VMs')
 # @click.option('--osp-aio', help='Boot a full CCS implementation of the \
 #              OpenStack Platform on one VM. Note: This is not the same as \
@@ -200,11 +201,17 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         sys.exit(1)
 
     if remote:
-        # TODO: Write out remote provider Vagrantfile not local
-        # TODO: get env vars.
         Vagrantfile_utils.overwrite_vagrantfile(ctx.path)
-        a = openstack_utils.SLab_OS(path=ctx.path, password='XXXX', username=username,
-                                    base_url='XXXX')
+        # TODO: Get from env vars
+        password = os.environ.get(OS_PASSWORD)
+        base_url = os.environ.get(OS_REGION_NAME)
+        if password is False or base_url is False:
+            ctx.logger.error('Can --not-- boot into OS b/c password or base_url is\
+                             not set')
+            ctx.logger.error('Exiting now.')
+            sys.exit(1)
+        a = openstack_utils.SLab_OS(path=ctx.path, password=password, username=username,
+                                    base_url=base_url)
         returncode, tenant_id, temp_token = a.login_or_gettoken()
         if returncode > 0:
             ctx.logger.error("Could not create router in project.")
@@ -214,6 +221,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             ctx.logger.error("Could not create router in project.")
             sys.exit(1)
         a.connect_to_neutron()
+        returncode, float_net = a.find_floatnet_id(return_name="Yes")
+        if returncode > 0:
+            ctx.logger.error('Could not get the name for the floating network.")
+            sys.exit(1)
         returncode, router = a.create_router()
         if returncode > 0:
             ctx.logger.error("Could not create router in project.")
@@ -227,6 +238,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         if returncode > 0:
             ctx.logger.error("Could not create subnet in project.")
             sys.exit(1)
+        ctx.logger.debug('Sleeping 5s b/c of slow neutron create times.')
+        time.sleep(5)
         a.add_int_to_router(router_id, subnet['id'])
 
         name = a.create_name_for("network", append="mgmt")
@@ -240,9 +253,27 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         if returncode > 0:
             ctx.logger.error("Could not create subnet in project.")
             sys.exit(1)
+        ctx.logger.debug('Sleeping 5s b/c of slow neutron create times.')
+        time.sleep(5)
         a.add_int_to_router(router_id, mgmt_subnet['id'])
+        mynets = a.neutron.list_networks()
+        mynewnets = []
+
+        for i in mynets['networks']:
+            if i.get('name') == name:
+                mynewnets.append(i)
+        elif i.get('name') == mgmtname:
+            mynewnets.append(i)
+
+        envvar_dict = Vagrantfile_utils._vbox_os_provider_env_vars(float_net, mynewnets)
+        # TODO: Determine hosts
+        host = 'horizon-001'
+        flav_img = Vagrantfile_utils._vbox_os_provider_host_vars(path, host)
+        Vagrantfile_utils.overwrite_vagrantfile(ctx.path, provider="OS",
+                                                envvar_dict=envvar_dict, flav_img=flav_img,
+                                                host=host)
     else:
-        # Write out local provider Vagrantfile
+        # Note: Write out local provider Vagrantfile
         Vagrantfile_utils.overwrite_vagrantfile(ctx.path)
 
     a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=ctx.path)
@@ -250,7 +281,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         for k in allmy_vms:
             for i in k:
                 a.v.up(vm_name=i, no_provision=True)
-    # Provision VMS using 4 CPUs from a pool
+        # Note: Provision VMS using 4 CPUs from a pool
         pool = multiprocessing.Pool(4)
         for k in allmy_vms:
             for i in k:
@@ -297,18 +328,22 @@ def infra_ensure_up(hostname="infra-001", path=None):
         returncode = vm_isrunning(hostname=hostname, path=path)
         if returncode == 1:
             infra_connection.v.up(vm_name=hostname)
-            returncode = vm_isrunning(hostname=hostname, path=ctx.path)
+            returncode = vm_isrunning(hostname=hostname, path=path)
             if returncode == 0:
                 return 0
             else:
-                ctx.logger.error("Could not boot " + hostname)
+                # no ctx provided
+                # ctx.logger.error("Could not boot " + hostname)
                 return 1
     except CalledProcessError as e:
         path_to_utils = helper_utils.get_path_to_utils(path)
         returncode, idic = yaml_utils.gethost_byname(hostname, path_to_utils)
         if returncode == 1:
             ctx.logger.error("Couldn't get the templated host details\
-                             in vagrant.yaml.")
+                             in vagrant.yaml.:")
+            ctx.logger.error(e)
+            # RFI: Should I exit here??
+            sys.exit(1)
 
         retcode = yaml_utils.host_add_vagrantyaml(path=path,
                                                   file_name="vagrant.yaml",

@@ -520,7 +520,7 @@ class SLab_OS(object):
         self.write_to_cache(floatingip)
         return 0
 
-    def find_floatnet_id(self):
+    def find_floatnet_id(self, return_name=""):
         """Find the public floating network by searching all networks by name.
 
         This is a network that contains the publicly addressable ip range
@@ -530,7 +530,9 @@ class SLab_OS(object):
         "public-floating-602".
 
         Args:
-            None
+            return_name (str): Either empty so it resolves to false or Yes as
+                               the preferred string. Right now it could take
+                               anything technically.
 
         Returns:
             id (str): This is the unique identifier provided by OS on a
@@ -538,6 +540,7 @@ class SLab_OS(object):
                       subnet it will get an id or if you create a new router
                       it will get an id, etc.
                       Ex id:  364c4cc8-dbc0-406b-b996-b20f1e164b74
+            name (str): If set to "Yes" you can get the name instead of the id.
             Returncode (int):
                 0 - Success
                 1 - Failure
@@ -546,14 +549,18 @@ class SLab_OS(object):
             >>> print a.find_floatnet_id()
             0, 364c4cc8-dbc0-406b-b996-b20f1e164b74
         """
-        id = ""
+        _id = ""
+        float_name = ""
         networks = self.neutron.list_networks()
         for i in networks['networks']:
             if "public-floating" in i['name']:
-                id = i['id']
-                return 0, id
+                _id = i['id']
+                float_name = i['name']
+                if return_name:
+                    return 0, float_name
+                return 0, _id
         openstack_utils_logger.error('Failed to find public-floating-\* in networks names')
-        return 1, id
+        return 1, _id
 
     def del_in_project(self, neutron_type, id):
         """Delete a neutron object (subnet, network, router, floatingip) in a
