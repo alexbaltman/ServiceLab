@@ -73,8 +73,8 @@ def find_ip(env_path, vlan):
     pp = pprint.PrettyPrinter(indent=2)
     # Create list of ipaddress module objects of all valid IPs in the subnet
     all_ips = list(vlan.hosts())
-    # Remove the first 10 IPs.  They *should* be reserved in AM anyway.
-    del all_ips[0:10]
+    # Remove the first 4 IPs.  They *should* be reserved in AM anyway.
+    del all_ips[0:4]
     # Find all the envs within the site
     for env in os.listdir(env_path):
         hosts_path = os.path.join(env_path, env, 'hosts.d')
@@ -83,14 +83,16 @@ def find_ip(env_path, vlan):
         for f in files:
             hostfile = os.path.join(hosts_path, f)
             host_data = open_yaml(hostfile)
-            # There should not be any baremetal nodes using virtual vlans
-            if 'type' in host_data:
-                if host_data['type'] == 'virtual':
-                    addy = unicode(host_data['interfaces']['eth0']['ip_address'])
-                    # Turn IP into ipaddress module object for list search
-                    ipaddy = ipaddress.IPv4Address(addy)
-                    if ipaddy in all_ips:
-                        all_ips.remove(ipaddy)
+            if 'interfaces' in host_data:
+                # Not all interface names are created equally
+                for interface in host_data['interfaces']:
+                    # Not all interfaces have an ip_ddress
+                    if 'ip_address' in host_data['interfaces'][interface]:
+                        addy = unicode(host_data['interfaces']['eth0']['ip_address'])
+                        # Turn IP into ipaddress module object for list search
+                        ipaddy = ipaddress.IPv4Address(addy)
+                        if ipaddy in all_ips:
+                            all_ips.remove(ipaddy)
     remove_ips = list()
     for ip in all_ips:
         try:
