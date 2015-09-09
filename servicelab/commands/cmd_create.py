@@ -55,16 +55,18 @@ def repo_new(ctx, repo_name, kind):
 @cli.command('host')
 @click.argument('host_name')
 @click.argument('env_name')
-@click.option('--vlan', default="66", help='Choose the vlan to add your vm to or default\
-                              is set to 66')
-@click.option('--flavor', default="2cpu.4ram.20-96sas", help='Choose the flavor for the vm.\
-                          Default is set to 2cpu.4ram.20-96sas')
-@click.option('--role', default='none', help='Choose the role of the vm if needed, or the\
-                          default is "none"')
-@click.option('--group', help='Choose the group, default is virtual')
-@click.option('--sec-groups', help='Choose the security groups, comma delimited')
+@click.option('--ip', '-i', default=False, help='Specify the IP address to use.  --vlan \
+              will be ignored if this option is used')
+@click.option('--vlan', '-v', default="66", help='Choose the vlan to add your vm to or \
+              default is set to 66')
+@click.option('--flavor', '-f', default="2cpu.4ram.20-96sas", help='Choose the flavor for\
+              the vm.  Default is set to 2cpu.4ram.20-96sas')
+@click.option('--role', '-r', default='none', help='Choose the role of the vm if needed, or\
+              the default is "none"')
+@click.option('--group', '-g', help='Choose the group, default is virtual')
+@click.option('--sec-groups', '-s', help='Choose the security groups, comma delimited')
 @pass_context
-def host_new(ctx, host_name, env_name, vlan, flavor, role, group, sec_groups):
+def host_new(ctx, host_name, env_name, vlan, flavor, role, group, sec_groups, ip):
     """
     Creates a host.yaml file in an environment so that a vm can then be
     booted.
@@ -84,9 +86,11 @@ def host_new(ctx, host_name, env_name, vlan, flavor, role, group, sec_groups):
         sec_groups = 'default,' + sec_groups
     else:
         sec_groups = 'default'
-    tc_vm_yaml_create.create_vm(ccs_datapath, host_name, str(site), str(env_name),
-                                str(flavor), str(vlan), str(role), groups,
-                                str(sec_groups))
+    ret_code = tc_vm_yaml_create.create_vm(ccs_datapath, host_name, str(site), str(env_name),
+                                           str(flavor), str(vlan), str(role), groups,
+                                           str(sec_groups), str(ip))
+    if ret_code > 0:
+        print "File for %s was not created.  Exiting." % host_name
 
 
 @cli.command('site')

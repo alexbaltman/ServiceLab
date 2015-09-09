@@ -10,7 +10,7 @@ import yaml_utils
 
 
 def open_yaml(filename):
-    """Opens environment yaml into dictionary
+    """Opens yaml file into dictionary
 
     Args:
         filename {str}: File path and name to open
@@ -53,12 +53,44 @@ def write_file(yaml_data, output_file):
     with open(output_file, 'w') as outfile:
         outfile.write(yaml.dump(yaml_data, default_flow_style=False))
     print output_file
+    print "File created successfully"
     # print yaml.dump(yaml_data, default_flow_style=False)
+
+
+def find_vlan(source_data):
+    """Determines which vlan the IP belongs to from the env data.  Generates a list of all
+       IPs for each vlan found within the dictionary provided, then checks if the supplied
+       IP is in the list.
+
+    Args:
+       source_data {dict}: Keys needed:
+          ip: IP address in standard four octect format, no mask
+          <vlan-ids>: Number of the vlan for the key, subnet with mask for the value
+          tc_name: Name of the tenant cloud being worked on.  Used for error message.
+
+    Returns:
+        vlan {str}: VLAN ID as extracted from the environment.yaml or '1' if no valid match
+
+    Example Usage:
+        vlan_id = find_vlan(source_data)
+    """
+    for key in source_data:
+        match = re.search('^(\d+)$', key)
+        if match:
+            subnet = ipaddress.IPv4Network(unicode(source_data[key]))
+            subnet_ips = list(subnet.hosts())
+            for subnet_ip in subnet_ips:
+                if source_data['ip'] == str(subnet_ip):
+                    return key
+
+    print "Unable to find the vlan for %s within %s" \
+          % (source_data['ip'], source_data['tc_name'])
+    return 1
 
 
 def find_ip(env_path, vlan):
     """Finds the first unassigned IP in the selected vlan.  Searches all host.yamls in the
-       service cloud directory, and does a host lookup on the remaining IPs
+       service cloud environments subdirs, and does a host lookup on the remaining IPs
 
     Args:
        env_path {str}: path to service cloud env - ccs-data/sites/sc/environments
@@ -70,7 +102,6 @@ def find_ip(env_path, vlan):
     Example Usage:
         find_ip('<environments path>, ipaddress.IPv4Network(unicode(10.11.12.0/24))
     """
-    pp = pprint.PrettyPrinter(indent=2)
     # Create list of ipaddress module objects of all valid IPs in the subnet
     all_ips = list(vlan.hosts())
     # Remove the first 4 IPs.  They *should* be reserved in AM anyway.
@@ -86,7 +117,7 @@ def find_ip(env_path, vlan):
             if 'interfaces' in host_data:
                 # Not all interface names are created equally
                 for interface in host_data['interfaces']:
-                    # Not all interfaces have an ip_ddress
+                    # Not all interfaces have an ip_address
                     if 'ip_address' in host_data['interfaces'][interface]:
                         addy = unicode(host_data['interfaces']['eth0']['ip_address'])
                         # Turn IP into ipaddress module object for list search
@@ -104,7 +135,7 @@ def find_ip(env_path, vlan):
 
 
 def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, groups,
-              sec_groups):
+              sec_groups, ip_address):
     """Combine the user inputs from 'stack create host' to create a host.yaml file in the
        appropriate tenant cloud hosts.d directory
 
@@ -114,10 +145,12 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
         sc_name {str}: Service cloud name
         tc_name {str}: Tenant cloud name
         flavor {str}: Flavor (hardware requirements) of the vm
-        vlan_id {str}: Vlan number to assign IP from
+        vlan_id {str}: Vlan number to assign IP from.  This must be present in the tenant
+                       environment.yaml file
         role {str}: Role of the vm
         groups {list}: List of groups the vm should be in
         sec_groups {str}: Comma delimited str of security groups
+        ip_address {str}: Either a specific IP address, or 'False'
 
     Returns:
         Nothing.  Calls various subroutines to gather data, build the host data, and write
@@ -154,8 +187,15 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
         print('Vlan%s was not found within %s.  Please try a different vlan'
               % (vlan_id, source_data['tc_name']))
         return 1
-    vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
-    source_data['ip'] = find_ip(source_data['env_path'], vlan)
+    if ip_address == 'False':
+        vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
+        source_data['ip'] = find_ip(source_data['env_path'], vlan)
+    else:
+        source_data['ip'] = ip_address
+        vlan_id = find_vlan(source_data)
+        if vlan_id == 1:
+            return 1
+        vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
     yaml_data = build_yaml_data(source_data, vlan)
     output_file = os.path.join(source_data['tc_path'], 'hosts.d',
                                str(source_data['hostname'] + '.yaml'))
@@ -255,8 +295,6 @@ def extract_env_data(source_data):
     Example Usage:
         source_data = extract_env_data(source_data)
     """
-    pp = pprint.PrettyPrinter(indent=2)
-
     # Open the service cloud environment.yaml
     env_path = os.path.join(source_data['repo_path'], 'sites', source_data['sc_name'],
                             'environments/')

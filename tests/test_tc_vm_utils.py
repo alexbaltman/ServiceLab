@@ -23,7 +23,8 @@ class TestVMYamlCreate(unittest.TestCase):
         """
         self.ctx = Context()
         self.ccsdatapath = os.path.join(self.ctx.path, 'testsite')
-        self.hostname = 'my-test-002'
+        self.hostname1 = 'my-test-001'
+        self.hostname2 = 'my-test-002'
         self.site = 'test-site-1'
         self.env = 'test-env-1'
         self.tcregion = 'csl-a'
@@ -32,10 +33,16 @@ class TestVMYamlCreate(unittest.TestCase):
         self.role = 'none'
         self.groups = 'default'
         self.secgroups = ['default']
-        self.filename = os.path.join(self.ccsdatapath, 'sites', self.site,
-                                     'environments', self.env, 'hosts.d',
-                                     str(self.tcregion + '-' + self.hostname + '.yaml')
-                                     )
+        self.ip1 = 'False'
+        self.ip2 = '10.11.12.152'
+        self.filename1 = os.path.join(self.ccsdatapath, 'sites', self.site,
+                                      'environments', self.env, 'hosts.d',
+                                      str(self.tcregion + '-' + self.hostname1 + '.yaml')
+                                      )
+        self.filename2 = os.path.join(self.ccsdatapath, 'sites', self.site,
+                                      'environments', self.env, 'hosts.d',
+                                      str(self.tcregion + '-' + self.hostname2 + '.yaml')
+                                      )
         self.subnet = ipaddress.IPv4Network(unicode('10.12.14.128/25'))
         env_path = os.path.join(self.ccsdatapath, 'sites', self.site, 'environments')
 
@@ -79,16 +86,23 @@ class TestVMYamlCreate(unittest.TestCase):
         """
         Tests the create of the host yaml file within the supplied site / env
         """
-        tc_vm_yaml_create.create_vm(self.ccsdatapath, self.hostname, self.site, self.env,
+        tc_vm_yaml_create.create_vm(self.ccsdatapath, self.hostname1, self.site, self.env,
                                     self.flavor, self.vlanid, self.role, self.groups,
-                                    self.secgroups)
-        self.assertTrue(os.path.isfile(self.filename))
-        print 'Expected file was found'
-        with open(self.filename, 'r') as yaml_file:
+                                    self.secgroups, self.ip1)
+        tc_vm_yaml_create.create_vm(self.ccsdatapath, self.hostname2, self.site, self.env,
+                                    self.flavor, self.vlanid, self.role, self.groups,
+                                    self.secgroups, self.ip2)
+        self.assertTrue(os.path.isfile(self.filename1))
+        self.assertTrue(os.path.isfile(self.filename2))
+        print 'Expected files were found'
+        with open(self.filename1, 'r') as yaml_file:
             yaml_data = yaml.load(yaml_file)
             ipaddr = str(self.subnet.network_address + 25)
         self.assertTrue(yaml_data['interfaces']['eth0']['ip_address'] == ipaddr)
-        print 'Expected IP was found'
+        with open(self.filename2, 'r') as yaml_file:
+            yaml_data = yaml.load(yaml_file)
+        self.assertTrue(yaml_data['interfaces']['eth0']['ip_address'] == self.ip2)
+        print 'Expected IPs were found'
 
     def tearDown(self):
         shutil.rmtree(self.ccsdatapath)
