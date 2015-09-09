@@ -2,9 +2,11 @@ import click
 import re
 import os
 from servicelab.stack import pass_context
+from servicelab.utils import jenkins_utils
 import requests
 from requests.auth import HTTPBasicAuth
 from BeautifulSoup import BeautifulSoup
+from jenkinsapi.jenkins import Jenkins
 
 
 @click.group('find', short_help='Helps you search \
@@ -129,3 +131,37 @@ def find_pipe(ctx, search_term, localrepo, gouser, gopass, goserver):
                             print searchObj.group()
             else:
                 print searchObj.group()
+
+
+@cli.command('build', short_help='Find a build')
+@click.argument('search_term')
+@click.option(
+    '-x',
+    '--jenkinsuser',
+    help='Provide jenkins username',
+    required=True)
+@click.option(
+    '-y',
+    '--jenkinspass',
+    help='Provide jenkins server password',
+    required=True)
+@click.option(
+    '-z',
+    '--jenkinsservurl',
+    help='Provide the jenkinsserv url ip address and port\
+    no in format <ip:portno>.',
+    required=True)
+@pass_context
+def find_build(ctx, search_term, jenkinsuser, jenkinspass, jenkinsservurl):
+    """
+    Searches through the build search term.
+    """
+    server = jenkins_utils.get_server_instance(jenkinsservurl,
+                                               jenkinsuser, jenkinspass)
+    for j in server.keys():
+        searchObj = re.search(
+            "^" + search_term + "$",
+            j,
+            re.M | re.I)
+        if searchObj:
+            print searchObj.group()
