@@ -4,9 +4,11 @@ import click
 import logging
 from servicelab.stack import pass_context
 from servicelab.utils import ccsdata_utils
+from servicelab.utils import jenkins_utils
 import requests
 from requests.auth import HTTPBasicAuth
 from BeautifulSoup import BeautifulSoup
+from jenkinsapi.jenkins import Jenkins
 
 
 @click.group('list', short_help='You can list available pipeline objects',
@@ -85,12 +87,32 @@ def list_repos(ctx):
 
 # RFI: should there be more intelligence here than a blankey list?
 @cli.command('builds', short_help='List a Jenkins\' builds.')
+@click.option(
+    '-x',
+    '--jenkinsuser',
+    help='Provide jenkins username',
+    required=True)
+@click.option(
+    '-y',
+    '--jenkinspass',
+    help='Provide jenkins server password',
+    required=True)
+@click.option(
+    '-z',
+    '--jenkinsservurl',
+    help='Provide the jenkinsserv url ip address and port \
+        no in format <ip:portno>.',
+    required=True)
 @pass_context
-def list_build(ctx):
+def list_build(ctx, jenkinsservurl, jenkinsuser, jenkinspass):
     """
     Searches through Jenkins API for pipelines using your search term.
     """
     click.echo('Listing builds in Jenkins.')
+    server = jenkins_utils.get_server_instance(jenkinsservurl,
+                                               jenkinsuser, jenkinspass)
+    for j in server.keys():
+        print j
 
 
 # RFI: should there be more intelligence here than a blankey list?
