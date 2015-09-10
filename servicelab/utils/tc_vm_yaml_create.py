@@ -153,8 +153,8 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
         ip_address {str}: Either a specific IP address, or 'False'
 
     Returns:
-        Nothing.  Calls various subroutines to gather data, build the host data, and write
-        the host file.
+        Status code.  Calls various subroutines to gather data, build the host data, and
+        write the host file.
 
     Example usage:
         tc_vm_yaml_create.create_vm(path=<path to ccs-data repo>, hostname='my-service-001',
@@ -183,11 +183,11 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
         source_data['hostname'] = source_data['tc_region'] + '-' + source_data['hostname']
     source_data['az'] = source_data['sc_region'] + determine_az(hostname)
     source_data['vlan_id'] = str(source_data['vlan_prefix']) + source_data['vlan_id']
-    if not str(vlan_id) in source_data:
+    if vlan_id not in source_data:
         print('Vlan%s was not found within %s.  Please try a different vlan'
               % (vlan_id, source_data['tc_name']))
         return 1
-    if ip_address == 'False':
+    if not ip_address:
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
         source_data['ip'] = find_ip(source_data['env_path'], vlan)
     else:
@@ -200,6 +200,7 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
     output_file = os.path.join(source_data['tc_path'], 'hosts.d',
                                str(source_data['hostname'] + '.yaml'))
     write_file(yaml_data, output_file)
+    return 0
 
 
 def determine_az(hostname):
