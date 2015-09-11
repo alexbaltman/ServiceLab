@@ -14,3 +14,4 @@ prettytable==0.7.2
 ipaddress==1.0.14
 beautifulsoup==3.2.1
 jenkinsapi==0.2.28
+python-gerrit==0.0.1

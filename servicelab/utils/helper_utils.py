@@ -3,6 +3,7 @@ import fnmatch
 import sys
 import os
 import re
+import getpass
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -117,11 +118,8 @@ def get_current_service(path):
             # TODO: verify that current is set to something sane.
             current = f.readline()
             if current == "":
-                helper_utils_logger.error("No service set.")
                 return 1, current
-            else:
-                helper_utils_logger.debug("Working on %s" % (current))
-                return 0, current
+    return 0, ""
 
 
 def get_path_to_utils(path):
@@ -144,3 +142,12 @@ def get_path_to_utils(path):
     split_path = os.path.split(path)
     path_to_utils = os.path.join(split_path[0], "utils")
     return path_to_utils
+
+
+def get_username(path):
+    returncode, username = set_user(path)
+    if returncode > 0:
+        username = getpass.getuser()
+        if not username:
+            raise Exception("Still couldn't set username. Exiting.")
+    return username

@@ -223,7 +223,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         a.connect_to_neutron()
         returncode, float_net = a.find_floatnet_id(return_name="Yes")
         if returncode > 0:
-            ctx.logger.error('Could not get the name for the floating network.")
+            ctx.logger.error("Could not get the name for the floating network.")
             sys.exit(1)
         returncode, router = a.create_router()
         if returncode > 0:
@@ -262,8 +262,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         for i in mynets['networks']:
             if i.get('name') == name:
                 mynewnets.append(i)
-        elif i.get('name') == mgmtname:
-            mynewnets.append(i)
+            elif i.get('name') == mgmtname:
+                mynewnets.append(i)
 
         envvar_dict = Vagrantfile_utils._vbox_os_provider_env_vars(float_net, mynewnets)
         # TODO: Determine hosts
