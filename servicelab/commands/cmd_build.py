@@ -44,7 +44,7 @@ def display_build_status(
     server = jenkins_utils.get_server_instance(
         jenkinsservurl, jenkinsuser, jenkinspass)
     print server[job_name].get_last_build().name, ", ",
-    server[job_name].get_last_build().get_status()
+    print server[job_name].get_last_build().get_status()
 
 
 @cli.command('log', short_help='Display build status log')

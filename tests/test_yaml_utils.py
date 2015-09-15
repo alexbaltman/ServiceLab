@@ -1,12 +1,13 @@
 import os
 import unittest
-import getpass
 from tests.helpers import temporary_dir
 from servicelab.utils import yaml_utils
 from servicelab.utils import service_utils
 import yaml
 import shutil
 import time
+from servicelab.utils import helper_utils
+from servicelab.stack import Context
 
 
 class TestYamlUtils(unittest.TestCase):
@@ -74,6 +75,11 @@ class TestYamlUtils(unittest.TestCase):
         '255.255.255.0']
     yaml_ips = ['192.168.100.2']
 
+    def setUp(self):
+        """ setUp function of the TestYamlUtils class
+        """
+        self.ctx = Context()
+
     def test_validate_syntax(self):
         """ Tests syntax validation of yaml. Tests valid and invalid files.
         """
@@ -102,12 +108,13 @@ class TestYamlUtils(unittest.TestCase):
         """ Tests adding host to vagrant yaml. Adds a host to vagrant
             file and checks for its presence.
         """
+        username = helper_utils.get_username(self.ctx.path)
         with temporary_dir() as temp_dir:
             os.makedirs(os.path.join(temp_dir, "services"))
             service_utils._git_clone(
                 os.path.join(temp_dir),
                 "master",
-                getpass.getuser(),
+                username,
                 "ccs-data")
             shutil.copy(TestYamlUtils.VAGRANT_YAML, temp_dir)
             self.assertEquals(
@@ -128,12 +135,13 @@ class TestYamlUtils(unittest.TestCase):
             Adds a hosts, deletes a hosts, checks for absence of host
             in vagrantfile
         """
+        username = helper_utils.get_username(self.ctx.path)
         with temporary_dir() as temp_dir:
             os.makedirs(os.path.join(temp_dir, "services"))
             service_utils._git_clone(
                 os.path.join(temp_dir),
                 "master",
-                getpass.getuser(),
+                username,
                 "ccs-data")
             shutil.copy(TestYamlUtils.VAGRANT_YAML, temp_dir)
             self.assertEquals(
@@ -166,7 +174,7 @@ class TestYamlUtils(unittest.TestCase):
             service_utils._git_clone(
                 os.path.join(temp_dir),
                 "master",
-                getpass.getuser(),
+                username,
                 "ccs-data")
             print yaml_utils.get_allips_forsite(
                     temp_dir,
@@ -181,12 +189,13 @@ class TestYamlUtils(unittest.TestCase):
     def test_get_allips_foryaml(self):
         """ Tests getting all ips for yamls.
         """
+        username = helper_utils.get_username(self.ctx.path)
         with temporary_dir() as temp_dir:
             os.makedirs(os.path.join(temp_dir, "services"))
             service_utils._git_clone(
                 os.path.join(temp_dir),
                 "master",
-                getpass.getuser(),
+                username,
                 "ccs-data")
             full_path = os.path.join(temp_dir, "services", "ccs-data",
                                      "sites", TestYamlUtils.SITE_NAME)
