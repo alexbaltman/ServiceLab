@@ -1,3 +1,6 @@
+"""
+gerrit functions
+"""
 import click
 import logging
 import datetime
@@ -102,6 +105,9 @@ class GerritFns(object):
 
     """ Valid Gerrit review states."""
     status = ["open", "reviewed", "submitted", "closed", "merged", "abandoned"]
+
+    """ Flag for instrumenting code for unit testing."""
+    instrument_code = False
 
     def __init__(self, user, project, ctx):
         """ Constructor for GerritFns Class
@@ -261,10 +267,14 @@ class GerritFns(object):
 
         query = reviews.Query(self.hostname)
         for review in query.filter(project, other):
-            if pformat == "summary":
-                GerritFns.summary(review)
+            if GerritFns.instrument_code:
+                # if instrumenting code we only need to check the first review
+                return review
             else:
-                GerritFns.detail(review)
+                if pformat == "summary":
+                    GerritFns.summary(review)
+                else:
+                    GerritFns.detail(review)
 
     @classmethod
     def summary(cls, review):

@@ -3,6 +3,7 @@ import re
 import yaml
 import click
 from servicelab.stack import pass_context
+from servicelab.utils import create_repo
 from servicelab.utils import helper_utils
 from servicelab.utils import service_utils
 from servicelab.utils import ccsbuildtools_utils
@@ -43,11 +44,9 @@ def repo_new(ctx, repo_name, kind):
                          Ansible will create a service repo of ansible type.
                          Puppet will create a service repo of ansible type.
     """
-    # the next line should be removed in actual test environment
-    ctx.debug = True
     kinds = dict(project="Project", ansible="Ansible",
                  puppet="Puppet", empty="EmptyProject")
-    repo = Repo.construct(kinds[kind], ctx, repo_name)
+    repo = create_repo.Repo.builder(kinds[kind], ctx, repo_name)
     repo.construct()
     return
 
@@ -79,7 +78,8 @@ def host_new(ctx, host_name, env_name, vlan, flavor, role, group, sec_groups, ip
     our_sites = ccsdata_utils.list_envs_or_sites(ctx.path)
     site = ccsdata_utils.get_site_from_env(our_sites, env_name)
     if site is None:
-        print '%s is an invalid env.  Please select one from "stack list envs"' % env_name
+        click.echo("%s is an invalid env. Please select one from "
+                   "stack list envs" % env_name)
         return 1
     groups = ['virtual', str(group)]
     if sec_groups:
@@ -88,8 +88,9 @@ def host_new(ctx, host_name, env_name, vlan, flavor, role, group, sec_groups, ip
         sec_groups = 'default'
     if ip:
         ip = str(ip)
-    ret_code = tc_vm_yaml_create.create_vm(ccs_datapath, host_name, str(site), str(env_name),
-                                           str(flavor), str(vlan), str(role), groups,
+    ret_code = tc_vm_yaml_create.create_vm(ccs_datapath, host_name, str(site),
+                                           str(env_name), str(flavor),
+                                           str(vlan), str(role), groups,
                                            str(sec_groups), ip)
     if ret_code > 0:
         print "File for %s was not created.  Exiting." % host_name
@@ -97,8 +98,8 @@ def host_new(ctx, host_name, env_name, vlan, flavor, role, group, sec_groups, ip
 
 @cli.command('site')
 @click.option('--continue', 'cont', flag_value='continue',
-              help='If you did not finish creating your site and paused midway; '
-                   ' you can continue or abort it.'
+              help="If you did not finish creating your site and paused midway;"
+                   " you can continue or abort it."
               )
 @click.option('-u', '--username', help='Enter the password for the username')
 @pass_context

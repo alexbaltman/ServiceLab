@@ -19,7 +19,7 @@ logging.basicConfig()
 class Repo(object):
     __metaclass__ = ABCMeta
 
-    def construct(type, ctx, name):
+    def builder(type, ctx, name):
         if type is "Ansible":
             return Ansible(ctx, name)
         if type is "Puppet":
@@ -29,11 +29,12 @@ class Repo(object):
         if type is "EmptyProject":
             return EmptyProject(ctx, name)
         assert 0, "unable to construct the project of type: " + type
-    construct = staticmethod(construct)
+    builder = staticmethod(builder)
 
     def __init__(self, ctx, name):
         self.ctx = ctx
         self.name = name
+        self.chk_script = None
 
     def get_usr(self):
         cmd = "git config user.name"
@@ -82,8 +83,8 @@ class Repo(object):
     def create_repo(self, username):
         # please see https://code.google.com/p/gerrit/issues/detail?id=1013
         # for -no-checkout option.
-        hostname = ctx.get_gerrit_server()['hostname']
-        port = ctx.get_gerrit_server()['port']
+        hostname = self.ctx.get_gerrit_server()['hostname']
+        port = self.ctx.get_gerrit_server()['port']
         cmd = "git clone --no-checkout --depth=1 ssh://{}@{}:{}/{} /tmp/{}".format(
                       username, hostname, port,
                       self.get_reponame(), self.get_reponame())
@@ -108,15 +109,18 @@ class Repo(object):
 class Ansible(Repo):
     def __init__(self, ctx, name):
         super(Ansible, self).__init__(ctx, name)
+        self.play_roles = {}
 
     def create_nimbus(self):
-        chk_script = click.prompt(
-            "enter the script to check", default="", type=str)
+        if not self.chk_script:
+            self.chk_script = click.prompt("enter the script to check",
+                                           default="", type=str)
+
         nimbusdict = dict(service=self.name + "-ansible", version="0.0.1",
                           deploy=dict(type="ansible", playbook=self.name + ".yaml"),
                           verify=dict(type="serverspec"))
-        if chk_script:
-            nimbusdict['check'] = dict(script=chk_script)
+        if self.chk_script:
+            nimbusdict['check'] = dict(script=self.chk_script)
 
         n = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
         with open(n, "w") as nimbus:
@@ -130,15 +134,15 @@ class Ansible(Repo):
         if not os.path.isdir(ansibledir):
             os.mydir(ansibledir)
 
-        play_roles = []
-        while True:
-            role = click.prompt("role", default="", type=str)
-            if not role:
-                break
-            play_roles.append(role)
+        if not self.play_roles:
+            while True:
+                role = click.prompt("role", default="", type=str)
+                if not role:
+                    break
+                self.play_roles.append(role)
 
         playdict = dict(hosts="{}-ansible".format(self.name),
-                        remote_user=user, roles=play_roles)
+                        remote_user=user, roles=self.play_roles)
 
         playfile = "./{}/ansible/{}".format(self.get_reponame(),
                                             self.name + ".yaml")
@@ -148,7 +152,7 @@ class Ansible(Repo):
         os.link(playfile, "./{}/ansible/{}".format(
             self.get_reponame(), self.name + ".yml"))
 
-        return play_roles
+        return self.play_roles
 
     def create_roles(self, roles):
         path = os.path.join(self.get_reponame(), "ansible", "roles")
@@ -204,15 +208,16 @@ class Puppet(Repo):
         super(Puppet, self).__init__(ctx, name)
 
     def create_nimbus(self):
-        chk_script = click.prompt(
-            "enter the script to check", default="./check.sh", type=str)
+        if not self.chk_script:
+            self.chk_script = click.prompt(
+                "enter the script to check", default="./check.sh", type=str)
         nimbusdict = dict(service=self.name + "-puppet",
                           version="0.0.1",
                           deploy=dict(type="puppet", manifest="manifests/site.pp"),
                           verify=dict(type="serverspec"))
-        if chk_script:
-            nimbusdict['check'] = dict(script=chk_script)
-        if chk_script is not "./check.sh":
+        if self.chk_script:
+            nimbusdict['check'] = dict(script=self.chk_script)
+        if self.chk_script is not "./check.sh":
             os.remove(os.path.join(self.get_reponame(), "check.sh"))
 
         n = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
@@ -341,7 +346,7 @@ class Project(Repo):
         os.mkdir(os.path.join(self.get_reponame(), "src"))
 
     def create_nimbus(self):
-        chk_script = click.prompt(
+        self.chk_script = click.prompt(
             "enter the script to check", default="/bin/true", type=str)
         nimbusdict = dict(project=self.name,
                           version="0.0.1",
