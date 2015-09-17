@@ -748,7 +748,8 @@ def gen_mac_from_ip(ip):
 
 
 def write_dev_hostyaml_out(path, hostname, role=None, site="ccs-dev-1",
-                           env="dev-tenant"):
+                           env="dev-tenant", flavor='2cpu.4ram.20sas',
+                           image='slab-RHEL7.1v7'):
     """Given an ip address generate a mac address.
 
     Mac will be in form: 02:00:27:00:0x:xx where the Xs will depend
@@ -793,6 +794,12 @@ def write_dev_hostyaml_out(path, hostname, role=None, site="ccs-dev-1",
         env (str): You can use the stack list envs command to find out what
                     sites are available. We're primarily using dev-tenant
                     with servicelab. The default is set to dev-tenant.
+        flavor (str): The servicelab default flavor is 2cpu.4ram.20sas
+                      You may, however, pass whatever flavor is available in
+                      your region.
+        image (str): The servicelab default image is slab-rhel7.1V7, you may
+                     pass to the function whichever flavor is available in
+                     your environment though.
 
     Returns:
         returncode (int): 0 - Success, 1 - Failure
@@ -845,6 +852,8 @@ def write_dev_hostyaml_out(path, hostname, role=None, site="ccs-dev-1",
 
         doc = yaml.load(f)
         doc['deploy_args']['mac_address'] = mac_colon
+        doc['deploy_args']['image'] = image
+        doc['deploy_args']['flavor'] = flavor
         doc['hostname'] = hostname
         doc['interfaces']['eth0']['ip_address'] = ip
         doc['role'] = role

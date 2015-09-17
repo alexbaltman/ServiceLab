@@ -66,21 +66,26 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
                                         "ccs-dev-1")
         myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
-        if os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
+        if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
 
         if remote:
-            returncode, float_net, mynets = os_ensure_network()
+            returncode, float_net, mynets = os_ensure_network(ctx.path)
             if returncode > 0:
+            	ctx.logger.debug("No OS_ environment variables found")
                 sys.exit(1)
-            myvfile._vbox_os_provider_env_vars()
-            myvfile.add_openstack_vm(hostname=hostname)
+            myvfile._vbox_os_provider_env_vars(float_net, mynets)
+            returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
+            if returncode > 0:
+                ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
+                sys.exit(1)
+            myvfile.add_openstack_vm(host_dict)
         else:
             returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
             if returncode > 0:
                 ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
                 sys.exit(1)
-            myvfile.add_virtualbox_vm(host_dict[hostname])
+            myvfile.add_virtualbox_vm(host_dict)
 
         a = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                              path=ctx.path)
@@ -115,7 +120,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             myvfile.init_vagrantfile()
         # TODO: We got to boot to wherever the infra node is or put one there.
         if remote:
-            returncode, float_net, mynets = os_ensure_network()
+            returncode, float_net, mynets = os_ensure_network(ctx.path)
             myvfile._vbox_os_provider_env_vars()
             myvfile.add_openstack_vm(hostname=hostname)
         else:
@@ -332,39 +337,41 @@ def os_ensure_network(path):
     password = os.environ.get('OS_PASSWORD')
     username = os.environ.get('OS_USERNAME')
     base_url = os.environ.get('OS_REGION_NAME')
+    float_net = ''
+    mynewnets = []
     if not password or not base_url:
         # ctx.logger.error('Can --not-- boot into OS b/c password or base_url is\
         # not set')
         # ctx.logger.error('Exiting now.')
-        return 1
+        return 1, float_net, mynewnets
     a = openstack_utils.SLab_OS(path=path, password=password, username=username,
                                 base_url=base_url)
     returncode, tenant_id, temp_token = a.login_or_gettoken()
     if returncode > 0:
         # ctx.logger.error("Could not create router in project.")
-        return 1
+        return 1, float_net, mynewnets
     returncode, tenant_id, token = a.login_or_gettoken(tenant_id=tenant_id)
     if returncode > 0:
         # ctx.logger.error("Could not create router in project.")
-        return 1
+        return 1, float_net, mynewnets
     a.connect_to_neutron()
     returncode, float_net = a.find_floatnet_id(return_name="Yes")
     if returncode > 0:
         # ctx.logger.error('Could not get the name for the floating network.')
-        return 1
+        return 1, float_net, mynewnets
     returncode, router = a.create_router()
     if returncode > 0:
         # ctx.logger.error("Could not create router in project.")
-        return 1
+        return 1, float_net, mynewnets
     router_id = router['id']
     returncode, network = a.create_network()
     if returncode > 0:
         # ctx.logger.error("Could not create network in project.")
-        return 1
+        return 1, float_net, mynewnets
     returncode, subnet = a.create_subnet()
     if returncode > 0:
         # ctx.logger.error("Could not create subnet in project.")
-        return 1
+        return 1, float_net, mynewnets
     # ctx.logger.debug('Sleeping 5s b/c of slow neutron create times.')
     time.sleep(5)
     a.add_int_to_router(router_id, subnet['id'])
@@ -373,13 +380,13 @@ def os_ensure_network(path):
     returncode, mgmt_network = a.create_network(name=mgmtname)
     if returncode > 0:
         # ctx.logger.error("Could not create network in project.")
-        return 1
+        return 1, float_net, mynewnets
     name = a.create_name_for("subnet", append="mgmt")
     returncode, mgmt_subnet = a.create_subnet(name=name,
                                               cidr='192.168.1.0/24')
     if returncode > 0:
         # ctx.logger.error("Could not create subnet in project.")
-        return 1
+        return 1, float_net, mynewnets
     # ctx.logger.debug('Sleeping 5s b/c of slow neutron create times.')
     time.sleep(5)
     a.add_int_to_router(router_id, mgmt_subnet['id'])
