@@ -867,6 +867,70 @@ def write_dev_hostyaml_out(path, hostname, role=None, site="ccs-dev-1",
             return 0
 
 
+def get_dev_hostyaml(path, hostname, site='ccs-dev-1', env='dev-tenant'):
+    '''Get a host's vm definition yaml file so we can write, alter, deploy, or
+       assess those vars in an automated fashion.
+
+    Args:
+        path (str): The path to your working .stack directory. Typically,
+                    this looks like ./servicelab/servicelab/.stack where "."
+                    is the path to the root of the servicelab repository.
+        hostname (str): The name of the host you would like added to
+                        ccs-data in the ccs-dev-1 site.
+        site (str): You can use the stack list sites command to find out what
+                    sites are available. We're primarily using ccs-dev-1
+                    with servicelab. The default is set to ccs-dev-1.
+        env (str): You can use the stack list envs command to find out what
+                    sites are available. We're primarily using dev-tenant
+                    with servicelab. The default is set to dev-tenant.
+
+
+    Returns:
+        returncode (int): 0 - Success, 1 - Failure
+
+    Example Usage:
+        >>> print get_dev_hostyaml('/mnt/localwindows/servicelab/servicelab/.stack',
+                                   'infra-001')
+        (0,
+         {'deploy_args': {'cobbler_kickstart': '/etc/cobbler/preseed/rhel-preseed',
+          'cobbler_pass': '',
+          'cobbler_profile': 'rhel-server-7.0-x86_64',
+          'mac_address': "'00:00:27:00:00:30'",
+          'management_ip': '192.168.100.254',
+          'management_pass': 'cisco',
+          'management_type': 'cimc'},
+          'hostname': 'infra-001',
+          'interfaces': {'eth0': {'gateway': '192.168.100.2',
+                               'ip_address': '192.168.100.30',
+                               'netmask': '255.255.255.0'}
+                         },
+          'nameservers': '192.168.100.2',
+          'role': 'build',
+          'server': 'sdlc-mirror.cisco.com',
+          'type': 'physical'}
+         )
+    '''
+    myhost = {}
+    if not os.path.exists(os.path.join(path, 'services', 'ccs-data')):
+        yaml_utils_logger.debug("Cloning ccs-data. on master branch.")
+        returncode, username = helper_utils.set_user(path)
+        if returncode > 0:
+            yaml_utils_logger.error('could not set username for clone of ccs-data.')
+            return 1, myhost
+
+        service_utils.sync_service(path, 'master', username,
+                                   "ccs-data")
+    path = os.path.join(path, 'services', 'ccs-data', "sites", site,
+                        "environments", env, "hosts.d", (hostname + '.yaml'))
+
+    if not os.path.isfile(path):
+        return 1, myhost
+
+    with open(path, 'r') as f:
+        myhost = yaml.load(f)
+        return 0, myhost
+
+
 # small driver stub
 if __name__ == "__main__":
     validate_syntax(sys.argv[1])
