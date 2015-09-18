@@ -355,6 +355,7 @@ def os_ensure_network(path):
         # ctx.logger.error("Could not create router in project.")
         return 1, float_net, mynewnets
     a.connect_to_neutron()
+    
     returncode, float_net = a.find_floatnet_id(return_name="Yes")
     if returncode > 0:
         # ctx.logger.error('Could not get the name for the floating network.')
@@ -381,8 +382,8 @@ def os_ensure_network(path):
     if returncode > 0:
         # ctx.logger.error("Could not create network in project.")
         return 1, float_net, mynewnets
-    name = a.create_name_for("subnet", append="mgmt")
-    returncode, mgmt_subnet = a.create_subnet(name=name,
+    mgmtsubname = a.create_name_for("subnet", append="mgmt")
+    returncode, mgmt_subnet = a.create_subnet(name=mgmtsubname,
                                               cidr='192.168.1.0/24')
     if returncode > 0:
         # ctx.logger.error("Could not create subnet in project.")
@@ -394,7 +395,7 @@ def os_ensure_network(path):
     mynewnets = []
 
     for i in mynets['networks']:
-        if i.get('name') == name:
+        if i.get('name') == network['name']:
             mynewnets.append(i)
         elif i.get('name') == mgmtname:
             mynewnets.append(i)
