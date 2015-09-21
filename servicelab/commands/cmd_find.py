@@ -1,5 +1,6 @@
 import click
 import re
+import json
 import os
 from servicelab.stack import pass_context
 from servicelab.utils import jenkins_utils
@@ -7,6 +8,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 from BeautifulSoup import BeautifulSoup
 from jenkinsapi.jenkins import Jenkins
+from servicelab.utils import context_utils
 
 
 @click.group('find', short_help='Helps you search \
@@ -47,28 +49,38 @@ def find_review(ctx, search_term):
     click.echo('Searching for %s review in Gerrit' % search_term)
 
 
-@cli.command('build', short_help='Find a Jenkins build.')
-@click.argument('search_term')
-@pass_context
-# RFI: how do we take fancy input like grep? aka grep -ie "this|that"
-#      see pipe in search term.
-def find_build(ctx, search_term):
-    """
-    Searches through Jenkins API for pipelines using your search term.
-    """
-    click.echo('Searching for %s build in Jenkins' % search_term)
-
-
 @cli.command('artifact', short_help='Find an artifact in artifactory')
 @click.argument('search_term')
+@click.option(
+    '-m',
+    '--artuser',
+    help='Provide artifactory username',
+    required=True)
+@click.option(
+    '-n',
+    '--artpass',
+    help='Provide artifactory password',
+    required=True)
+@click.option(
+    '-o',
+    '--artservurl',
+    default=context_utils.getArtifactoryURL(),
+    help='Provide the artifactory url ip address and port \
+        no in format http://<ip:portno>.',
+    required=True)
 @pass_context
 # RFI: how do we take fancy input like grep? aka grep -ie "this|that"
 #      see pipe in search term.
-def find_artifact(ctx, search_term):
+def find_artifact(ctx, search_term, artservurl, artuser, artpass):
     """
     Searches through Artifactory's API for artifacts using your search term.
     """
     click.echo('Searching for %s artifact in Artifactory' % search_term)
+    findURL = artservurl + "/api/search/artifact?name=" + search_term
+    requests.packages.urllib3.disable_warnings()
+    res = requests.get(findURL, auth=HTTPBasicAuth(artuser, artpass))
+    for val in json.loads(res.content)["results"]:
+        click.echo(val["uri"])
 
 
 @cli.command('pipe', short_help='Find a Go deploy pipeline')
