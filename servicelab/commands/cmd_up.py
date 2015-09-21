@@ -52,10 +52,15 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                 sys.exit(1)
 
     if not any([full, mini, rhel7, target, service]):
-        returncode, service = helper_utils.get_current_service(ctx.path)
+        try:
+            returncode, service = helper_utils.get_current_service(ctx.path)
+        except TypeError:
+            ctx.logger.error("Could not get the current service.")
+            ctx.logger.error("Try: stack workon service-myservice")  
+            sys.exit(1)
         if returncode > 0:
             ctx.logger.debug("Failed to get the current service")
-            sys.exit(0)
+            sys.exit(1)
 
     # RHEL7 WORKFLOW ===============================
     if rhel7:
@@ -313,6 +318,9 @@ def infra_ensure_up(hostname="infra-001", path=None):
                                                   mac_nocolon=idic[hostname]['mac'],
                                                   ip=idic[hostname]['ip'],
                                                   site='ccs-dev-1')
+        ####HERE DO the writing to ccs-data and Vagrantfile - write get function for ccs-data
+        yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
+
         # TODO: Need a better error check here:
         if retcode == 0:
             infra_connection.v.up(vm_name=hostname)
