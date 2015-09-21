@@ -10,6 +10,7 @@ from servicelab.stack import Context
 from servicelab.utils import create_repo
 from servicelab.utils import service_utils
 
+
 @unittest.skip("Tests are to be performed on local machine as they use  staging server")
 class TestAnsibleBuilder(unittest.TestCase):
     """
@@ -23,7 +24,7 @@ class TestAnsibleBuilder(unittest.TestCase):
     Test will run and test each of the attributes of the created projects
 
     Attributes:
-        ctx                 -- Context object of servicelab module.
+        gsrvr               -- Gerrit server IP and Port
         name                -- name of the repo.
         reponame            -- The directory name is always of type
                                service-<name>-ansible.
@@ -39,10 +40,9 @@ class TestAnsibleBuilder(unittest.TestCase):
         self.name = "ansibletest"
         self.roles = ["role1", "role2"]
         self.chk_script = "ansibletest.chk"
-        self.ctx = Context()
+        self.gsrvr = Context().get_gerrit_staging_server()
 
-        self.ctx.debug = True
-        blder = create_repo.Repo.builder("Ansible", self.ctx, self.name)
+        blder = create_repo.Repo.builder("Ansible", self.gsrvr, self.name)
         blder.chk_script = self.chk_script
         blder.play_roles = self.roles
 
@@ -63,8 +63,8 @@ class TestAnsibleBuilder(unittest.TestCase):
         Check if the project service-ansibletest-ansible exist in the gerrit
         repository as the project.
         """
-        hostname = self.ctx.get_gerrit_server()['hostname']
-        port = self.ctx.get_gerrit_server()['port']
+        hostname = self.gsrvr['hostname']
+        port = self.gsrvr['port']
         cmd = "ssh -p {} {} gerrit ls-projects | grep {}".format(port,
                                                                  hostname,
                                                                  self.reponame)
@@ -148,7 +148,7 @@ class TestPuppetBuilder(unittest.TestCase):
     Test will run and test each of the attributes of the created projects
 
     Attributes:
-        ctx                 -- Context object of servicelab module.
+        ctx                 -- Gerrit Server IP and Port
         name                -- name of the repo
         reponame            -- The directory name is always of type
                                service-<name>-puppet
@@ -163,10 +163,9 @@ class TestPuppetBuilder(unittest.TestCase):
         self.name = "puppettest"
         self.roles = ["role1", "role2"]
         self.chk_script = "ansible.chk"
-        self.ctx = Context()
+        self.gsrvr = Context().get_gerrit_staging_server()
 
-        self.ctx.debug = True
-        blder = create_repo.Repo.builder("Puppet", self.ctx, self.name)
+        blder = create_repo.Repo.builder("Puppet", self.gsrvr, self.name)
         blder.chk_script = self.chk_script
         blder.play_roles = self.roles
         self.user = blder.get_usr()
@@ -185,8 +184,8 @@ class TestPuppetBuilder(unittest.TestCase):
         Check if the project service-puppettest-puppet exist in the gerrit repository
         as the project.
         """
-        hostname = self.ctx.get_gerrit_server()['hostname']
-        port = self.ctx.get_gerrit_server()['port']
+        hostname = self.gsrvr['hostname']
+        port = self.gsrvr['port']
         cmd = "ssh -p {} {} gerrit ls-projects | grep {}".format(port,
                                                                  hostname,
                                                                  self.reponame)

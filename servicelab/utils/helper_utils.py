@@ -1,8 +1,8 @@
-import logging
-import fnmatch
-import sys
 import os
 import re
+import sys
+import logging
+import fnmatch
 import getpass
 
 # create logger
