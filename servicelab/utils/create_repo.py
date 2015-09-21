@@ -1,3 +1,18 @@
+"""
+The create_repo module has a set of classes to create an Empty project, Project, Ansible
+project or a Puppet project. Each of the above project type derives and delegates it
+creation and construction to the common abstact base class Repo. One can get instance of
+Project, Empty project, Ansible, or Puppet by invoking static Repo::builder method.
+One can invoke construct method to the instance to
+   1. Create the gerrit project.
+   2. Download a template project.
+   3. Instantiate the template project with the project name.
+
+For
+    1. Ansible project - create_repo uses service-helloworld-ansible as a template
+    2. Puppet project  - create_repo uses service-helloworld-puppet as a template
+
+"""
 import os
 import shutil
 
@@ -8,38 +23,50 @@ import logging
 
 from abc import ABCMeta, abstractmethod
 from servicelab.utils import service_utils
-from servicelab.utils import ccsdata_utils
-from servicelab.utils import yaml_utils
-from servicelab.stack import Context
 
-logger = logging.getLogger('click_application')
+LOGGER = logging.getLogger('click_application')
 logging.basicConfig()
 
 
 class Repo(object):
+    """
+    ABC for creating repos of type Ansible, Puppet, Project, EmptyProject
+    """
     __metaclass__ = ABCMeta
 
-    def builder(type, ctx, name):
-        if type is "Ansible":
-            return Ansible(ctx, name)
-        if type is "Puppet":
-            return Puppet(ctx, name)
-        if type is "Project":
-            return Project(ctx, name)
-        if type is "EmptyProject":
-            return EmptyProject(ctx, name)
-        assert 0, "unable to construct the project of type: " + type
+    def builder(rtype, gsrvr, name):
+        """
+        Static method Instantiates Concreate classes of type Repo.
+        """
+        if rtype is "Ansible":
+            return Ansible(gsrvr, name)
+        if rtype is "Puppet":
+            return Puppet(gsrvr, name)
+        if rtype is "Project":
+            return Project(gsrvr, name)
+        if rtype is "EmptyProject":
+            return EmptyProject(gsrvr, name)
+        assert 0, "unable to construct the project of type: " + rtype
     builder = staticmethod(builder)
 
-    def __init__(self, ctx, name):
-        self.ctx = ctx
+    def __init__(self, gsrvr, name):
+        self.gsrvr = gsrvr
         self.name = name
         self.chk_script = None
 
     def get_usr(self):
+        """
+        Get the gerrit user name
+
+        Returns:
+            str: The gerrit user name
+
+        Raises:
+            Raises Exception if unable to get the user name
+        """
         cmd = "git config user.name"
-        retCode, username = service_utils.run_this(cmd)
-        if retCode == 1:
+        ret_code, username = service_utils.run_this(cmd)
+        if ret_code == 1:
             click.echo("Unable to fetch user name from git. Please provide")
             username = click.prompt("username", type=str, default="")
         username = string.strip(username)
@@ -47,6 +74,16 @@ class Repo(object):
         return username
 
     def get_reponame(self):
+        """
+        Get the name of the repo
+
+        Returns:
+            str: The gerrit user name
+
+        Raises:
+            Raises Exception if type is not Ansible, Puppet, Project or
+            EmptyProject.
+        """
         repo_type = type(self).__name__
         if repo_type is "Ansible":
             return "service-" + self.name + "-ansible"
@@ -59,59 +96,97 @@ class Repo(object):
         assert type(self).__name__ != "Repo", "no repo name available for i" + repo_type
 
     def create_project(self):
-        hostname = self.ctx.get_gerrit_server()['hostname']
-        port = self.ctx.get_gerrit_server()['port']
-        cmd = "ssh -p {} {} gerrit create-project {}".format(
-                                port, hostname, self.get_reponame())
+        """
+        Create the project on the gerrit server.
 
-        retCode, retStr = service_utils.run_this(cmd)
-        return (retCode, retStr)
+        Returns:
+        (
+            int : return code
+            str : output string if any.
+        )
+        """
+        hostname = self.gsrvr['hostname']
+        port = self.gsrvr['port']
+        cmd = "ssh -p {} {} gerrit create-project {}".format(port,
+                                                             hostname,
+                                                             self.get_reponame())
+
+        ret_code, ret_str = service_utils.run_this(cmd)
+        return (ret_code, ret_str)
 
     def cleanup_properties(self, name):
+        """
+        Clean up any files from the template directories
+        """
         pdict = {}
         fpath = os.path.join(self.get_reponame(), "serverspec", "properties.yml")
-        with open(self.get_reponame() + "/serverspec/properties.yml") as f:
-            pdict = yaml.load(f)
+        with open(self.get_reponame() + "/serverspec/properties.yml") as ydata:
+            pdict = yaml.load(ydata)
             pdict[self.name] = pdict[name]
             del pdict[name]
         os.remove(fpath)
 
         fpath = os.path.join(self.get_reponame(), "serverspec", "properties.yaml")
-        with open(fpath, "w") as f:
-            f.write(yaml.dump(pdict, default_flow_style=False))
+        with open(fpath, "w") as yamlf:
+            yamlf.write(yaml.dump(pdict, default_flow_style=False))
 
     def create_repo(self, username):
+        """
+        create a repo on the local machine. Returns -1 if the repo creation fails.
+        Returns:
+        (
+            int : return code
+            str : output string if any.
+        )
+        """
+        hostname = self.gsrvr['hostname']
+        port = self.gsrvr['port']
         # please see https://code.google.com/p/gerrit/issues/detail?id=1013
         # for -no-checkout option.
-        hostname = self.ctx.get_gerrit_server()['hostname']
-        port = self.ctx.get_gerrit_server()['port']
-        cmd = "git clone --no-checkout --depth=1 ssh://{}@{}:{}/{} /tmp/{}".format(
-                      username, hostname, port,
-                      self.get_reponame(), self.get_reponame())
-        retCode, retStr = service_utils.run_this(cmd)
-        assert retCode == 0, "unable to clone the project:" + retStr
+        cmd = "git clone --no-checkout --depth=1 "
+        cmd += "ssh://{}@{}:{}/{} /tmp/{}".format(username,
+                                                  hostname,
+                                                  port,
+                                                  self.get_reponame(),
+                                                  self.get_reponame())
+        ret_code, ret_str = service_utils.run_this(cmd)
+        assert ret_code == 0, "unable to clone the project:" + ret_str
 
         os.rename("/tmp/" + self.get_reponame() + "/.git", self.get_reponame() + "/.git")
         shutil.rmtree("/tmp/" + self.get_reponame())
 
         # now get the template repo
-        return retCode
+        return ret_code
 
     @abstractmethod
-    def download_template(self):
+    def download_template(self, name):
+        """
+        download template is an abstarct method redefined in the subclass.
+        """
         return
 
     @abstractmethod
-    def create_nimbus():
+    def create_nimbus(self):
+        """
+        create nimbus is an abstarct method redefined in the subclass.
+        """
         return
 
 
 class Ansible(Repo):
-    def __init__(self, ctx, name):
-        super(Ansible, self).__init__(ctx, name)
-        self.play_roles = {}
+    """
+    Creates the Ansible Repo.
+    """
+    def __init__(self, gsrvr, name):
+        super(Ansible, self).__init__(gsrvr, name)
+        self.play_roles = []
 
     def create_nimbus(self):
+        """
+        create the nimbus file for teh Ansible project. By default .nimbus.yaml
+        is created. For downward compatability we create .nimbus.yml as a link to
+        .nimbus.yaml.
+        """
         if not self.chk_script:
             self.chk_script = click.prompt("enter the script to check",
                                            default="", type=str)
@@ -122,17 +197,20 @@ class Ansible(Repo):
         if self.chk_script:
             nimbusdict['check'] = dict(script=self.chk_script)
 
-        n = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
-        with open(n, "w") as nimbus:
+        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
+        with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
 
         os.remove(os.path.join(".", self.get_reponame(), ".nimbus.yml"))
-        os.link(n, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
+        os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def create_ansible(self, user):
+        """
+        Create the ansible directory for the ansible project.
+        """
         ansibledir = "./{}/ansible".format(self.get_reponame())
         if not os.path.isdir(ansibledir):
-            os.mydir(ansibledir)
+            os.mkdir(ansibledir)
 
         if not self.play_roles:
             while True:
@@ -155,6 +233,9 @@ class Ansible(Repo):
         return self.play_roles
 
     def create_roles(self, roles):
+        """
+        Create all the roles in the ansible directory
+        """
         path = os.path.join(self.get_reponame(), "ansible", "roles")
         if not os.path.isdir(path):
             os.mkdir(path)
@@ -165,14 +246,25 @@ class Ansible(Repo):
             os.mkdir(os.path.join(path, role, "templates"))
 
     def download_template(self, username):
-        hostname = self.ctx.get_gerrit_server()['hostname']
-        port = self.ctx.get_gerrit_server()['port']
-        cmd = "git clone --depth=1 ssh://{}@{}:{}/service-helloworld-ansible {}".format(
-                     username, hostname, port, self.get_reponame())
-        retCode, retStr = service_utils.run_this(cmd)
-        assert retCode == 0, "unable to get ansible template project:" + retStr
+        """
+        Download the service-helloworld-ansible template from the gerrit server
+        """
+        hostname = self.gsrvr['hostname']
+        port = self.gsrvr['port']
+        cmd = "git clone --depth=1 "
+        cmd += "ssh://{}@{}:{}/service-helloworld-ansible {}".format(username,
+                                                                     hostname,
+                                                                     port,
+                                                                     self.get_reponame())
+        ret_code, ret_str = service_utils.run_this(cmd)
+        assert ret_code == 0, "unable to get ansible template project:" + ret_str
 
     def instantiate_template(self):
+        """
+        Instantiate the service-helloworld-ansible to the project. This involves
+        removing some files as well updating others with the correct input project
+        name.
+        """
         shutil.rmtree(os.path.join(self.get_reponame(), ".git"))
         self.cleanup_properties("helloworld-test")
 
@@ -180,16 +272,27 @@ class Ansible(Repo):
         os.remove(os.path.join(self.get_reponame(), "data", "dev.yaml"))
         os.remove(os.path.join(self.get_reponame(), "data", "service.yaml"))
 
-        with open(os.path.join(self.get_reponame(), "data", "dev.yaml"), "w") as f:
-            f.write("# this is generated file")
+        with open(os.path.join(self.get_reponame(), "data", "dev.yaml"), "w") as devfile:
+            devfile.write("# this is generated file")
 
-        with open(os.path.join(self.get_reponame(), "data", "service.yaml"), "w") as f:
-            f.write("# this is a generated file")
+        with open(os.path.join(self.get_reponame(),
+                               "data",
+                               "service.yaml"), "w") as sfile:
+            sfile.write("# this is a generated file")
 
         shutil.rmtree(os.path.join(self.get_reponame(), "ansible",
                                    "roles", "helloworld-test"))
 
     def construct(self):
+        """
+        Constructing the ansible project involves
+            1. Creating the project on the gerrit server.
+            2. downloading the template
+            3. Instantiating the template to the correct value.
+            4. Creating the git repo files.
+            5. Creating the nimbus
+            6. Creating the roles directory.
+        """
         try:
             user = self.get_usr()
             self.create_project()
@@ -199,15 +302,23 @@ class Ansible(Repo):
             self.create_nimbus()
             roles = self.create_ansible(user)
             self.create_roles(roles)
-        except Exception as e:
+        except Exception:
             raise
 
 
 class Puppet(Repo):
-    def __init__(self, ctx, name):
-        super(Puppet, self).__init__(ctx, name)
+    """
+    Creates a Puppet Repo of the given name on the gerrit server and local directory.
+    """
+    def __init__(self, gsrvr, name):
+        super(Puppet, self).__init__(gsrvr, name)
 
     def create_nimbus(self):
+        """
+        Create the nimbus file for the Puppet project. By default .nimbus.yaml
+        is created. For downward compatability we create .nimbus.yml as a link to
+        .nimbus.yaml.
+        """
         if not self.chk_script:
             self.chk_script = click.prompt(
                 "enter the script to check", default="./check.sh", type=str)
@@ -220,50 +331,63 @@ class Puppet(Repo):
         if self.chk_script is not "./check.sh":
             os.remove(os.path.join(self.get_reponame(), "check.sh"))
 
-        n = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
-        with open(n, "w") as nimbus:
+        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
+        with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
 
         os.remove(os.path.join(".", self.get_reponame(), ".nimbus.yml"))
-        os.link(n, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
+        os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def download_template(self, username):
-        hostname = self.ctx.get_gerrit_server()['hostname']
-        port = self.ctx.get_gerrit_server()['port']
-        cmd = "git clone --depth=1 ssh://{}@{}:{}/service-helloworld-puppet {}".format(
-                     username, hostname, port, self.get_reponame())
-        retCode, retStr = service_utils.run_this(cmd)
-        assert retCode == 0, "unable to get puppet template project:" + retStr
+        """
+        Download the service-helloworld-ansible template from the gerrit server
+        """
+        hostname = self.gsrvr['hostname']
+        port = self.gsrvr['port']
+        cmd = "git clone --depth=1 "
+        cmd += "ssh://{}@{}:{}/service-helloworld-puppet {}".format(username,
+                                                                    hostname,
+                                                                    port,
+                                                                    self.get_reponame())
+        ret_code, ret_str = service_utils.run_this(cmd)
+        assert ret_code == 0, "unable to get puppet template project:" + ret_str
 
     def instantiate_template(self):
+        """
+        Instantiate the service-helloworld-project to the project. This involves
+        removing some files as well updating others with the correct input project
+        name.
+        """
         # cleanup any extra artifact
         shutil.rmtree(os.path.join(self.get_reponame(), ".git"))
 
         os.remove(os.path.join(self.get_reponame(), "doc", "README.md"))
 
         os.remove(os.path.join(self.get_reponame(), "data", "dev.yaml"))
-        with open(os.path.join(self.get_reponame(), "data", "dev.yaml"), "w") as f:
-            f.write("# this is generated file\n")
-            f.write("environment_name: dev\n")
-            f.write("manage_packages: false\n")
-            f.write("{}::site_note: | \n".format(self.name))
-            f.write("  This is an example of data that you would expect to be\n")
-            f.write("  provided per site, for example, in\n")
-            f.write("  ccs-data/sites/<site>/environments/"
-                    "<env_name>/data.d/environment.yaml.\n")
+        with open(os.path.join(self.get_reponame(), "data", "dev.yaml"), "w") as devf:
+            devf.write("# this is generated file\n")
+            devf.write("environment_name: dev\n")
+            devf.write("manage_packages: false\n")
+            devf.write("{}::site_note: | \n".format(self.name))
+            devf.write("  This is an example of data that you would expect to be\n")
+            devf.write("  provided per site, for example, in\n")
+            devf.write("  ccs-data/sites/<site>/environments/"
+                       "<env_name>/data.d/environment.yaml.\n")
 
         os.remove(os.path.join(self.get_reponame(), "data", "service.yaml"))
-        with open(os.path.join(self.get_reponame(), "data", "service.yaml"), "w") as f:
+        with open(os.path.join(self.get_reponame(),
+                               "data",
+                               "service.yaml"), "w") as servf:
             sdict = {}
             banner = "service {} - service.yaml".format(self.name)
             note = "This was populated from service.yaml"
             sdict["{}::banner".format(self.name)] = banner
             sdict["{}::service-note".format(self.name)] = note
-            f.write(yaml.dump(yaml.dump(sdict, default_flow_style=False)))
+            servf.write(yaml.dump(yaml.dump(sdict, default_flow_style=False)))
 
         with open(os.path.join(self.get_reponame(), "puppet",
-                  "manifests", "site.pp"), "w") as f:
-            f.write("node default {\n  include ::" + self.name + "\n}")
+                               "manifests", "site.pp"), "w") as sitef:
+            sitef.write("node default {\n  include ::" + self.name + "\n}")
 
         shutil.rmtree(os.path.join(self.get_reponame(), "puppet", "modules",
                                    "helloworld"))
@@ -271,39 +395,47 @@ class Puppet(Repo):
         os.mkdir(os.path.join(self.get_reponame(), "puppet", "modules", self.name,
                               "manifests"))
         with open(os.path.join(self.get_reponame(), "puppet", "modules",
-                  self.name, "manifests", "init.pp"), "w") as f:
-            f.write("#generated init.pp\n"
-                    "  $banner       = 'Default banner!',\n"
-                    "  $service_note = 'Default service note',\n"
-                    "  $site_note    = 'Default site note',\n"
-                    ") {\n"
-                    "\n"
-                    "}\n")
+                               self.name, "manifests", "init.pp"), "w") as initf:
+            initf.write("#generated init.pp\n"
+                        "  $banner       = 'Default banner!',\n"
+                        "  $service_note = 'Default service note',\n"
+                        "  $site_note    = 'Default site note',\n"
+                        ") {\n"
+                        "\n"
+                        "}\n")
 
         os.mkdir(os.path.join(self.get_reponame(), "puppet", "modules", self.name,
                               "templates"))
         with open(os.path.join(self.get_reponame(), "puppet", "modules", self.name,
-                               "templates", "index.html.erb"), "w") as f:
-            f.write("<html>\n"
-                    "<head>\n"
-                    "  <title> service" + self.name + "</title>\n"
-                    "</head>\n"
-                    "<body>\n"
-                    "  <h1><%= @banner %></h1>\n"
-                    "  <p><%= @service_note %></p>"
-                    "  <p><%= @site_note %></p>"
-                    "</body>\n"
-                    "</html>\n")
+                               "templates", "index.html.erb"), "w") as indexf:
+            indexf.write("<html>\n"
+                         "<head>\n"
+                         "  <title> service" + self.name + "</title>\n"
+                         "</head>\n"
+                         "<body>\n"
+                         "  <h1><%= @banner %></h1>\n"
+                         "  <p><%= @service_note %></p>"
+                         "  <p><%= @site_note %></p>"
+                         "</body>\n"
+                         "</html>\n")
 
         self.cleanup_properties("helloworld-puppet")
 
-        with open(os.path.join(self.get_reponame(), "Vagrantfile"), 'r+') as f:
-            l = [l.replace("helloworld", self.name) for l in f.readlines()]
-            f.seek(0)
-            f.write("".join(l))
-            f.truncate()
+        with open(os.path.join(self.get_reponame(), "Vagrantfile"), 'r+') as vagf:
+            lns = [ln.replace("helloworld", self.name) for ln in vagf.readlines()]
+            vagf.seek(0)
+            vagf.write("".join(lns))
+            vagf.truncate()
 
     def construct(self):
+        """
+        Constructing the puppet project involves
+            1. Creating the project on the gerrit server.
+            2. downloading the template
+            3. Instantiating the template to the correct value.
+            4. Creating the git repo files.
+            5. Creating the nimbus
+        """
         try:
             user = self.get_usr()
             self.create_project()
@@ -311,107 +443,148 @@ class Puppet(Repo):
             self.instantiate_template()
             self.create_repo(user)
             self.create_nimbus()
-        except Exception as e:
+        except Exception:
             raise
 
 
 class Project(Repo):
-    def __init__(self, ctx, name):
-        super(Project, self).__init__(ctx, name)
+    """
+    Create a Project of the given name on the gerrit server and local directory.
+    """
+    def __init__(self, gsrvr, name):
+        super(Project, self).__init__(gsrvr, name)
 
     def download_template(self, username):
-        hostname = self.ctx.get_gerrit_server()['hostname']
-        port = self.ctx.get_gerrit_server()['port']
-        cmd = "git clone --depth=1 ssh://{}@{}:{}/{}".format(
-                     username, hostname, port, self.get_reponame())
-        retCode, retStr = service_utils.run_this(cmd)
-        assert retCode == 0, "unable to get puppet template project:" + retStr
+        """
+        Download the created project from the gerrit server
+        """
+        hostname = self.gsrvr['hostname']
+        port = self.gsrvr['port']
+        cmd = "git clone --depth=1 "
+        cmd += "ssh://{}@{}:{}/{}".format(username,
+                                          hostname,
+                                          port,
+                                          self.get_reponame())
+        ret_code, ret_str = service_utils.run_this(cmd)
+        assert ret_code == 0, "unable to get puppet template project:" + ret_str
 
     def instantiate_template(self):
-        with open(self.name + ".spec", "w") as f:
-            f.write(
-                    "Name:" + self.name + "\n"
-                    "Version:        1.0\n"
-                    "Release:        1%{?build_number}%{?branch_name}%{?dist}\n"
-                    "Summary:        "+self.name + " Project\n"
-                    "Group:          'Development/Tools'\n"
-                    "License:        Cisco Systems\n"
-                    "Source:         %{name}.tar.gz\n"
-                    "%description\n\n\n"
-                    "%prep\n"
-                    "%setup -n src\n"
-                    "%files\n\n"
-                    "%install\n\n"
-                    "%changelog\n\n")
+        """
+        Instantiating the project involves creating the project spec file.
+        """
+        with open(self.name + ".spec", "w") as specf:
+            specf.write("Name:" + self.name + "\n"
+                        "Version:        1.0\n"
+                        "Release:        1%{?build_number}%{?branch_name}%{?dist}\n"
+                        "Summary:        "+self.name + " Project\n"
+                        "Group:          'Development/Tools'\n"
+                        "License:        Cisco Systems\n"
+                        "Source:         %{name}.tar.gz\n"
+                        "%description\n\n\n"
+                        "%prep\n"
+                        "%setup -n src\n"
+                        "%files\n\n"
+                        "%install\n\n"
+                        "%changelog\n\n")
         os.mkdir(os.path.join(self.get_reponame(), "src"))
 
     def create_nimbus(self):
-        self.chk_script = click.prompt(
-            "enter the script to check", default="/bin/true", type=str)
+        """
+        Create the nimbus file for the project. By default .nimbus.yaml
+        is created. For downward compatability we create .nimbus.yml as a link to
+        .nimbus.yaml.
+        """
+        if not self.chk_script:
+            self.chk_script = click.prompt("enter the script to check",
+                                           default="/bin/true",
+                                           type=str)
         nimbusdict = dict(project=self.name,
                           version="0.0.1",
                           package=dict(name=self.name,
                                        specfile=os.path.join(".", self.name+".spec"),
                                        src=os.path.join(".", "src")))
-        if chk_script:
-            nimbusdict['check'] = dict(script=chk_script)
+        if self.chk_script:
+            nimbusdict['check'] = dict(script=self.chk_script)
 
-        n = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
-        with open(n, "w") as nimbus:
+        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
+        with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
-        os.link(n, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
+        os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def construct(self):
+        """
+        Constructing the project involves
+            1. Creating the project on the gerrit server.
+            2. Downloading the template.
+            3. Instantiating the template to the correct value.
+            4. Creating the nimbus
+        """
         try:
             user = self.get_usr()
             self.create_project()
             self.download_template(user)
             self.instantiate_template()
             self.create_nimbus()
-        except Exception as e:
-            print "exception"
+        except Exception:
             raise
 
 
 class EmptyProject(Repo):
-    def __init__(self, ctx, name):
-        super(EmptyProject, self).__init__(ctx, name)
+    """
+    Create an Empty project of the given name on the gerrit server and local directory.
+    """
+    def __init__(self, gsrvr, name):
+        super(EmptyProject, self).__init__(gsrvr, name)
 
     def download_template(self, username):
-        import pdb
-        pdb.set_trace()
-        hostname = self.ctx.get_gerrit_server()['hostname']
-        port = self.ctx.get_gerrit_server()['port']
-        cmd = "git clone --depth=1 ssh://{}@{}:{}/{}".format(
-                     username, hostname, port, self.get_reponame())
-        retCode, retStr = service_utils.run_this(cmd)
-        assert retCode == 0, "unable to get puppet template project:" + retStr
+        """
+        Download the created project from the gerrit server
+        """
+        hostname = self.gsrvr['hostname']
+        port = self.gsrvr['port']
+        cmd = "git clone --depth=1 ssh://{}@{}:{}/{}".format(username,
+                                                             hostname,
+                                                             port,
+                                                             self.get_reponame())
+        ret_code, ret_str = service_utils.run_this(cmd)
+        assert ret_code == 0, "unable to get puppet template project:" + ret_str
 
     def instantiate_template(self):
+        """
+        This is a stubbed  function
+        """
         pass
 
     def create_nimbus(self):
+        """
+        This is a stubbed  function
+        """
         pass
 
     def construct(self):
+        """
+        Constructing an empty  project involves
+            1. Creating the project on the gerrit server.
+            2. Downloading the template.
+            3. Instantiating the template to the correct value.
+            4. Creating the nimbus
+        """
         try:
             user = self.get_usr()
             self.create_project()
             self.download_template(user)
             self.instantiate_template()
             self.create_nimbus()
-        except Exception as e:
-            print "exception"
+        except Exception:
             raise
 
 #
 # This is the driver stub
 #
 if __name__ == '__main__':
-    ctx = Context()
-    ctx.debug = True
-#   a = Repo.construct("Puppet", ctx, "gamma")
-#   a = Repo.construct("Ansible", ctx, "gamma")
-    a = Repo.construct("EmptyProject", ctx, "gamma")
-    a.construct()
-    print "completed"
+    from servicelab.stack import Context
+    Repo.builder("Puppet", Context().get_gerrit_staging_server(), "gamma").construct()
+    Repo.builder("Ansible", Context().get_gerrit_staging_server(), "gamma").construct()
+    Repo.builder("Project", Context().get_gerrit_staging_server(), "gamma").construct()
+    Repo.builder("EmptyProject", Context().get_gerrit_staging_server(),
+                 "gamma").construct()

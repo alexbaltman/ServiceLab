@@ -1,5 +1,10 @@
+"""
+Test functions for encrytion, decryption.
+"""
 import os
+
 import unittest
+
 from servicelab.stack import Context
 from servicelab.utils import encrypt_utils
 
@@ -32,10 +37,10 @@ class TestEncUtils(unittest.TestCase):
                                         TestEncUtils.PRIVATE_KEY)
         self.data = "alpha"
 
-        if(not os.path.isfile(self.public_cert)):
+        if not os.path.isfile(self.public_cert):
             self.fail("Setup FAILS as the test public cert is unavilable")
 
-        if(not os.path.isfile(self.private_key)):
+        if not os.path.isfile(self.private_key):
             self.fail("Setup FAILS as the test private key is unavilable")
 
     def test_enc_decrypt(self):
