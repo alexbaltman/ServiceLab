@@ -1,11 +1,14 @@
 """
 gerrit functions
 """
+import datetime
+
 import click
 import logging
-import datetime
+
 from gerrit import filters
 from gerrit import reviews
+
 from servicelab.stack import Context
 from servicelab.utils import service_utils
 
@@ -103,7 +106,7 @@ class GerritFns(object):
     """Gerrit class for performing various gerrit functions of the gerrit server.
        The Server itself is defined in the Context class"""
 
-    """ Valid Gerrit review states."""
+    # Valid Gerrit review states.
     status = ["open", "reviewed", "submitted", "closed", "merged", "abandoned"]
 
     """ Flag for instrumenting code for unit testing."""
@@ -233,6 +236,22 @@ class GerritFns(object):
             else:
                 raise GerritFnException(ret_str)
 
+    def repo_list(self):
+        """ Generate list of all repos on gerrit server."""
+        cmd = "ssh -p {} {}@{} gerrit ls-projects".format(self.port,
+                                                          self.user,
+                                                          self.hostname)
+
+        # now run the command and get output
+        ret_code, ret_str = service_utils.run_this(cmd)
+        if ret_code:
+            raise GerritFnException(ret_str)
+        return ret_str.split()
+
+    def print_list(self):
+        """ Prints the generated  list of all repos on gerrit server."""
+        click.echo("\n".join(self.repo_list()))
+
     def print_gerrit(self, pformat="", number=None, owner="", reviewer="", status=""):
         """ Print the complete review information for a review numeber and given owner
             or reviewer with status. The print detail can be summary or detailed.
@@ -247,10 +266,6 @@ class GerritFns(object):
                 reviewer              -- The reviewer.
                 status                -- Any valid gerrit status.
         """
-
-        project = filters.OrFilter()
-        project.add_items('project', [self.prjname])
-
         other = filters.Items()
         if number:
             other.add_items('change', number)
@@ -258,6 +273,8 @@ class GerritFns(object):
             other.add_items('owner', owner)
         if reviewer:
             other.add_items('reviewer', reviewer)
+        if self.prjname:
+            other.add_items('project', self.prjname)
 
         if status:
             if status in GerritFns.status:
@@ -266,7 +283,7 @@ class GerritFns(object):
                 raise ValueError("Invalid Status supplied")
 
         query = reviews.Query(self.hostname)
-        for review in query.filter(project, other):
+        for review in query.filter(other):
             if GerritFns.instrument_code:
                 # if instrumenting code we only need to check the first review
                 return review
@@ -298,8 +315,7 @@ class GerritFns(object):
 
     @classmethod
     def detail(cls, review):
-        """ Print the complete review information for a given review.
-        """
+        """ Print the complete review information for a given review."""
         pstl = Format.bld
         click.echo(Format.message(24, 0, pstl, "Branch")+review['branch'])
         click.echo(Format.message(24, 0, pstl, "Created On") +
@@ -353,6 +369,7 @@ class GerritFns(object):
                     click.echo(Format.message(24, 4, pstl,
                                               " Description") + aprvl["description"])
         click.echo("\n")
+
 
 # driver check for this
 if __name__ == '__main__':

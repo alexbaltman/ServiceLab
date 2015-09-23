@@ -1,15 +1,16 @@
-import subprocess32 as subprocess
-import fileinput
-import logging
-import helper_utils
-import sys
+"""
+Stack utility functions.
+"""
 import os
 import re
+import subprocess32 as subprocess
+
+import logging
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
 #       to import the one in stack.py properly.
-service_utils_logger = logging.getLogger('click_application')
+SERVICE_UTILS_LOGGER = logging.getLogger('click_application')
 logging.basicConfig()
 
 
@@ -47,31 +48,31 @@ def sync_service(path, branch, username, service_name):
     # Note: Branch defaults to master in the click application
     check_for_git_output, myinfo = _check_for_git()
     if not check_for_git_output == 0:
-        service_utils_logger.error("Could not find git executable.")
+        SERVICE_UTILS_LOGGER.error("Could not find git executable.")
         return False
     else:
         # TODO: refactor this back in -->or os.listdir(os.path.join(path,
         #       "services/%s" % (service_name))) == []: on the or part
         #       we'll want to rm the dir if it's there but empty b/c this
         #       isn't handling that.
-        if os.path.isdir(os.path.join(path, "services/%s" % (service_name))):
-            service_utils_logger.debug("Sync'ing service.")
-            service_utils_logger.debug("Fast Forward Pull.")
+        if os.path.isdir(os.path.join(path, "services", service_name)):
+            SERVICE_UTILS_LOGGER.debug("Sync'ing service.")
+            SERVICE_UTILS_LOGGER.debug("Fast Forward Pull.")
             returncode, myinfo = _git_pull_ff(path, branch, service_name)
             if returncode != 0:
-                service_utils_logger.error(myinfo)
+                SERVICE_UTILS_LOGGER.error(myinfo)
                 return False
             else:
-                service_utils_logger.debug("Service has been sync'ed.")
+                SERVICE_UTILS_LOGGER.debug("Service has been sync'ed.")
                 return True
         else:
-            service_utils_logger.debug("Trying clone.")
+            SERVICE_UTILS_LOGGER.debug("Trying clone.")
             returncode, myinfo = _git_clone(path, branch, username, service_name)
             if returncode != 0:
-                service_utils_logger.error(myinfo)
+                SERVICE_UTILS_LOGGER.error(myinfo)
                 return False
             else:
-                service_utils_logger.debug("Clone successful.")
+                SERVICE_UTILS_LOGGER.debug("Clone successful.")
                 return True
 
 
@@ -97,13 +98,11 @@ def build_data(path):
 
     """
     data_reponame = "ccs-data"
-    service_utils_logger.debug("Building the data.")
-    returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml\
-                                  --site ccs-dev-1 && cd ..',
+    SERVICE_UTILS_LOGGER.debug("Building the data.")
+    returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml'
+                                  '--site ccs-dev-1 && cd ..',
                                   cwd=os.path.join(path, "services",
-                                                   data_reponame
-                                                   )
-                                  )
+                                                   data_reponame))
     return(returncode, myinfo)
 
 
@@ -136,10 +135,11 @@ def _git_clone(path, branch, username, service_name):
     # TODO: ADD error handling here - specifically, I encountered a bug where
     #       if a branch in upstream doesn't exist and you've specified it, the
     #       call fails w/ only the poor err msg from the calling function.
-    returncode, myinfo = run_this('git clone --depth=1 -b %s \
-                                  ssh://%s@cis-gerrit.cisco.com:29418/%s \
-                                  %s/services/%s' % (branch, username, service_name, path,
-                                  service_name))
+    returncode, myinfo = run_this("git clone --depth=1 -b %s "
+                                  "ssh://%s@cis-gerrit.cisco.com:29418/%s "
+                                  "%s/services/%s" % (branch, username,
+                                                      service_name, path,
+                                                      service_name))
     return(returncode, myinfo)
 
 
@@ -284,21 +284,20 @@ def link(path, service_name, branch, username):
     """
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
-            f = open(os.path.join(path, "current"), 'r')
-            f.seek(0)
-            service_name = f.readline()
+            currentf = open(os.path.join(path, "current"), 'r')
+            currentf.seek(0)
+            service_name = currentf.readline()
         else:
-            service_utils_logger.error("Current file doesn't exist\
+            SERVICE_UTILS_LOGGER.error("Current file doesn't exist\
                                         and service set to current\
                                         . Please enter a service to\
                                         work on.")
-            return(1)
+            return 1
 
-    f = open(os.path.join(path, "current"), 'w+')
-    f.seek(0)
-    f.write(service_name)
-    f.truncate()
-    f.close()
+    with open(os.path.join(path, "current"), 'w+') as service_file:
+        service_file.seek(0)
+        service_file.write(service_name)
+        service_file.truncate()
 
     if not os.path.islink(os.path.join(path, "current_service")):
         # Note: What to link is first arg, where to link is second aka src dest
@@ -306,22 +305,22 @@ def link(path, service_name, branch, username):
             os.symlink(os.path.join(path, "services", service_name),
                        os.path.join(path, "current_service"))
         else:
-            service_utils_logger.debug("Could not find source for symlink.\
+            SERVICE_UTILS_LOGGER.debug("Could not find source for symlink.\
                                        Attempting re-clone of source.")
             sync_service(path, branch, username, service_name)
             if os.path.isdir(os.path.join(path, "services", service_name)):
                 os.symlink(os.path.join(path, "services", service_name),
                            os.path.join(path, "current_service"))
             else:
-                service_utils_logger.error("Failed to find source for symlink: " +
+                SERVICE_UTILS_LOGGER.error("Failed to find source for symlink: " +
                                            os.path.join(path, "services", service_name))
-                return(1)
+                return 1
     else:
-        service_utils_logger.debug("Link already exists.")
+        SERVICE_UTILS_LOGGER.debug("Link already exists.")
 
-    f = open(os.path.join(path, "hosts"), 'w+')
-    f.seek(0)
-    f.write("[%s]\nvm-001\nvm-002\nvm-003\n" % (service_name))
+    hostf = open(os.path.join(path, "hosts"), 'w+')
+    hostf.seek(0)
+    hostf.write("[%s]\nvm-001\nvm-002\nvm-003\n" % (service_name))
 
 
 def clean(path):
@@ -343,7 +342,7 @@ def clean(path):
     Example Usage:
         >>> print clean("/Users/aaltman/Git/servicelab/servicelab/.stack")
     """
-    returncode, myinfo = run_this('vagrant destroy -f')
+    run_this('vagrant destroy -f')
     os.remove(os.path.join(path, "current"))
     if os.path.islink(os.path.join(path, "current_service")):
         os.unlink(os.path.join(path, "current_service"))
@@ -371,15 +370,15 @@ def check_service(path, service_name):
     """
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
-            f = open(os.path.join(path, "current"), 'r')
-            f.seek(0)
-            service_name = f.readline()
+            cfile = open(os.path.join(path, "current"), 'r')
+            cfile.seek(0)
+            service_name = cfile.readline()
         else:
-            service_utils_logger.error("Current file doesn't exist\
+            SERVICE_UTILS_LOGGER.error("Current file doesn't exist\
                                         and service set to current\
                                         . Please enter a service to\
                                         work on.")
-            return(1)
+            return 1
 
     if os.path.exists(os.path.join(path, "cache")):
         if os.path.isfile(os.path.join(path, "cache", "projects")):
@@ -387,39 +386,32 @@ def check_service(path, service_name):
                 # Note: re.search takes a search term as 1st arg and what to
                 #       search as second arg.
                 if re.search(service_name, line):
-                    returncode = 0
-                    return(returncode)
+                    return 0
 
             run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects">\
-                     %s' % (os.path.join(path, "cache", "projects"))
-                     )
+                     %s' % (os.path.join(path, "cache", "projects")))
             for line in open(os.path.join(path, "cache", "projects"), 'r'):
                 if re.search(service_name, line):
-                    returncode = 0
-                    return(returncode)
+                    return 0
 
             # Note: We didn't succeed in finding a match.
-            returncode = 1
-            service_utils_logger.error("Could not find repo in ccs-gerrit.")
-            return(returncode)
+            SERVICE_UTILS_LOGGER.error("Could not find repo in ccs-gerrit.")
+            return 1
     else:
         os.makedirs(os.path.join(path, "cache"))
-        f = open(os.path.join(path, "cache", "projects"), 'w+')
+        cachef = open(os.path.join(path, "cache", "projects"), 'w+')
         # Note: We close right away b/c we're just trying to
         #       create the file.
-        f.close()
+        cachef.close()
         run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
-                 % (os.path.join(path, "cache", "projects"))
-                 )
+                 % (os.path.join(path, "cache", "projects")))
         for line in open(os.path.join(path, "cache", "projects"), 'r'):
             if re.search(service_name, line):
-                returncode = 0
-                return(returncode)
+                return 0
 
         # Note: We didn't succeed in finding a match.
-        returncode = 1
-        service_utils_logger.error("Could not find repo in ccs-gerrit.")
-        return(returncode)
+        SERVICE_UTILS_LOGGER.error("Could not find repo in ccs-gerrit.")
+        return 1
 
 
 def run_this(command_to_run, cwd=os.getcwd()):
@@ -446,12 +438,11 @@ def run_this(command_to_run, cwd=os.getcwd()):
                                   stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, close_fds=True,
-                                  cwd=cwd
-                                  )
+                                  cwd=cwd)
 
         myinfo = output.communicate()[0]
         myinfo.strip()
         return(output.returncode, myinfo)
-    except OSError, e:
-        service_utils_logger.error(e)
-        return (1, str(e))
+    except OSError, ex:
+        SERVICE_UTILS_LOGGER.error(ex)
+        return (1, str(ex))

@@ -96,8 +96,6 @@ class TestGerrtFunctions(unittest.TestCase):
         gerrit_functions.GerritFns.instrument_code = True
         gfn.change_review(self.review, 1, 0, "reviewed")
         rev = gfn.print_gerrit("", self.review, self.user, "", "")
-        import pdb
-        pdb.set_trace()
         self.assertEqual(rev["currentPatchSet"]["approvals"][0]["value"],
                          "1",
                          "unable to change the code review value")

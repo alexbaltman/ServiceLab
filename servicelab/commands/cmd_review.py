@@ -1,3 +1,14 @@
+"""
+Stack command implementing the following gerrit functionality
+
+    1. Searche through Gerrit's API for incoming and outgoing reviews
+    2. Approves and merges a gerrit change set.
+    3. Approves, but does not merge a gerrit change set.
+    4. Prefer the code is not submitted.
+    5. Do not submit the code
+    6. Display the review
+    7. Display the code diff
+"""
 import click
 from servicelab.stack import pass_context
 from servicelab.utils import helper_utils
@@ -6,15 +17,13 @@ from servicelab.utils import gerrit_functions
 
 @click.group('review', short_help='Helps you work with Gerrit')
 @pass_context
-def cli(ctx):
+def cli(_):
     """
     Helps you work with Gerrit.
     """
     pass
 
 
-# RFI: Aren't the inc and out basically the same as list out review
-# list inc review? Do we need both?
 @cli.command('inc', short_help='Find incoming reviews Gerrit.')
 @click.option('-p', '--project', help='Enter the project')
 @click.option('-u', '--username', help='Enter the desired username')
@@ -67,7 +76,6 @@ def review_out(ctx, project, username, detail):
                          reviewer="", status="open")
 
 
-# RFI: Can we do +2 w/ the plus?
 @cli.command('plustwo', short_help='Plus two gerrit change set.')
 @click.argument('item')
 @click.option('-p', '--project', help='Enter the project')

@@ -1,31 +1,42 @@
+"""
+List command submodule implements listing all the
+    1. Sites and services of ccs-data
+    2. Environments using the git submodule ccs-data.
+    3. Hosts using the git submodule ccs-data.
+    4. Repos using Gerrit's API.
+    5. Piplines using GO's API.
+    and also
+    6. Searches through Jenkins API for pipelines using the given search term.
+"""
 import os
 import re
+
 import click
-import logging
 import json
-from servicelab.stack import pass_context
-from servicelab.utils import ccsdata_utils
-from servicelab.utils import jenkins_utils
 import requests
+
 from requests.auth import HTTPBasicAuth
 from BeautifulSoup import BeautifulSoup
-from jenkinsapi.jenkins import Jenkins
+
+from servicelab.stack import pass_context
+
 from servicelab.utils import context_utils
+from servicelab.utils import helper_utils
+from servicelab.utils import ccsdata_utils
+from servicelab.utils import jenkins_utils
+from servicelab.utils import gerrit_functions
 
 
 @click.group('list', short_help='You can list available pipeline objects',
              add_help_option=True)
 @pass_context
-def cli(ctx):
+def cli(_):
     """
     Listing sites and services of ccs-data
     """
     pass
 
 
-# TODO: the command sites, envs, and hosts should be able to take
-#       an option to display the env item belongs to and/or site,
-#       as well as print a lot prettier.
 @cli.command('sites', short_help="List sites")
 @pass_context
 def list_sites(ctx):
@@ -45,10 +56,10 @@ def list_envs(ctx):
     Here we list all the environments using the git submodule ccs-data.
     '''
     ctx.logger.debug("Gathered environments from ccs-data submodule.")
-    d = ccsdata_utils.list_envs_or_sites(ctx.path)
-    for keys, values in d.iteritems():
-        for k2 in values:
-            click.echo(k2)
+    data = ccsdata_utils.list_envs_or_sites(ctx.path)
+    for _, values in data.iteritems():
+        for val in values:
+            click.echo(val)
 
 
 @cli.command('hosts', short_help="List hosts")
@@ -58,147 +69,151 @@ def list_hosts(ctx):
     Here we list all the hosts using the git submodule ccs-data.
     '''
     ctx.logger.debug("Gathered hosts from ccs-data submodule.")
-    d = ccsdata_utils.list_envs_or_sites(ctx.path)
-    for keys, values in d.iteritems():
-        for k2, v2 in values.iteritems():
-            click.echo(v2)
+    data = ccsdata_utils.list_envs_or_sites(ctx.path)
+    for _, values in data.iteritems():
+        for _, l2_values in values.iteritems():
+            click.echo(l2_values)
 
 
 @cli.command('reviews', short_help='List reviews in Gerrit.')
-# RFI: Is using an option here 100% the right way to go or nest
-#      the command set again (?)
-@click.option('ino', '--out', help='List the outgoing reviews I have.')
-@click.option('ino', '--inc', help='List the incoming reviews I have.')
+@click.option('inout',
+              '--inc/--out',
+              help='List the incoming or outgoing reviews.',
+              default=True)
 @pass_context
-def list_repo(ctx, ino):
+def list_reviews(ctx, inout):
     """
-    Lists repos using Gerrit's API.
+    Lists reviews using Gerrit's API.
     """
-    click.echo('Listing reviews in Gerrit.')
+    username = helper_utils.get_username(ctx.path)
+    gfn = gerrit_functions.GerritFns(username, "", ctx)
+    if inout:
+        gfn.print_gerrit(pformat="summary", number=None, owner=username,
+                         reviewer="", status="open")
+    else:
+        gfn.print_gerrit(pformat="summary", number=None, owner="",
+                         reviewer=username, status="open")
 
 
-# RFI: should there be more intelligence here than a blankey list?
 @cli.command('repos', short_help='List repos in Gerrit.')
 @pass_context
 def list_repos(ctx):
     """
     Lists repos using Gerrit's API.
     """
-    click.echo('Listing repos in Gerrit.')
+    username = helper_utils.get_username(ctx.path)
+    gfn = gerrit_functions.GerritFns(username, "", ctx)
+    gfn.print_list()
 
 
-# RFI: should there be more intelligence here than a blankey list?
 @cli.command('builds', short_help='List a Jenkins\' builds.')
 @click.option(
-    '-x',
-    '--jenkinsuser',
+    '-u',
+    '--user',
     help='Provide jenkins username',
     required=True)
 @click.option(
-    '-y',
-    '--jenkinspass',
+    '-p',
+    '--password',
     help='Provide jenkins server password',
     required=True)
 @click.option(
-    '-z',
-    '--jenkinsservurl',
+    '-ip',
+    '--ip_address',
     help='Provide the jenkinsserv url ip address and port \
         no in format <ip:portno>.',
     required=True)
 @pass_context
-def list_build(ctx, jenkinsservurl, jenkinsuser, jenkinspass):
+def list_build(_, ip_address, user, password):
     """
     Searches through Jenkins API for pipelines using your search term.
     """
     click.echo('Listing builds in Jenkins.')
-    server = jenkins_utils.get_server_instance(jenkinsservurl,
-                                               jenkinsuser, jenkinspass)
-    for j in server.keys():
-        print j
+    server = jenkins_utils.get_server_instance(ip_address,
+                                               user,
+                                               password)
+    for key in server.keys():
+        click.echo(key)
 
 
-# RFI: should there be more intelligence here than a blankey list?
 @cli.command('artifacts', short_help='List artifacts in artifactory')
 @click.option(
-    '-m',
-    '--artuser',
+    '-u',
+    '--user',
     help='Provide artifactory username',
     required=True)
 @click.option(
-    '-n',
-    '--artpass',
+    '-p',
+    '--password',
     help='Provide artifactory password',
     required=True)
 @click.option(
-    '-o',
-    '--artservurl',
+    '-ip',
+    '--ip_address',
     default=context_utils.getArtifactoryURL(),
     help='Provide the artifactory url ip address and port \
         no in format http://<ip:portno>.',
     required=True)
 @pass_context
-def list_artifact(ctx, artservurl, artuser, artpass):
+def list_artifact(_, ip_address, user, password):
     """
     Lists artifacts using Artifactory's API.
     """
     click.echo('Listing artifacts in Artifactory.')
-    listURL = artservurl + "/api/search/creation?from=968987355"
+    list_url = ip_address + "/api/search/creation?from=968987355"
     requests.packages.urllib3.disable_warnings()
-    res = requests.get(listURL, auth=HTTPBasicAuth(artuser, artpass))
-    print res.content
+    res = requests.get(list_url, auth=HTTPBasicAuth(user, password))
+    click.echo(res.content)
     for val in json.loads(res.content)["results"]:
-        print val["uri"]
+        click.echo(val["uri"])
 
 
 @cli.command('pipes', short_help='List Go deployment pipelines')
-@click.option(
-    '-l',
-    '--localrepo',
-    help='If provided stack will filter pipelines by services \
-          listed in local .stack directory.',
-    is_flag=True,
-    required=False)
-@click.option(
-    '-g',
-    '--gouser',
-    help='Provide go server username',
-    required=True)
-@click.option(
-    '-h',
-    '--gopass',
-    help='Provide go server password',
-    required=True)
-@click.option(
-    '-s',
-    '--goserver',
-    help='Provide the go server ip address and port no in format <ip:portno>.',
-    required=True)
+@click.option('-l',
+              '--localrepo',
+              help='If provided stack will filter pipelines by services '
+                   'listed in local .stack directory.',
+              is_flag=True,
+              required=False)
+@click.option('-u',
+              '--user',
+              help='Provide go server username',
+              required=True)
+@click.option('-p',
+              '--password',
+              help='Provide go server password',
+              required=True)
+@click.option('-ip',
+              '--ip_address',
+              help="Provide the go server ip address and port no in "
+                   "format <ip:portno>.",
+              required=True)
 @pass_context
-def list_pipe(ctx, localrepo, gouser, gopass, goserver):
+def list_pipe(ctx, localrepo, user, password, ip_address):
     """
     Lists piplines using GO's API.
     """
-    serverURL = "http://{0}/go/api/pipelines.xml".format(goserver)
-    serverStringPrefix = "http://{0}/go/api/pipelines/".format(goserver)
-    serverStringSuffix = "/stages.xml"
+    server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
+    server_string_prefix = "http://{0}/go/api/pipelines/".format(ip_address)
+    server_string_suffix = "/stages.xml"
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
         servicesdirs = os.listdir(os.path.join(ctx.path, "services"))
 
     # Find latest run info
-    res = requests.get(serverURL, auth=HTTPBasicAuth(gouser, gopass))
+    res = requests.get(server_url, auth=HTTPBasicAuth(user, password))
     soup = BeautifulSoup(res.content)
     pipelines = soup.findAll('pipeline')
     for pipeline in pipelines:
-        r = re.compile(serverStringPrefix + '(.*?)' + serverStringSuffix)
-        m = r.search(pipeline['href'])
-        if m:
-            pipelineName = m.group(1)
+        exp = re.compile(server_string_prefix + '(.*?)' + server_string_suffix)
+        match = exp.search(pipeline['href'])
+        if match:
+            pipeline_name = match.group(1)
             if localrepo:
                 for sdir in servicesdirs:
                     if sdir.startswith("service-"):
                         service = sdir.split("service-", 1)[1]
-                        if service == pipelineName:
-                            print pipelineName
+                        if service == pipeline_name:
+                            click.echo(pipeline_name)
             else:
-                print pipelineName
+                click.echo(pipeline_name)
