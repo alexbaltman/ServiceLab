@@ -56,7 +56,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             returncode, service = helper_utils.get_current_service(ctx.path)
         except TypeError:
             ctx.logger.error("Could not get the current service.")
-            ctx.logger.error("Try: stack workon service-myservice")  
+            ctx.logger.error("Try: stack workon service-myservice")
             sys.exit(1)
         if returncode > 0:
             ctx.logger.debug("Failed to get the current service")
@@ -77,7 +77,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         if remote:
             returncode, float_net, mynets = os_ensure_network(ctx.path)
             if returncode > 0:
-            	ctx.logger.debug("No OS_ environment variables found")
+                ctx.logger.debug("No OS_ environment variables found")
                 sys.exit(1)
             myvfile._vbox_os_provider_env_vars(float_net, mynets)
             returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
@@ -104,7 +104,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             sys.exit(0)
     # SERVICE VM WORKFLOW ==========================
     elif service:
-        returncode = infra_ensure_up(path=ctx.path)
+        if remote:
+            returncode = infra_ensure_up(path=ctx.path, remote=True)
+        else:
+            returncode = infra_ensure_up(path=ctx.path)
         if returncode == 1:
             ctx.logger.error("Could not boot infra-001")
             sys.exit(1)
@@ -278,67 +281,96 @@ def name_vm(name, path):
             return hostname
 
 
-def infra_ensure_up(hostname="infra-001", path=None):
+def infra_ensure_up(hostname="infra-001", path=None, remote=False):
     '''
     #Out[3]: [Status(name='rhel7-001', state='running', provider='virtualbox')]
-    #CalledProcessError
+    #CalledProcessError --> subprocess exit 1 triggers this exception
+    #Do we really care if infra is vbox or remote??? --> can prob execute from either
+    #if that's true then we'd always want one local b/c we can go out, but not in
     '''
     infra_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra-001",
                                                         path=path)
-    try:
-        returncode = vm_isrunning(hostname=hostname, path=path)
-        if returncode == 1:
-            infra_connection.v.up(vm_name=hostname)
-            returncode = vm_isrunning(hostname=hostname, path=path)
-            if returncode == 0:
+    returncode, isremote = vm_isrunning(hostname=hostname, path=path)
+    if remote:
+        if isremote and returncode == 0:
                 return 0
-            else:
-                # no ctx provided
-                # ctx.logger.error("Could not boot " + hostname)
+        elif isremote and returncode == 1:
+            try:
+                infra_connection.v.up(vm_name=hostname)
+            except CalledProcessError:
                 return 1
-    except CalledProcessError as e:
-        path_to_utils = helper_utils.get_path_to_utils(path)
-        returncode, idic = yaml_utils.gethost_byname(hostname, path_to_utils)
-        if returncode == 1:
-            # ctx.logger.error("Couldn't get the templated host details\
-            # in vagrant.yaml.:")
-            # ctx.logger.error(e)
-            # RFI: Should I exit here??
-            print(e)
-            sys.exit(1)
-
-        retcode = yaml_utils.host_add_vagrantyaml(path=path,
-                                                  file_name="vagrant.yaml",
-                                                  hostname=hostname,
-                                                  memory=(idic[hostname]['memory'] / 512),
-                                                  box=idic[hostname]['box'],
-                                                  role=idic[hostname]['role'],
-                                                  profile=idic[hostname]['profile'],
-                                                  domain=idic[hostname]['domain'],
-                                                  mac_nocolon=idic[hostname]['mac'],
-                                                  ip=idic[hostname]['ip'],
-                                                  site='ccs-dev-1')
-        ####HERE DO the writing to ccs-data and Vagrantfile - write get function for ccs-data
-        yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
-
-        # TODO: Need a better error check here:
-        if retcode == 0:
-            infra_connection.v.up(vm_name=hostname)
+        elif not isremote:
+            thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
+            if not os.path.exists(os.path.join(path, 'Vagrantfile')):
+                thisvfile.init_vagrantfile()
+            hostst = yaml_utils.host_exists_vagrantyaml(hostname, path)
+            if hostst:
+                hostname = 'infra-002'
+            returncode, float_net, mynets = os_ensure_network(path)
+            if returncode > 0:
+                return 1
+            thisvfile._vbox_os_provider_env_vars(float_net, mynets)
+            returncode, host_dict = yaml_utils.gethost_byname(hostname, path)
+            if returncode > 0:
+                return 1
+            thisvfile.add_openstack_vm(host_dict)
+    else:
+        if not isremote and returncode == 0:
             return 0
-        else:
-            # Not defined yet b/c not @pass_context to sub function
-            # ctx.logger.error("Failed to bring up " + hostname)
-            return 1
+        if not isremote and returncode == 1:
+            try:
+                infra_connection.v.up(vm_name=hostname)
+            except CalledProcessError:
+                return 1
+        elif isremote:
+            hostst = yaml_utils.host_exists_vagrantyaml(hostname, path)
+            if hostst:
+                # change name for local Vagf write
+                hostname = 'infra-002'
+            path_to_utils = helper_utils.get_path_to_utils(path)
+            returncode, idic = yaml_utils.gethost_byname(hostname, path_to_utils)
+            if returncode > 0:
+                return 1
+            retcode = yaml_utils.host_add_vagrantyaml(path=path,
+                                                      file_name="vagrant.yaml",
+                                                      hostname=hostname,
+                                                      memory=(idic[hostname]['memory'] / 512),
+                                                      box=idic[hostname]['box'],
+                                                      role=idic[hostname]['role'],
+                                                      profile=idic[hostname]['profile'],
+                                                      domain=idic[hostname]['domain'],
+                                                      mac_nocolon=idic[hostname]['mac'],
+                                                      ip=idic[hostname]['ip'],
+                                                      site='ccs-dev-1')
+            if retcode > 0:
+                return 1
+
+            thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
+            if not os.path.exists(os.path.join(path, 'Vagrantfile')):
+                thisvfile.init_vagrantfile()
+            thisvfile.add_virtualbox_vm(idic)
+            try:
+                infra_connection.v.up(vm_name=hostname)
+                return 0
+            except CalledProcessError:
+                return 1
 
 
 def vm_isrunning(hostname, path):
+    '''
+    Second return value is if it's remote.
+    '''
     vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                                      path=path)
     status = vm_connection.v.status()
-    if status[0][1] == "running":
-        return 0
-    else:
-        return 1
+    if status[0][1] == 'running':
+        return 0, False
+    elif status[0][1] == 'poweroff':
+        return 1, False
+    elif status[0][1] == 'active':
+        return 0, True
+    elif status[0][1] == 'shutoff':
+        return 1, True
 
 
 def os_ensure_network(path):
@@ -363,7 +395,7 @@ def os_ensure_network(path):
         # ctx.logger.error("Could not create router in project.")
         return 1, float_net, mynewnets
     a.connect_to_neutron()
-    
+
     returncode, float_net = a.find_floatnet_id(return_name="Yes")
     if returncode > 0:
         # ctx.logger.error('Could not get the name for the floating network.')
