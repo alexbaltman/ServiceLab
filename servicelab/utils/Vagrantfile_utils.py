@@ -93,6 +93,9 @@ class SlabVagrantfile(object):
         ip = self.host_dict[self.hostname]['ip']
         try:
             setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n"
+                       "  config.hostmanager.enabled = true\n"
+                       "  config.hostmanager.manage_host = true\n"
+                       "  config.hostmanager.include_offline = true\n"
                        "  config.vm.box = \"" + self.host_dict[self.hostname]['box'] + "\"\n"
                        # RFI: non-win config --> use hosts keypair so set insert_key to F
                        #      then enable agent forwarding.
@@ -131,6 +134,9 @@ class SlabVagrantfile(object):
         self._vbox_os_provider_host_vars(self.path)
         setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n",
                    "  cluster.ssh.username = 'cloud-user' \n",
+                   "  config.hostmanager.enabled = true\n"
+                   "  config.hostmanager.manage_host = true\n"
+                   "  config.hostmanager.include_offline = true\n"
                    "  config.vm.provider :openstack do |os, override|\n")
 
         setitup += ("    os.openstack_auth_url   = \"" + env_vars['openstack_auth_url'] + "\"\n",
