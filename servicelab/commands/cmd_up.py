@@ -299,12 +299,12 @@ def infra_ensure_up(hostname="infra-001", path=None, remote=False):
                 infra_connection.v.up(vm_name=hostname)
             except CalledProcessError:
                 return 1
-        elif not isremote:
+        elif not isremote or returncode == 2:
             thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
             if not os.path.exists(os.path.join(path, 'Vagrantfile')):
                 thisvfile.init_vagrantfile()
             hostst = yaml_utils.host_exists_vagrantyaml(hostname, path)
-            if hostst:
+            if hostst and returncode != 2:
                 hostname = 'infra-002'
             returncode, float_net, mynets = os_ensure_network(path)
             if returncode > 0:
@@ -322,10 +322,9 @@ def infra_ensure_up(hostname="infra-001", path=None, remote=False):
                 infra_connection.v.up(vm_name=hostname)
             except CalledProcessError:
                 return 1
-        elif isremote:
+        elif isremote or returncode == 2:
             hostst = yaml_utils.host_exists_vagrantyaml(hostname, path)
-            if hostst:
-                # change name for local Vagf write
+            if hostst and returncode != 2:
                 hostname = 'infra-002'
             path_to_utils = helper_utils.get_path_to_utils(path)
             returncode, idic = yaml_utils.gethost_byname(hostname, path_to_utils)
@@ -358,19 +357,23 @@ def infra_ensure_up(hostname="infra-001", path=None, remote=False):
 
 def vm_isrunning(hostname, path):
     '''
-    Second return value is if it's remote.
+    on/off then second return value is if it's remote.
     '''
     vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                                      path=path)
-    status = vm_connection.v.status()
-    if status[0][1] == 'running':
-        return 0, False
-    elif status[0][1] == 'poweroff':
-        return 1, False
-    elif status[0][1] == 'active':
-        return 0, True
-    elif status[0][1] == 'shutoff':
-        return 1, True
+    try:
+      status = vm_connection.v.status()
+      if status[0][1] == 'running':
+          return 0, False
+      elif status[0][1] == 'poweroff':
+          return 1, False
+      elif status[0][1] == 'active':
+          return 0, True
+      elif status[0][1] == 'shutoff':
+          return 1, True
+    except CalledProcessError:
+        # RFI: is there a better way to return here? raise exception?
+        return 2, False
 
 
 def os_ensure_network(path):
