@@ -87,6 +87,8 @@ class SlabVagrantfile(object):
             hostname
 
         '''
+        import pdb
+        pdb.set_trace()
         setitup = ''
         self.host_dict = host_dict
         self.hostname = self.host_dict.keys()[0]

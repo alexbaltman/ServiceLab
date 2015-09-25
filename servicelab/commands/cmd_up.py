@@ -141,7 +141,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             if returncode > 0:
                 ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
                 sys.exit(1)
-            myvfile.add_virtualbox_vm(host_dict[hostname])
+            myvfile.add_virtualbox_vm(host_dict)
 
         a = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                              path=ctx.path)
