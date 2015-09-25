@@ -134,8 +134,14 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             # Note: Shouldn't need to ensure network in OS here b/c it happens
             #       during the infra node ensure up.
             returncode, float_net, mynets = os_ensure_network(ctx.path)
-            myvfile._vbox_os_provider_env_vars()
-            myvfile.add_openstack_vm(hostname=hostname)
+            if returncode > 0:
+                sys.exit(1)
+            myvfile._vbox_os_provider_env_vars(float_net, mynets)
+            returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
+            if returncode > 0:
+                ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
+                sys.exit(1)
+            myvfile.add_openstack_vm(host_dict)
         else:
             returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
             if returncode > 0:
@@ -307,14 +313,36 @@ def infra_ensure_up(hostname="infra-001", path=None, remote=False):
             hostst = yaml_utils.host_exists_vagrantyaml(hostname, path)
             if hostst and returncode != 2:
                 hostname = 'infra-002'
+            path_to_utils = helper_utils.get_path_to_utils(path)
             returncode, float_net, mynets = os_ensure_network(path)
             if returncode > 0:
                 return 1
             thisvfile._vbox_os_provider_env_vars(float_net, mynets)
-            returncode, host_dict = yaml_utils.gethost_byname(hostname, path)
+            returncode, idic = yaml_utils.gethost_byname(hostname, os.path.join(path,
+                                                                                     'provision')
+                                                              )
             if returncode > 0:
                 return 1
-            thisvfile.add_openstack_vm(host_dict)
+            retcode = yaml_utils.host_add_vagrantyaml(path=path,
+                                                      file_name="vagrant.yaml",
+                                                      hostname=hostname,
+                                                      memory=(idic[hostname]['memory'] / 512),
+                                                      box=idic[hostname]['box'],
+                                                      role=idic[hostname]['role'],
+                                                      profile=idic[hostname]['profile'],
+                                                      domain=idic[hostname]['domain'],
+                                                      mac_nocolon=idic[hostname]['mac'],
+                                                      ip=idic[hostname]['ip'],
+                                                      site='ccs-dev-1')
+            if retcode > 0:
+                return 1
+            thisvfile.add_openstack_vm(idic)
+            try:
+                infra_connection.v.up(vm_name=hostname)
+                return 0
+            except CalledProcessError:
+                return 1
+
     else:
         if not isremote and returncode == 0:
             return 0
@@ -327,8 +355,9 @@ def infra_ensure_up(hostname="infra-001", path=None, remote=False):
             hostst = yaml_utils.host_exists_vagrantyaml(hostname, path)
             if hostst and returncode != 2:
                 hostname = 'infra-002'
-            path_to_utils = helper_utils.get_path_to_utils(path)
-            returncode, idic = yaml_utils.gethost_byname(hostname, path_to_utils)
+            returncode, idic = yaml_utils.gethost_byname(hostname, os.path.join(path,
+                                                                                'provision')
+                                                         )
             if returncode > 0:
                 return 1
             retcode = yaml_utils.host_add_vagrantyaml(path=path,
