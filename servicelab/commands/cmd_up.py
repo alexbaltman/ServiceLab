@@ -377,6 +377,7 @@ def os_ensure_network(path):
     password = os.environ.get('OS_PASSWORD')
     username = os.environ.get('OS_USERNAME')
     base_url = os.environ.get('OS_REGION_NAME')
+    os_tenant_name = os.environ.get('OS_TENANT_NAME')
     float_net = ''
     mynewnets = []
     if not password or not base_url:
@@ -385,7 +386,7 @@ def os_ensure_network(path):
         # ctx.logger.error('Exiting now.')
         return 1, float_net, mynewnets
     a = openstack_utils.SLab_OS(path=path, password=password, username=username,
-                                base_url=base_url)
+                                base_url=base_url, os_tenant_name=os_tenant_name)
     returncode, tenant_id, temp_token = a.login_or_gettoken()
     if returncode > 0:
         # ctx.logger.error("Could not create router in project.")
@@ -430,7 +431,7 @@ def os_ensure_network(path):
         return 1, float_net, mynewnets
     # ctx.logger.debug('Sleeping 5s b/c of slow neutron create times.')
     time.sleep(5)
-    a.add_int_to_router(router_id, mgmt_subnet['id'])
+    a.add_int_to_router(router_id, mgmt_subnet['id'], mgmt=True)
     mynets = a.neutron.list_networks()
     mynewnets = []
 
