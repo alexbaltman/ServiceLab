@@ -887,6 +887,7 @@ def get_dev_hostyaml(path, hostname, site='ccs-dev-1', env='dev-tenant'):
 
     Returns:
         returncode (int): 0 - Success, 1 - Failure
+        host dict (dict): A dictionary of the host attributes from ccs-dev-1.
 
     Example Usage:
         >>> print get_dev_hostyaml('/mnt/localwindows/servicelab/servicelab/.stack',

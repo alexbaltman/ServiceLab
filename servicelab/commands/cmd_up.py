@@ -113,10 +113,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             sys.exit(1)
 
         hostname = name_vm(service, ctx.path)
-        returncode = yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
+
+        returncode, host_dict = yaml_utils.get_dev_hostyaml(ctx.path, hostname)
         if returncode == 1:
-            ctx.logger.error("Couldn't write vm yaml to ccs-dev-1 for " + hostname)
-            sys.exit(1)
+            returncode2 = yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
+            if returncode2 == 1:
+                ctx.logger.error("Couldn't write vm yaml to ccs-dev-1 for " + hostname)
+                sys.exit(1)
         returncode = yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml",
                                                      hostname, "ccs-dev-1")
         if returncode == 1:
@@ -126,8 +129,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
         if os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
-        # TODO: We got to boot to wherever the infra node is or put one there.
+
         if remote:
+            # Note: Shouldn't need to ensure network in OS here b/c it happens
+            #       during the infra node ensure up.
             returncode, float_net, mynets = os_ensure_network(ctx.path)
             myvfile._vbox_os_provider_env_vars()
             myvfile.add_openstack_vm(hostname=hostname)
@@ -149,15 +154,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         else:
             sys.exit(0)
         # TODO: Figure out a better way to execute this. The ssh can be very
-        #       fragile.
+        #       fragile. May not be 001.
         service_utils.run_this('vagrant ssh infra-001 -c cp "/etc/ansible"; \
                                 cd "/opt/ccs/services/%s; sudo heighliner \
                                 --dev --debug deploy"' % (os.path.join(ctx.path, "hosts"),
                                                           service))
-        returncode, myinfo = service_utils.run_this('vagrant hostmanager')
-        if returncode > 0:
-            ctx.logger.error("Could not run vagrant hostmanager because\
-                             {0}".format(myinfo))
     elif target:
         service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
         service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
