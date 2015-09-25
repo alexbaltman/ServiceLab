@@ -1,11 +1,14 @@
 deploy_args:
-  cobbler_kickstart: /etc/cobbler/preseed/rhel-preseed
-  cobbler_pass: ''
-  cobbler_profile: rhel-server-7.0-x86_64
-  mac_address: "'00:00:27:00:00:12'"
-  management_ip: 192.168.100.254
-  management_pass: cisco
-  management_type: cimc
+  availability_zone: csm-a
+  flavor: 2cpu.4ram.20sas
+  image: slab-RHEL7.1v7
+  network_name: SLAB_aaltman_network
+  security_groups: default
+  subnet_name: SLAB_aaltman_network_subnet
+  tenant: dev-tenant
+groups:
+  - virtual
+  - redhouse-tenant
 hostname: db-001
 interfaces:
   eth0:
@@ -15,4 +18,4 @@ interfaces:
 nameservers: 192.168.100.2
 role: tenant_db
 server: sdlc-mirror.cisco.com
-type: physical
+type: virtual
