@@ -127,7 +127,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             sys.exit(1)
 
         myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
-        if os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
+        if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
 
         if remote:
