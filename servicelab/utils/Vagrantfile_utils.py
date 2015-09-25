@@ -29,7 +29,8 @@ class SlabVagrantfile(object):
             h1 = ("# -*- mode: ruby -*-\n"
                   "# vi: set ft=ruby :\n")
             h2 = "VAGRANTFILE_API_VERSION = \"2\"\n"
-            req_plugin = ("required_plugins = %w( vagrant-hostmanager vagrant-openstack-provider )\n",
+            req_plugin = ("required_plugins = %w( vagrant-hostmanager ",
+                          "vagrant-openstack-provider )\n",
                           "required_plugins.each do |plugin|\n",
                           "  system \"vagrant plugin install #{plugin}\" unless\n",
                           "Vagrant.has_plugin? plugin\n",
@@ -117,7 +118,8 @@ class SlabVagrantfile(object):
             setitup += '  end\n'
             setitup += "  config.vm.hostname = \"" + self.hostname + "\"\n"
             try:
-                setitup += "  config.vm.network :private_network, ip: \"" + ip + "\", mac: \"" + host_dict[self.hostname]['mac'] + "\"\n"
+                setitup += "  config.vm.network :private_network, ip: \"" + ip
+                setitup += "\", mac: \"" + host_dict[self.hostname]['mac'] + "\"\n"
             except KeyError:
                 setitup += "  config.vm.network :private_network, ip: \"" + ip + "\"\n"
             self.append_it(setitup)
@@ -141,14 +143,17 @@ class SlabVagrantfile(object):
                    "  config.hostmanager.include_offline = true\n"
                    "  config.vm.provider :openstack do |os, override|\n")
 
-        setitup += ("    os.openstack_auth_url   = \"" + env_vars['openstack_auth_url'] + "\"\n",
+        setitup += ("    os.openstack_auth_url   = \"" + env_vars['openstack_auth_url'] +
+                    "\"\n",
                     "    os.username             = \"" + env_vars['username'] + "\"\n",
                     "    os.password              = \"" + env_vars['password'] + "\"\n",
                     "    os.tenant_name          = \"" + env_vars['tenant_name'] + "\"\n")
 
         try:
-            setitup += ("    os.flavor               = \"" + self.host_vars['flavor'] + "\"\n",
-                        "    os.image                = \"" + self.host_vars['image'] + "\"\n")
+            setitup += ("    os.flavor               = \"" + self.host_vars['flavor'],
+                        "\"\n",
+                        "    os.image                = \"" + self.host_vars['image'],
+                        "\"\n")
 
         except KeyError:
             Vagrantfile_utils_logger.error('Could not set host flavor or img from\
@@ -157,7 +162,8 @@ class SlabVagrantfile(object):
                     "\"\n",
                     "    os.openstack_network_url=\"" + env_vars['openstack_network_url'] +
                     "\"\n",
-                    "    os.openstack_image_url  = \"" + env_vars['openstack_image_url'] + "\"\n",
+                    "    os.openstack_image_url  = \"" + env_vars['openstack_image_url'] +
+                    "\"\n",
                     "    os.networks             = " + env_vars['networks'] + "\n",
                     "    override.vm.box = \"openstack\"\n"
                     "  end\n")
@@ -206,10 +212,10 @@ class SlabVagrantfile(object):
         return vagrant_network
 
     def _vbox_os_provider_host_vars(self, path):
-        '''Func_vbox_os_provider_env_vars(stion will accept a path to the .stack directory and the host being
-        booted. It will navigate to the ccs-devel directory, find the
-        corresponding host.yaml file, parse it and return a dict with flavor,
-        and image used for the host'''
+        '''Func_vbox_os_provider_env_vars(stion will accept a path to the .stack
+           directory and the host being booted. It will navigate to the ccs-devel directory,
+           find the corresponding host.yaml file, parse it and return a dict with flavor,
+           and image used for the host'''
         relpath_toyaml = 'services/ccs-data/sites/ccs-dev-1/environments/dev-tenant/hosts.d/'
         if (os.path.exists(path)):
             path = os.path.join(path, relpath_toyaml)
@@ -219,8 +225,8 @@ class SlabVagrantfile(object):
                     try:
                         with open(path) as host_yaml:
                             host_data = yaml.load(host_yaml)
-                            self.host_vars['image'] = host_data.get('deploy_args').get('image')
-                            self.host_vars['flavor'] = host_data.get('deploy_args').get('flavor')
+                            self.host_vars['image'] = host_data['deploy_args']['image']
+                            self.host_vars['flavor'] = host_data['deploy_args']['flavor']
                     except:
                         Vagrantfile_utils_logger.error('Could not set host flavor or img from\
                                                         ccs-data')

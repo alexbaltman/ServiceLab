@@ -192,7 +192,8 @@ class SLab_OS(object):
             append = "_" + append
 
         username = self.username
-        name = "SLAB_%s%s_%s_%s" % (self.username, append, self.os_tenant_name,  neutron_type)
+        name = "SLAB_%s%s_%s_%s" % (self.username, append, self.os_tenant_name,
+                                    neutron_type)
         return name
 
     def check_for_network(self, name):
@@ -246,8 +247,8 @@ class SLab_OS(object):
         network = ""
         parts = name.split('_')
         # ['SLAB', 'Servicelab2', 'aaltman', 'mgmt', 'network']
-        parts = [ i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
-        #['SLAB', 'mgmt', 'network']
+        parts = [i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
+        # ['SLAB', 'mgmt', 'network']
         for network in networks['networks']:
             if all(i in network['name'] for i in parts):
                 return 0, network
@@ -296,8 +297,8 @@ class SLab_OS(object):
         subnet = ""
         parts = name.split('_')
         # ['SLAB', 'Servicelab2', 'aaltman', 'mgmt', 'subnet']
-        parts = [ i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
-        #['SLAB', 'mgmt', 'subnet']
+        parts = [i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
+        # ['SLAB', 'mgmt', 'subnet']
         for subnet in subnets['subnets']:
             if all(i in subnet['name'] for i in parts):
                 return 0, subnet
@@ -335,8 +336,8 @@ class SLab_OS(object):
         router = ""
         parts = name.split('_')
         # ['SLAB', 'Servicelab2', 'aaltman', 'mgmt', 'router']
-        parts = [ i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
-        #['SLAB', 'mgmt', 'router']
+        parts = [i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
+        # ['SLAB', 'mgmt', 'router']
         for router in routers['routers']:
             if all(i in router['name'] for i in parts):
                 return 0, router
@@ -363,7 +364,9 @@ class SLab_OS(object):
            {'ports': [{u'admin_state_up': True,
            u'allowed_address_pairs': [],
            u'binding:vnic_type': u'normal',
-           u'device_id': u'dhcp18d9e9ce-a714-5869-a6df-8c5339b4a142-6d5d4d54-fbec-41a0-91fe-e61c5b0d9ac2',
+           u'device_id': u'dhcp18d9e9ce-a714-5869-
+                           a6df-8c5339b4a142-6d5d4d54-
+                           fbec-41a0-91fe-e61c5b0d9ac2',
            u'device_owner': u'network:dhcp',
            u'extra_dhcp_opts': [],
            u'fixed_ips': [{u'ip_address': u'192.168.1.3',
@@ -378,7 +381,9 @@ class SLab_OS(object):
           {u'admin_state_up': True,
            u'allowed_address_pairs': [],
            u'binding:vnic_type': u'normal',
-           u'device_id': u'dhcp18d9e9ce-a714-5869-a6df-8c5339b4a142-e29e9fa3-9289-4430-b234-c1efa288c23e',
+           u'device_id': u'dhcp18d9e9ce-a714-5869-
+                           a6df-8c5339b4a142-e29e9fa3-
+                           9289-4430-b234-c1efa288c23e',
            u'device_owner': u'network:dhcp',
            u'extra_dhcp_opts': [],
            u'fixed_ips': [{u'ip_address': u'192.168.100.3',

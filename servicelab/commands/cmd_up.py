@@ -319,14 +319,14 @@ def infra_ensure_up(hostname="infra-001", path=None, remote=False):
                 return 1
             thisvfile._vbox_os_provider_env_vars(float_net, mynets)
             returncode, idic = yaml_utils.gethost_byname(hostname, os.path.join(path,
-                                                                                     'provision')
-                                                              )
+                                                                                'provision')
+                                                         )
             if returncode > 0:
                 return 1
             retcode = yaml_utils.host_add_vagrantyaml(path=path,
                                                       file_name="vagrant.yaml",
                                                       hostname=hostname,
-                                                      memory=(idic[hostname]['memory'] / 512),
+                                                      memory=(idic[hostname]['memory']/512),
                                                       box=idic[hostname]['box'],
                                                       role=idic[hostname]['role'],
                                                       profile=idic[hostname]['profile'],
@@ -363,7 +363,7 @@ def infra_ensure_up(hostname="infra-001", path=None, remote=False):
             retcode = yaml_utils.host_add_vagrantyaml(path=path,
                                                       file_name="vagrant.yaml",
                                                       hostname=hostname,
-                                                      memory=(idic[hostname]['memory'] / 512),
+                                                      memory=(idic[hostname]['memory']/512),
                                                       box=idic[hostname]['box'],
                                                       role=idic[hostname]['role'],
                                                       profile=idic[hostname]['profile'],
@@ -392,15 +392,15 @@ def vm_isrunning(hostname, path):
     vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                                      path=path)
     try:
-      status = vm_connection.v.status()
-      if status[0][1] == 'running':
-          return 0, False
-      elif status[0][1] == 'poweroff':
-          return 1, False
-      elif status[0][1] == 'active':
-          return 0, True
-      elif status[0][1] == 'shutoff':
-          return 1, True
+        status = vm_connection.v.status()
+        if status[0][1] == 'running':
+            return 0, False
+        elif status[0][1] == 'poweroff':
+            return 1, False
+        elif status[0][1] == 'active':
+            return 0, True
+        elif status[0][1] == 'shutoff':
+            return 1, True
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
         return 2, False
