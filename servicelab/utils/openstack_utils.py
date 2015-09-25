@@ -16,7 +16,8 @@ logging.basicConfig()
 
 class SLab_OS(object):
 
-    def __init__(self, path, password, base_url, url_domain=".cisco.com", username=None):
+    def __init__(self, path, password, base_url, url_domain=".cisco.com", username=None,
+                 os_tenant_name=''):
         """Init some of the variables we'll use to manipulate our Openstack tenant.
 
         Args:
@@ -35,6 +36,10 @@ class SLab_OS(object):
             url_domain (str): This is the domain associated with the horizon
                               endpoint. It may look like "cisco.com" or
                               "cloud.cisco.com".
+            os_tenant_name (str): This is the Tenant aka project in OS to address.
+                                  without this we won't know how to name our neutron
+                                  items or what project to address under a user if
+                                  there's more than one.
 
         Returns:
             Nothing. All these variables are instantiated as part of the
@@ -52,6 +57,7 @@ class SLab_OS(object):
         self.password = password
         self.base_url = base_url
         self.url_domain = url_domain
+        self.os_tenant_name = os_tenant_name
         self.auth_url = ""
         self.tenant_id = ""
 
@@ -178,15 +184,15 @@ class SLab_OS(object):
 
         Example Usage:
             >>> print a.create_name_for("subnet")
-            SLAB_aaltman_subnet
+            SLAB_Servicelab2_aaltman_subnet
             >>> print a.create_name_for("subnet", "mgmt")
-            SLAB_aaltman_mgmt_subnet
+            SLAB_Servicelab2_aaltman_mgmt_subnet
         """
         if append:
             append = "_" + append
 
         username = self.username
-        name = "SLAB_%s%s_%s" % (self.username, append, neutron_type)
+        name = "SLAB_%s%s_%s_%s" % (self.username, append, self.os_tenant_name,  neutron_type)
         return name
 
     def check_for_network(self, name):
@@ -238,8 +244,12 @@ class SLab_OS(object):
         """
         networks = self.neutron.list_networks(name=name)
         network = ""
+        parts = name.split('_')
+        # ['SLAB', 'Servicelab2', 'aaltman', 'mgmt', 'network']
+        parts = [ i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
+        #['SLAB', 'mgmt', 'network']
         for network in networks['networks']:
-            if name in network['name']:
+            if all(i in network['name'] for i in parts):
                 return 0, network
         return 1, network
 
@@ -284,8 +294,12 @@ class SLab_OS(object):
         """
         subnets = self.neutron.list_subnets()
         subnet = ""
+        parts = name.split('_')
+        # ['SLAB', 'Servicelab2', 'aaltman', 'mgmt', 'subnet']
+        parts = [ i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
+        #['SLAB', 'mgmt', 'subnet']
         for subnet in subnets['subnets']:
-            if name in subnet['name']:
+            if all(i in subnet['name'] for i in parts):
                 return 0, subnet
         return 1, subnet
 
@@ -319,10 +333,77 @@ class SLab_OS(object):
         """
         routers = self.neutron.list_routers(name=name)
         router = ""
+        parts = name.split('_')
+        # ['SLAB', 'Servicelab2', 'aaltman', 'mgmt', 'router']
+        parts = [ i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
+        #['SLAB', 'mgmt', 'router']
         for router in routers['routers']:
-            if name in router['name']:
+            if all(i in router['name'] for i in parts):
                 return 0, router
         return 1, router
+
+    def check_for_ports(self, mgmt=False):
+        """Check to see if ports exist on router from SLAB's networks' subnets.
+
+        Args:
+            mgmt (bool): If it's true we're looking for Servicelab's mgmt network.
+                         Otherwise we're looking for the regular servicelab network
+
+        Returns:
+            Returncode (int):
+                0 - Success
+                1 - Failure
+
+        Example Usage:
+            >>> print a.check_for_ports()
+            0
+
+        Data Structure:
+            >>> a.neutron.list_ports()
+           {'ports': [{u'admin_state_up': True,
+           u'allowed_address_pairs': [],
+           u'binding:vnic_type': u'normal',
+           u'device_id': u'dhcp18d9e9ce-a714-5869-a6df-8c5339b4a142-6d5d4d54-fbec-41a0-91fe-e61c5b0d9ac2',
+           u'device_owner': u'network:dhcp',
+           u'extra_dhcp_opts': [],
+           u'fixed_ips': [{u'ip_address': u'192.168.1.3',
+             u'subnet_id': u'0007e613-64ee-4f55-91fb-b6ec7516abc5'}],
+           u'id': u'0a205618-c716-4fd3-86ee-7450bdcf2201',
+           u'mac_address': u'fa:16:3e:84:24:fc',
+           u'name': u'',
+           u'network_id': u'6d5d4d54-fbec-41a0-91fe-e61c5b0d9ac2',
+           u'security_groups': [],
+           u'status': u'ACTIVE',
+           u'tenant_id': u'4ab4b8260df84a869782e2a3a5bf6101'},
+          {u'admin_state_up': True,
+           u'allowed_address_pairs': [],
+           u'binding:vnic_type': u'normal',
+           u'device_id': u'dhcp18d9e9ce-a714-5869-a6df-8c5339b4a142-e29e9fa3-9289-4430-b234-c1efa288c23e',
+           u'device_owner': u'network:dhcp',
+           u'extra_dhcp_opts': [],
+           u'fixed_ips': [{u'ip_address': u'192.168.100.3',
+             u'subnet_id': u'aa8eb260-5616-4cda-a02d-c57d731880dd'}],
+           u'id': u'0cf53ade-c2bf-47ef-830b-e4ba705fbad5',
+           u'mac_address': u'fa:16:3e:3d:25:fe',
+           u'name': u'',
+           u'network_id': u'e29e9fa3-9289-4430-b234-c1efa288c23e',
+           u'security_groups': [],
+           u'status': u'ACTIVE',
+           u'tenant_id': u'4ab4b8260df84a869782e2a3a5bf6101'},]}
+        """
+        ports = self.neutron.list_ports()
+        for i in ports['ports']:
+            if i.get('device_owner') == 'network:router_interface':
+                mysub = i.get('fixed_ips')
+                mysub = self.neutron.show_subnet(mysub[0]['subnet_id'])
+                if mgmt:
+                    if all(i in mysub['subnet']['name'] for i in ['SLAB', 'mgmt']):
+                        return 0
+                else:
+                    if 'SLAB' in mysub['subnet']['name']:
+                        if 'mgmt' not in mysub['subnet']['name']:
+                            return 0
+        return 1
 
     def create_network(self, name=""):
         """Create a network in OS tenant/project.
@@ -616,12 +697,7 @@ class SLab_OS(object):
             # TODO: return 1 until we have real check in place.
             return 1
 
-    def verify_connect_router_subnet(self):
-        # TODO: Find a way to verify that we've connected the
-        #       router and the subnet.
-        pass
-
-    def add_int_to_router(self, router_id, subnet_id):
+    def add_int_to_router(self, router_id, subnet_id, mgmt=False):
         """Add a port to a router to an internal network.
 
         Args:
@@ -647,13 +723,18 @@ class SLab_OS(object):
              u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'}
         """
         # RFI: Read router id from cache and read subnet id from cache?
-        # port = neutron.add_interface_router(router['router']['id'],
-        port = self.neutron.add_interface_router(router_id,
-                                                 {'subnet_id': subnet_id}
-                                                 )
+        returncode = self.check_for_ports(mgmt=mgmt)
+        if returncode == 1:
+            # Note: we'll get an exception here that will fail the code
+            #       so there isn't a return 1 yet until that's processed.
+            port = self.neutron.add_interface_router(router_id,
+                                                     {'subnet_id': subnet_id}
+                                                     )
         # TODO: write to cache if port has id returned aka is a success else fail.
-        self.write_to_cache(port)
-        return 0
+            self.write_to_cache(port)
+            return 0
+        else:
+            return 0
 
     def write_to_cache(self, writeit):
         """Write a dictionary item to cache.

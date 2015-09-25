@@ -111,7 +111,6 @@ def get_current_service(path):
         >>> print get_current_service(ctx.path)
         (0, service-redhouse-tenant)
     """
-
     if os.path.isfile(os.path.join(path, "current")):
             current_file = os.path.join(path, "current")
             f = open(current_file, 'r')
