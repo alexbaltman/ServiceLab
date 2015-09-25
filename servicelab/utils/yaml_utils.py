@@ -135,10 +135,11 @@ def gethost_byname(hostname, pathto_yaml):
                         'mac': '000027000021'}
            }
     """
+    yourdict = {}
     retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
     if retcode > 0:
         yaml_utils_logger.error("Invalid yaml file")
-        return 1
+        return 1, yourdict
     # Note: load vagrant yaml file
     try:
         with open(os.path.join(pathto_yaml, "vagrant.yaml"), 'r') as f:
