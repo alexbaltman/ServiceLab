@@ -167,7 +167,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                                                           service))
     elif target:
         service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
-        service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
+        # service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
         # Note: os.link(src, dst)
         if not os.path.islink(os.path.join(ctx.path,
                                            "services",
@@ -186,8 +186,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                                  "service-redhouse-tenant",
                                  "dev",
                                  "ccs-data"))
-        # TODO: if the infra node is up should we add to authorized_keys?
-        click.echo("vagrant up %s" % (target))
+        # TODO: if the infra node is up we should add to authorized_keys -
+        #       local/remote based on servicelab's Vagrantfile not redhouse's
         a = vagrant_utils.Connect_to_vagrant(vm_name=target,
                                              path=os.path.join(ctx.path,
                                                                "services",
@@ -195,7 +195,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         # Note: from python-vagrant up function (self, no_provision=False,
         #                                        provider=None, vm_name=None,
         #                                        provision=None, provision_with=None)
-        a.v.up(vm_name=target)
+        if remote:
+            # TODO: write out settings.yaml on a per target basis
+            pass
+        else:
+            a.v.up(vm_name=target)
         returncode, myinfo = service_utils.run_this('vagrant hostmanager')
         if returncode > 0:
             ctx.logger.error("Could not run vagrant hostmanager because\
@@ -313,7 +317,6 @@ def infra_ensure_up(hostname="infra-001", path=None, remote=False):
             hostst = yaml_utils.host_exists_vagrantyaml(hostname, path)
             if hostst and returncode != 2:
                 hostname = 'infra-002'
-            path_to_utils = helper_utils.get_path_to_utils(path)
             returncode, float_net, mynets = os_ensure_network(path)
             if returncode > 0:
                 return 1
@@ -475,3 +478,27 @@ def os_ensure_network(path):
             mynewnets.append(i)
 
     return 0, float_net, mynewnets
+
+
+def wr_settingsyml(settingsyaml_d):
+    import yaml
+    doc = {}
+    try:
+        with open('settings.yaml', 'w') as f:
+            # setup defaults
+            doc = {'openstack_provider': 'true',
+                   'management_network': '',
+                   'lab_network':        '',
+                   'image':              'slab-RHEL7.1v7',
+                   'flavor':             '2cpu.4ram.20sas',
+                   'floating_ip_pool':   'public-floating-602',
+                   'os_network_url':     'https://us-rdu-3.cisco.com:9696/v2.0',
+                   'os_image_url':       'https://us-rdu-3.cisco.com:9292/v2'
+                   }
+            for k, v in settingsyaml_d:
+                # TODO: here
+                pass
+            yaml.dump(doc, f, default_flow_style=False)
+    except (OSError):
+        # TODO: here
+        pass
