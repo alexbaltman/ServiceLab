@@ -9,7 +9,8 @@ import unittest
 
 from click.testing import CliRunner
 
-from servicelab.commands import cmd_build
+from servicelab.utils import jenkins_utils
+
 from servicelab.commands import cmd_list
 from servicelab.commands import cmd_find
 from servicelab.stack import Context
@@ -26,7 +27,6 @@ class TestJenkinsUtils(unittest.TestCase):
     JENKINS_PASS = "NEWjob2015"
     JOB_NAME = "check-servicelab"
     BUILD_STATUS = "check-servicelab"
-    ENDING_LOG = "-------- End of job log for build --------"
 
     def setUp(self):
         """
@@ -38,19 +38,11 @@ class TestJenkinsUtils(unittest.TestCase):
         """
         Tests pipeline status command.
         """
-        runner = CliRunner()
-        result = runner.invoke(cmd_build.cli,
-                               ['status',
-                                TestJenkinsUtils.JOB_NAME,
-                                '-u',
-                                TestJenkinsUtils.JENKINS_USER,
-                                '-p',
-                                TestJenkinsUtils.JENKINS_PASS,
-                                '-ip',
-                                TestJenkinsUtils.JENKINS_SERVER])
-#       print result.output
-#       self.assertTrue(TestJenkinsUtils.BUILD_STATUS in result.output.strip())
-        self.assertTrue(1 == 1)
+        status = jenkins_utils.get_build_status(TestJenkinsUtils.JOB_NAME,
+                                                TestJenkinsUtils.JENKINS_USER,
+                                                TestJenkinsUtils.JENKINS_PASS,
+                                                TestJenkinsUtils.JENKINS_SERVER)
+        self.assertTrue(TestJenkinsUtils.BUILD_STATUS in status)
 
     def test_cmd_build_list(self):
         """
@@ -65,8 +57,7 @@ class TestJenkinsUtils(unittest.TestCase):
                                 TestJenkinsUtils.JENKINS_PASS,
                                 '-ip',
                                 TestJenkinsUtils.JENKINS_SERVER])
-#       self.assertTrue(TestJenkinsUtils.JOB_NAME in result.output.strip())
-        self.assertTrue(1 == 1)
+        self.assertTrue(TestJenkinsUtils.JOB_NAME in result.output.strip())
 
     def test_build_find(self):
         """
@@ -82,25 +73,17 @@ class TestJenkinsUtils(unittest.TestCase):
                                 TestJenkinsUtils.JENKINS_PASS,
                                 '-ip',
                                 TestJenkinsUtils.JENKINS_SERVER])
-#       self.assertItemsEqual(result.output.strip(), TestJenkinsUtils.JOB_NAME)
-        self.assertTrue(1 == 1)
+        self.assertItemsEqual(result.output.strip(), TestJenkinsUtils.JOB_NAME)
 
     def test_build_log(self):
         """
         Tests log command.
         """
-        runner = CliRunner()
-        runner.invoke(cmd_build.cli,
-                      ['log',
-                       TestJenkinsUtils.JOB_NAME,
-                       '-u',
-                       TestJenkinsUtils.JENKINS_USER,
-                       '-p',
-                       TestJenkinsUtils.JENKINS_PASS,
-                       '-ip',
-                       TestJenkinsUtils.JENKINS_SERVER])
-#       self.assertTrue(TestJenkinsUtils.ENDING_LOG in result.output.strip())
-        self.assertTrue(1 == 1)
+        log = jenkins_utils.get_build_log(TestJenkinsUtils.JOB_NAME,
+                                          TestJenkinsUtils.JENKINS_USER,
+                                          TestJenkinsUtils.JENKINS_PASS,
+                                          TestJenkinsUtils.JENKINS_SERVER)
+        self.assertTrue(jenkins_utils.END_LOG in log)
 
 
 if __name__ == '__main__':
