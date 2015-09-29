@@ -50,6 +50,7 @@ class TestGoCdUtils(unittest.TestCase):
                       "HTTP return code {}: {}".format(res.status_code,
                                                        res.text))
 
+    @unittest.skip("skipping status pipeline test")
     def test_cmd_pipeline_status(self):
         """ Tests pipeline status command.
         """
@@ -65,6 +66,7 @@ class TestGoCdUtils(unittest.TestCase):
                                 TestGoCdUtils.GOCD_SERVER])
         self.assertItemsEqual(result.output.strip(), TestGoCdUtils.T_SCHED)
 
+    @unittest.skip("skipping run pipeline test")
     def test_cmd_run(self):
         """ Tests run command.
         """
