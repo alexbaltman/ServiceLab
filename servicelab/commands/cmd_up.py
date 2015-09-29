@@ -95,7 +95,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         a = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                              path=ctx.path)
         a.v.up(vm_name=hostname)
-        returncode, myinfo = service_utils.run_this('vagrant hostmanager')
+        returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
             ctx.logger.error("Could not run vagrant hostmanager because\
                             {0}".format(myinfo))
@@ -152,7 +152,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         a = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                              path=ctx.path)
         a.v.up(vm_name=hostname)
-        returncode, myinfo = service_utils.run_this('vagrant hostmanager')
+        returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
             ctx.logger.error("Could not run vagrant hostmanager because\
                             {0}".format(myinfo))
@@ -200,7 +200,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             pass
         else:
             a.v.up(vm_name=target)
-        returncode, myinfo = service_utils.run_this('vagrant hostmanager')
+        returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
             ctx.logger.error("Could not run vagrant hostmanager because\
                              {0}".format(myinfo))
@@ -262,7 +262,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             for i in k:
                 pool.map(a.v.provision(vm_name=i))
         pool.close()
-        returncode, myinfo = service_utils.run_this('vagrant hostmanager')
+        returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
             ctx.logger.error("Could not run vagrant hostmanager because\
                              {0}".format(myinfo))

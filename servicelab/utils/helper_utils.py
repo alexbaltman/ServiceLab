@@ -118,7 +118,7 @@ def get_current_service(path):
             current = f.readline()
             if current == "":
                 return 1, current
-    return 0, ""
+    return 0, current
 
 
 def get_path_to_utils(path):
