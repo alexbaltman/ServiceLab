@@ -5,10 +5,6 @@ Build command submodule displays
 
 """
 import click
-import requests
-
-from requests.auth import HTTPBasicAuth
-from BeautifulSoup import BeautifulSoup
 
 from servicelab.stack import pass_context
 from servicelab.utils import jenkins_utils
@@ -48,9 +44,11 @@ def display_build_status(_,
     """
     Displays a build status.
     """
-    server = jenkins_utils.get_server_instance(ip_address, user, password)
-    click.echo(server[job_name].get_last_build().name + ", " +
-               server[job_name].get_last_build().get_status())
+    status = jenkins_utils.get_build_status(job_name,
+                                            user,
+                                            password,
+                                            ip_address)
+    click.echo(status)
 
 
 @cli.command('log', short_help='Display build status log')
@@ -73,20 +71,5 @@ def display_build_log(_, job_name, user, password, ip_address):
     """
     Displays a build log.
     """
-    server = jenkins_utils.get_server_instance(ip_address, user, password)
-    click.echo(server[job_name].get_last_build().name + ", " +
-               server[job_name].get_last_build().get_status())
-
-    job_number = server[job_name].get_last_build().get_number()
-    log_url = "{0}/job/{1}/{2}/consoleText".format(ip_address, job_name,
-                                                   job_number)
-
-    # Find latest run info
-    import pdb
-    pdb.set_trace()
-    res = requests.post(log_url, auth=HTTPBasicAuth(user, password))
-    soup = BeautifulSoup(res.content)
-    click.echo("-------- Printing job log for build " + log_url + "--------")
-    click.echo(soup)
-    click.echo("-------- End of job log for build --------")
-    click.echo("\n")
+    log = jenkins_utils.get_build_log(job_name, user, password, ip_address)
+    click.echo(log)
