@@ -167,24 +167,21 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                                 --dev --debug deploy"' % (os.path.join(ctx.path, "hosts"),
                                                           service))
     elif target:
+        redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
         service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
         # service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
         # Note: os.link(src, dst)
-        if not os.path.islink(os.path.join(ctx.path,
-                                           "services",
-                                           "service-redhouse-tenant",
+        if not os.path.islink(os.path.join(redhouse_ten_path,
                                            "dev",
                                            "ccs-data")):
-            ctx.logger.debug('WARNING: Linking ' + os.path.join(ctx.path, "services",
-                             "service-redhouse-tenant") + "with " +
+            ctx.logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
+                                                                'ccs-data') + "with " +
                              os.path.join(ctx.path, "services", "ccs-data"))
             os.link(os.path.join(ctx.path,
                                  "services",
                                  "ccs-data"
                                  ),
-                    os.path.join(ctx.path,
-                                 "services",
-                                 "service-redhouse-tenant",
+                    os.path.join(redhouse_ten_path,
                                  "dev",
                                  "ccs-data"))
         # TODO: if the infra node is up we should add to authorized_keys -
@@ -197,9 +194,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         #                                        provider=None, vm_name=None,
         #                                        provision=None, provision_with=None)
         if remote:
-            # TODO: write out settings.yaml on a per target basis
-            pass
+            wr_settingsyml(os.path.join(ctx.path, 'services', 'service-redhouse-tenant'))
+            a.v.up(vm_name=target)
         else:
+            settingsyaml = {'openstack_provider': 'false'}
+            wr_settingsyml(settingsyaml)
             a.v.up(vm_name=target)
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
