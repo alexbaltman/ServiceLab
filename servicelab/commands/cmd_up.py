@@ -9,6 +9,7 @@ from servicelab.utils import yaml_utils
 import multiprocessing
 import click
 import time
+import yaml
 import sys
 import os
 
@@ -425,11 +426,11 @@ def os_ensure_network(path):
                                 base_url=base_url, os_tenant_name=os_tenant_name)
     returncode, tenant_id, temp_token = a.login_or_gettoken()
     if returncode > 0:
-        # ctx.logger.error("Could not create router in project.")
+        # ctx.logger.error("Could not login to Openstack.")
         return 1, float_net, mynewnets
     returncode, tenant_id, token = a.login_or_gettoken(tenant_id=tenant_id)
     if returncode > 0:
-        # ctx.logger.error("Could not create router in project.")
+        # ctx.logger.error("Could not get token to project.")
         return 1, float_net, mynewnets
     a.connect_to_neutron()
 
@@ -469,8 +470,8 @@ def os_ensure_network(path):
     time.sleep(5)
     a.add_int_to_router(router_id, mgmt_subnet['id'], mgmt=True)
     mynets = a.neutron.list_networks()
-    mynewnets = []
 
+    mynewnets = []
     for i in mynets['networks']:
         if i.get('name') == network['name']:
             mynewnets.append(i)
@@ -480,25 +481,45 @@ def os_ensure_network(path):
     return 0, float_net, mynewnets
 
 
-def wr_settingsyml(settingsyaml_d):
-    import yaml
+def wr_settingsyml(path, settingsyaml):
     doc = {}
+    settings = os.path.join(path, 'services', 'service-redhouse-tenant', 'settings.yaml')
+
+    returncode, float_net, mynewnets = os_ensure_network(path)
+    mgmt_net = [x.get('name') for x in mynewnets if 'mgmt' in x.get('name')]
+    lab_net = ''
+    for x in mynewnets:
+        if 'SLAB' in x.get('name') and 'mgmt' not in x.get('name'):
+            lab_net = x.get('name')
+
     try:
-        with open('settings.yaml', 'w') as f:
-            # setup defaults
+        base_url = os.environ.get('OS_REGION_NAME')
+    except OSError:
+        # try to get base_url from settingsyaml
+        # TODO: log error saying: source your OS environment's cred.s
+        return 1
+
+    a = Vagrantfile_utils.SlabVagrantfile(path)
+    # Note: setup host_vars under instance of class
+    a._vbox_os_provider_host_vars(path)
+
+    try:
+        with open(settings, 'w') as f:
+            # Note: setup defaults - see service-redhouse-tenant Vagrantfile for
+            #       $settings
             doc = {'openstack_provider': 'true',
-                   'management_network': '',
-                   'lab_network':        '',
-                   'image':              'slab-RHEL7.1v7',
-                   'flavor':             '2cpu.4ram.20sas',
-                   'floating_ip_pool':   'public-floating-602',
-                   'os_network_url':     'https://us-rdu-3.cisco.com:9696/v2.0',
-                   'os_image_url':       'https://us-rdu-3.cisco.com:9292/v2'
+                   'management_network': mgmt_net,
+                   'lab_network':        lab_net,
+                   'image':              a.host_vars['image'],
+                   'flavor':             a.host_vars['flavor'],
+                   'floating_ip_pool':   float_net,
+                   'os_network_url':     'https://' + base_url + '.cisco.com:9696/v2.0',
+                   'os_image_url':       'https://' + base_url + '.cisco.com:9292/v2',
                    }
-            for k, v in settingsyaml_d:
-                # TODO: here
-                pass
+            for k, v in settingsyaml:
+                doc[k] = v
             yaml.dump(doc, f, default_flow_style=False)
     except (OSError):
-        # TODO: here
-        pass
+        # TODO: Log - don't have access to settings under
+        # service-redhouse-tenant
+        return 1
