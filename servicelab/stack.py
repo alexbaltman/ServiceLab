@@ -33,7 +33,7 @@ class Context(object):
         logger (logger)
 
         file_handler       - Create filehandler that logs everything.
-        console_handler    - Create console handler that logs up to error msg.s.
+        console_handler    - Create console handler that logs up to error msg.
         formatter          - Create formatter and add it to the handlers
 
         __gerrit_test_info - Gerrit staging server
@@ -80,12 +80,20 @@ class Context(object):
                               "port": 29418}
         self.__artifactory_info = \
             {"url": "https://ccs-artifactory.cisco.com/artifactory"}
+        self.__gocd_info = \
+            {"ip": "10.202.44.100"}
 
     def get_gerrit_server(self):
         """
         get_gerrit_server get the gerrit server
         """
         return self.__gerrit_info
+
+    def get_gocd_info(self):
+        """
+        get_gocd_info get the gocd server
+        """
+        return self.__gocd_info
 
     def get_gerrit_staging_server(self):
         """
@@ -124,7 +132,8 @@ class ComplexCLI(click.MultiCommand):
     """
     def list_commands(self, ctx):
         """
-        list_commands returns list of all the commands existing in the cmd_folder.
+        list_commands returns list of all the commands existing
+        in the cmd_folder.
         """
         cmd_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                   'commands'))

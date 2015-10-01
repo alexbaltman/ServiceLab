@@ -150,7 +150,7 @@ def list_build(_, ip_address, user, password):
 @click.option(
     '-ip',
     '--ip_address',
-    default=context_utils.getArtifactoryURL(),
+    default=context_utils.get_artifactory_url(),
     help='Provide the artifactory url ip address and port \
         no in format http://<ip:portno>.',
     required=True)
@@ -185,6 +185,7 @@ def list_artifact(_, ip_address, user, password):
               required=True)
 @click.option('-ip',
               '--ip_address',
+              default=context_utils.get_gocd_ip(),
               help="Provide the go server ip address and port no in "
                    "format <ip:portno>.",
               required=True)
@@ -194,7 +195,7 @@ def list_pipe(ctx, localrepo, user, password, ip_address):
     Lists piplines using GO's API.
     """
     server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
-    server_string_prefix = "http://{0}/go/api/pipelines/".format(ip_address)
+    server_string_prefix = "http://(.*?)/go/api/pipelines/"
     server_string_suffix = "/stages.xml"
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
@@ -208,7 +209,7 @@ def list_pipe(ctx, localrepo, user, password, ip_address):
         exp = re.compile(server_string_prefix + '(.*?)' + server_string_suffix)
         match = exp.search(pipeline['href'])
         if match:
-            pipeline_name = match.group(1)
+            pipeline_name = match.group(0)
             if localrepo:
                 for sdir in servicesdirs:
                     if sdir.startswith("service-"):
