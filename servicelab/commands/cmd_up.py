@@ -169,36 +169,58 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
     elif target:
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
         service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
+        a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=redhouse_ten_path)
+        # TODO: Add to vagrant.yaml
+
         # service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
-        # Note: os.link(src, dst)
+        if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
+            service_utils.sync_service(ctx.path, branch, username, 'ccs-data')
+
+        if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data', 'out')):
+            returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml'
+                                          '--site ccs-dev-1',
+                                          cwd=os.path.join(ctx.path, "services", 'ccs-data'))
+            if returncode > 0:
+                ctx.logger.error('Failed to build ccs-data data b/c ' + myinfo)
+                sys.exit(1)
+
         if not os.path.islink(os.path.join(redhouse_ten_path,
                                            "dev",
                                            "ccs-data")):
             ctx.logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
                                                                 'ccs-data') + "with " +
                              os.path.join(ctx.path, "services", "ccs-data"))
-            os.link(os.path.join(ctx.path,
-                                 "services",
-                                 "ccs-data"
-                                 ),
-                    os.path.join(redhouse_ten_path,
-                                 "dev",
-                                 "ccs-data"))
+            # Note: os.symlink(src, dst)
+            os.symlink(os.path.join(ctx.path,
+                                    "services",
+                                    "ccs-data"
+                                    ),
+                       os.path.join(redhouse_ten_path,
+                                    "dev",
+                                    "ccs-data"))
         # TODO: if the infra node is up we should add to authorized_keys -
         #       local/remote based on servicelab's Vagrantfile not redhouse's
-        a = vagrant_utils.Connect_to_vagrant(vm_name=target,
-                                             path=os.path.join(ctx.path,
-                                                               "services",
-                                                               "service-redhouse-tenant"))
+
         # Note: from python-vagrant up function (self, no_provision=False,
         #                                        provider=None, vm_name=None,
         #                                        provision=None, provision_with=None)
         if remote:
-            wr_settingsyml(os.path.join(ctx.path, 'services', 'service-redhouse-tenant'))
-            a.v.up(vm_name=target)
+            settingsyaml = {'openstack_provider': True}
+            returncode = wr_settingsyaml(ctx.path, settingsyaml, hostname=target)
+            if returncode > 0:
+                ctx.logger.error('Failed to write settings yaml - make sure you have your OS'
+                                 'cred.s sourced and have access to'
+                                 'ccs-gerrit.cisco.com and have keys setup.')
+                sys.exit(1)
+            a.v.up(vm_name=target, provider='openstack')
         else:
             settingsyaml = {'openstack_provider': 'false'}
-            wr_settingsyml(settingsyaml)
+            returncode = wr_settingsyaml(ctx.path, settingsyaml=settingsyaml)
+            if returncode > 0:
+                ctx.logger.error('Failed to write settings yaml - make sure you have your OS'
+                                 'cred.s sourced and have access to'
+                                 'ccs-gerrit.cisco.com and have keys setup.')
+                sys.exit(1)
             a.v.up(vm_name=target)
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
@@ -212,13 +234,27 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
     service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
 
     if mini:
-        returncode, allmy_vms = yaml_utils.getmin_OS_vms(ctx.path)
+        returncode, allmy_vms = yaml_utils.getmin_OS_vms(os.path.join(ctx.path,
+                                                                      'provision'),
+                                                         '001')
     elif full:
-        returncode, allmy_vms = yaml_utils.getfull_OS_vms(ctx.path)
+        returncode, allmy_vms = yaml_utils.getfull_OS_vms(os.path.join(ctx.path,
+                                                                       'provision'),
+                                                          '001')
     if returncode > 0:
         ctx.logger.error("Couldn't get the vms from the vagrant.yaml.")
         sys.exit(1)
     try:
+        # Note: not sure if this will work w/ vm_name set
+        a = vagrant_utils.Connect_to_vagrant(vm_name='infra-001', path=ctx.path)
+        myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
+        returncode, float_net, mynets = os_ensure_network(ctx.path)
+        if returncode > 0:
+            ctx.logger.error('Failed to get float net and mynets')
+            sys.exit(1)
+        myvfile._vbox_os_provider_env_vars(float_net, mynets)
+        if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
+            myvfile.init_vagrantfile()
         for i in allmy_vms:
             if ha:
                 ha_vm = i.replace("001", "002")
@@ -247,10 +283,20 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                 if retcode > 0:
                     ctx.logger.error("Failed to add host" + host)
                     ctx.logger.error("Continuing despite failure...")
+            settingsyaml = {'openstack_provider': True}
+            returncode = wr_settingsyaml(ctx.path, settingsyaml, hostname=host)
+            if returncode > 0:
+                ctx.logger.error('writing to settings yaml failed on: ' + host)
+            if remote:
+                myvfile.add_openstack_vm(i)
+                a.v.up(vm_name=host)
+            else:
+                myvfile.add_virtualbox_vm(i)
+                a.v.up(vm_name=host)
     except IOError as e:
         ctx.logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
         sys.exit(1)
-
+'''
     a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=ctx.path)
     if os.name == "posix":
         for k in allmy_vms:
@@ -277,6 +323,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                              {0}".format(myinfo))
             sys.exit(1)
         sys.exit(0)
+'''
 
 
 def name_vm(name, path):
@@ -480,26 +527,30 @@ def os_ensure_network(path):
     return 0, float_net, mynewnets
 
 
-def wr_settingsyml(path, settingsyaml):
+def wr_settingsyaml(path, settingsyaml, hostname=''):
     doc = {}
     settings = os.path.join(path, 'services', 'service-redhouse-tenant', 'settings.yaml')
 
     returncode, float_net, mynewnets = os_ensure_network(path)
-    mgmt_net = [x.get('name') for x in mynewnets if 'mgmt' in x.get('name')]
+    mgmt_net = ''
+    for x in mynewnets:
+        if 'mgmt' in x.get('name'):
+            mgmt_net = x.get('name')
     lab_net = ''
     for x in mynewnets:
         if 'SLAB' in x.get('name') and 'mgmt' not in x.get('name'):
             lab_net = x.get('name')
 
-    try:
-        base_url = os.environ.get('OS_REGION_NAME')
-    except OSError:
+    base_url = os.environ.get('OS_REGION_NAME')
+    if not base_url:
         # try to get base_url from settingsyaml
         # TODO: log error saying: source your OS environment's cred.s
+        print('no env var base_url')
         return 1
 
     a = Vagrantfile_utils.SlabVagrantfile(path)
     # Note: setup host_vars under instance of class
+    a.hostname = hostname
     a._vbox_os_provider_host_vars(path)
 
     try:
@@ -507,15 +558,15 @@ def wr_settingsyml(path, settingsyaml):
             # Note: setup defaults - see service-redhouse-tenant Vagrantfile for
             #       $settings
             doc = {'openstack_provider': 'true',
-                   'management_network': mgmt_net,
-                   'lab_network':        lab_net,
+                   'mgmt_network':       str(mgmt_net),
+                   'lab_network':        str(lab_net),
                    'image':              a.host_vars['image'],
                    'flavor':             a.host_vars['flavor'],
-                   'floating_ip_pool':   float_net,
+                   'floating_ip_pool':   str(float_net),
                    'os_network_url':     'https://' + base_url + '.cisco.com:9696/v2.0',
                    'os_image_url':       'https://' + base_url + '.cisco.com:9292/v2',
                    }
-            for k, v in settingsyaml:
+            for k, v in settingsyaml.iteritems():
                 doc[k] = v
             yaml.dump(doc, f, default_flow_style=False)
     except (OSError):
