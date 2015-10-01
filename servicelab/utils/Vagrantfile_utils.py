@@ -218,7 +218,7 @@ class SlabVagrantfile(object):
         if (os.path.exists(path)):
             path = os.path.join(path, relpath_toyaml)
             if (os.path.exists(path)):
-                path = os.path.join(path, self.hostname.lower()+'.yaml')
+                path = os.path.join(path, self.hostname.lower() + '.yaml')
                 if os.path.exists(path):
                     try:
                         with open(path) as host_yaml:
@@ -232,5 +232,5 @@ class SlabVagrantfile(object):
                         self.host_vars['flavor'] = self.default_flavor
         if self.host_vars.get('image') is None:
             self.host_vars['image'] = self.default_image
-        if self.host_vars['flavor'] is None:
+        if self.host_vars.get('flavor') is None:
             self.host_vars['flavor'] = self.default_flavor
