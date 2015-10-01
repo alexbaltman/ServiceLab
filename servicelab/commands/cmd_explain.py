@@ -1,3 +1,16 @@
+"""
+Stack explain command provides
+    1. grab
+       Grabs data from confluence pages and servicelab docs and leverages sphinx to
+       converts them into a single man page that will be queried for high level info.
+    2. all
+       To list all sections of the man page and allow the user to navigate to one of them
+    3. list
+       To list all sections of the man page and allow the user to navigate to one of them
+    4. whatis
+       This cmd lets the user choose a section to navigate to based on how many times it
+       contains the query keyword.
+"""
 import click
 from servicelab.stack import pass_context
 from servicelab.utils import explain_utils
@@ -6,13 +19,15 @@ from servicelab.utils import explain_utils
 @click.group('explain', short_help='Provide high level explanations of servicelab',
              add_help_option=True)
 @pass_context
-def cli(ctx):
+def cli(_):
+    """
+    Stack decorator for explain command.
+    """
     pass
 
 
 @cli.command('init', short_help='Compiles all data specified in slab_man_data.yaml'
-                                ' into man page'
-             )
+                                ' into man page')
 @pass_context
 def explain_init(ctx):
     """
@@ -23,8 +38,7 @@ def explain_init(ctx):
 
 
 @cli.command('all', short_help='Navigate all high level topics '
-                               'specified in the slab man page'
-             )
+                               'specified in the slab man page')
 @pass_context
 def explain_all(ctx):
     """
@@ -34,8 +48,7 @@ def explain_all(ctx):
 
 
 @cli.command('list', short_help='Navigate to any high level '
-                                'topic specified in the slab man page'
-             )
+                                'topic specified in the slab man page')
 @pass_context
 def explain_list(ctx):
     """
@@ -45,8 +58,7 @@ def explain_list(ctx):
 
 
 @cli.command('whatis', short_help='Accept a string to query all content, and let user'
-                                  'navigate to the appropriate sections that matched'
-             )
+                                  'navigate to the appropriate sections that matched')
 @click.argument('query')
 @pass_context
 def explain_whatis(ctx, query):

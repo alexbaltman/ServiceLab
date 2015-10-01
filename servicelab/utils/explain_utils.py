@@ -1,30 +1,21 @@
-from servicelab.utils import service_utils
-from servicelab.utils import ccsbuildtools_utils
-import logging
+"""
+Stack explain command
+"""
 import os
+import re
+import yaml
+
+import click
+import requests
+import operator
+
+from string import maketrans
+
 from prettytable import PrettyTable
 from bs4 import BeautifulSoup
-import requests
-import re
-import operator
-from subprocess import call
-from string import maketrans
-import yaml
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
-# ccsbuildtools_utils_logger = logging.getLogger('click_application')
-# logging.basicConfig()
-# TODO: Improve html parser of confluence html pages. Still some issues with getting info
-# TODO: Support confluence tables using prettytable module
-# TODO: Follow up with Sergii Klymenko to get a custom user and figure out rest API access
-# to the SDLC confluence pages <> using Dylan's credentials & requests for manually
-# downloading the pages should only be temporary
-# TODO: Create a custom confluence page discussing servicelab, its purpose and
-# how it contributes to the heighliner workflow
-# TODO: Error handling, and tests_utils for jenkins/check.sh
-CIS_USER = 'dyhoang'
-CIS_PASS = 'Services123'
+
+from servicelab.utils import service_utils
+from servicelab.utils import ccsbuildtools_utils
 
 
 def compile_man_page(path):
@@ -36,24 +27,32 @@ def compile_man_page(path):
     path_to_docs = os.path.split(path_to_docs)[0]
     path_to_docs = os.path.join(path_to_docs, 'docs')
     man_yaml = _load_slabmanyaml(path)
+
     # The man_contents.rst.inc file follows Sphinx syntax for enumerating the
     # files that will be included in the final man page
-    with open(os.path.join(path_to_docs, 'man_contents.rst.inc'), 'w') as f:
-        f.write(".. toctree::\n   :maxdepth: 2\n\n")
-        for i in man_yaml['slab_docs']:
-            f.write('   ' + i + '\n')
+    with open(os.path.join(path_to_docs, "man_contents.rst.inc"), "w") as manf:
+        manf.write(".. toctree::\n   :maxdepth: 2\n\n")
+        manf.writelines("   " + elem + "\n" for elem in man_yaml["slab_docs"])
+
     # Manually download all desired sites, and leverage Sphinx's "make man" command
+    user = click.prompt("Please confirm CEC Use Name", type=str)
+    password = click.prompt("password", hide_input=True, type=str)
     # to build a single man page using pages indexed above
-    for i in man_yaml['confluence_pages']:
-        url = 'https://confluence.sco.cisco.com/display/' + i
-        site_title = i.translate(None, '+')
-        file_title = i.translate(maketrans("+", "-")).lower()[4:]
-        r = requests.get(url, auth=(CIS_USER, CIS_PASS))
-        with open(os.path.join(path_to_docs, 'man_pages', '%s.rst' % file_title), 'w') as f:
-            f.write(_parse_confluence_website(r.text, site_title))
-        service_utils.run_this("echo '   man_pages/%s' >> man_contents.rst.inc" % file_title,
-                               path_to_docs
-                               )
+    for item in man_yaml['confluence_pages']:
+        url = 'https://confluence.sco.cisco.com/display/' + item
+        site_title = item.translate(None, '+')
+        file_title = item.translate(maketrans("+", "-")).lower()[4:]
+        content = requests.get(url, auth=(user, password))
+        if content.status_code != 200:
+            click.echo("Unable to login to CEC. Initialization failed")
+            return
+        with open(os.path.join(path_to_docs, 'man_pages', '%s.rst' % file_title),
+                  'w') as manf:
+            manf.write(_parse_confluence_website(content.text, site_title))
+
+        service_utils.run_this("echo '   man_pages/%s' >> man_contents.rst.inc"
+                               % file_title, path_to_docs)
+
     cmd = "sed -i -e \"s/master_doc = 'index'/master_doc = 'man_index'/g\" conf.py; " \
           "make man;" \
           "sed -i -e \"s/master_doc = 'man_index'/master_doc = 'index'/g\" conf.py;"
@@ -80,7 +79,7 @@ def navigate_all(path):
     os.system(cmd_view)
 
 
-def query(path, query):
+def query(path, query_str):
     """
     Lists all the sections in the man page in descending order based on the
     number of times "query" is found in that section. Also gives arbitrary recommendations
@@ -92,41 +91,50 @@ def query(path, query):
     for i in man_yaml['confluence_pages']:
         topic_name = i[4:].replace('+', ' ').upper()
         topic_titles[topic_name] = man_yaml['confluence_pages'][i]
+
     for i in man_yaml['slab_docs']:
         topic_titles[i.upper()] = man_yaml['slab_docs'][i]
+
     path_to_man_page = _get_path_to_man_page(path)
+
     sections = _get_list_of_sections(path_to_man_page)
     results = {}
-    for i in sections:
-        results[i] = _get_number_of_matches(i, path_to_man_page, query)
+    for item in sections:
+        results[item] = _get_number_of_matches(item, path_to_man_page, query_str)
+
     results = sorted(results.items(), key=operator.itemgetter(1), reverse=True)
-    print "Your query was " + query
+
+    print "Your query was " + query_str
     print "Choose a topic to have it explained."
-    print "Pages relevant to your query are " \
-          "marked in the Recommended Column"
+    print "Pages relevant to your query are marked in the Recommended Column"
+
     table = PrettyTable(['#', 'Topic', 'Query Matches', 'Recommended'])
     table.align['#'] = 'r'
     table.align['Topic'] = 'l'
-    x = 1
+
+    index = 1
     for pair in results:
         recommend = ""
-        if query.lower() in topic_titles[pair[0]]:
+        if query_str.lower() in topic_titles[pair[0]]:
             recommend = "XXXXX"
         if not pair[1] == 0 or recommend:
-                table.add_row([x, pair[0], pair[1], recommend])
-        x = x + 1
+            table.add_row([index, pair[0], pair[1], recommend])
+        index = index + 1
+
     print table
+
     if table == []:
         print "Query unsuccessful. No matches found"
-    valid_opts = range(1, x)
+
+    valid_opts = range(1, index)
     for i in valid_opts:
         i = repr(i)
-    num = ccsbuildtools_utils._get_valid_input_or_option("Enter number: ", 0, valid_opts)
+
+    num = ccsbuildtools_utils.get_valid_input_or_option("Enter number: ", 0, valid_opts)
     table.header = False
     table.border = False
     topic_name = table.get_string(fields=['Topic'], start=int(num)-1,
-                                  end=int(num)
-                                  ).strip()
+                                  end=int(num)).strip()
     _view_section(topic_name, path_to_man_page)
 
 
@@ -147,8 +155,8 @@ def _get_list_of_sections(path_to_man_page):
     # Takes advantage of the way man pages are formatted.
     # All headings begin with .SH
     sections = []
-    with open(path_to_man_page, mode='r') as f:
-        for line in f:
+    with open(path_to_man_page, mode='r') as manf:
+        for line in manf:
             if (re.match('^.SH', line) and not line[4:].strip() == 'NAME' and
                     not line[4:].strip() == 'COPYRIGHT'):
                 sections.append(line[4:].strip())
@@ -160,20 +168,22 @@ def _view_section(section_name, path_to_man_page):
     """
     View man page section.
     """
-    # Complicated REGEX Expressions used
-    # TODO: Probably a cleaner way to do this ...
-    section_name1 = section_name.replace(' ', '\ ')
+    section_name1 = section_name.replace(' ', r'\ ')
     section_name2 = "^" + ".*".join(section_name) + "$"
+
     # Output the man page beginning at the appropriate section
     cmd_view = "man -P 'less -p ^%s' %s | " % (section_name1, path_to_man_page)
+
     # Grab everything from that man page up until and including the next line
     # that begins with nonwhitespace (i.e. the next header)
     cmd_view += "sed -n -e '/%s/,/^[^ \\t\\r\\n\\v\\f]/ p' | " % (section_name2)
+
     # Exclude that final header and display all the information with `more`
     cmd_view += "sed -e '$d' | more "
-    # TODO: I need to use os.system here to actually let the user interact with the
+
+    # We need to use os.system here to actually let the user interact with the
     # doc the same way a man page is viewed (calling shell commands).
-    # Ideally I wanted to use service_utils.run_this
+    # Ideally we wanted to use service_utils.run_this
     # but that wouldn't give me the appropriate behavior.
     os.system(cmd_view)
 
@@ -181,18 +191,20 @@ def _view_section(section_name, path_to_man_page):
 # With a bigger set of data, this runs okay. But ideally I'd want to set up a persistent
 # hash which saves query results, so that the program doesn't waste time querying for the
 # same keyword twice.
-def _get_number_of_matches(section_name, path_to_man_page, query):
+def _get_number_of_matches(section_name, path_to_man_page, query_str):
     """
     Return the number of times query is found in the man page section
     """
     # Equivalent to _view_section, except for the added grep command which
     # ignores case and outputs matches, which are then counted by wc
-    section_name1 = section_name.replace(' ', '\ ')
+    section_name1 = section_name.replace(' ', r'\ ')
     section_name2 = "^" + ".*".join(section_name) + "$"
     cmd_view = "man -P 'less -p ^%s' %s | " % (section_name1, path_to_man_page)
     cmd_view += "sed -n -e '/%s/,/^[^ \\t\\r\\n\\v\\f]/ p' | " % (section_name2)
-    cmd_view += "sed -e '$d' | grep -io %s | wc -l " % (query)
-    returncode, output = service_utils.run_this(cmd_view)
+    cmd_view += "sed -e '$d' | grep -io %s | wc -l " % (query_str)
+
+    # ignoring the error. just printing the output. this should be reviewed
+    _, output = service_utils.run_this(cmd_view)
     return int(output.strip())
 
 
@@ -202,8 +214,8 @@ def _load_slabmanyaml(path):
     """
     path_to_yaml = os.path.split(path)[0]
     path_to_yaml = os.path.join(path_to_yaml, "utils", "slab_man_data.yaml")
-    with open(path_to_yaml, 'r') as f:
-        return yaml.load(f)
+    with open(path_to_yaml, 'r') as yaml_file:
+        return yaml.load(yaml_file)
 
 
 # This needs improvement. Formatting is an issue for some html websites. There are too many
@@ -213,8 +225,8 @@ def _load_slabmanyaml(path):
 # html file with BeautifulSoup.
 def _parse_confluence_website(html_text, site_title):
     """
-    Removes all html tag s and grabs relevant data from a confluence html page - converts the
-    content into human-readable format.
+    Removes all html tag s and grabs relevant data from a confluence html page -
+    converts the content into human-readable format.
     """
     soup = BeautifulSoup(html_text, 'html.parser')
     title = soup.title.text.split('-')[0]
@@ -232,17 +244,15 @@ def _parse_confluence_website(html_text, site_title):
         cond_1 = re.match(re.compile("^h[0-9][0-9]?$"), tag.name)
         # Any tag prefixed with the name of the website has relevant content
         cond_2 = tag.has_attr('id') and re.match(re.compile("%s-[^/].*"
-                                                            % site_title
-                                                            ),
-                                                 tag['id']
-                                                 )
+                                                            % site_title),
+                                                 tag['id'])
         # If the tag has no attributes and is near relevant content it is
         # relevant
         cond_3 = content_found and tag.attrs == {}
         if cond_1 and (cond_2 or cond_3):
             content_found = True
             content.append(tag.get_text() + ": ")
-        # TODO: This tries to get the output of `tree` shell command, but
+        # This tries to get the output of `tree` shell command, but
         # isn't too efficient when sphinx builds final man page
         elif tag.has_attr('type') and tag['type'] == "syntaxhighlighter":
             content.append(tag.get_text()[9:])
@@ -257,7 +267,6 @@ def _parse_confluence_website(html_text, site_title):
         parsed_website += line.strip() + "\n"
     parsed_website = re.sub("Loading the Editor", "", parsed_website)
     parsed_website = re.sub("Add Comment", "", parsed_website)
-    parsed_website = re.sub("This page content was sourced from \[README.md\]",
-                            "", parsed_website
-                            )
+    parsed_website = re.sub(r"This page content was sourced from \[README.md\]",
+                            "", parsed_website)
     return parsed_website

@@ -94,20 +94,18 @@ def gather_site_info(path, cont):
         return 1, {}
     if site_dictionary['bom'] is None:
         print "--- Retreiving site data for BOM ---"
-        site_dictionary['bom'] = _get_valid_input_or_option("Enter "
-                                                            "the BOM version: ",
-                                                            1, []
-                                                            )
+        site_dictionary['bom'] = get_valid_input_or_option("Enter "
+                                                           "the BOM version: ",
+                                                           1, [])
     # Note that CIMC password is required by ccsbuildtools along with out of band VPN
     #        http://wikicentral.cisco.com/display/nimbus/CCS+VPN+Client+Setup
     # access to properly populate/generate hosts from the created answer-yaml file.
     # You can find the CIMC password in some host.yaml files of ccs-data.
     if site_dictionary['ucs_password'] is None:
         print "--- Retreiving site data for password ---"
-        site_dictionary['ucs_password'] = _get_valid_input_or_option("Enter "
-                                                                     "UCS password: ",
-                                                                     3, []
-                                                                     )
+        site_dictionary['ucs_password'] = get_valid_input_or_option("Enter "
+                                                                    "UCS password: ",
+                                                                    3, [])
     path_to_ccsbuildtools = os.path.join(path, "services", "ccs-build-tools")
     exit_input(site_dictionary, os.path.join(path_to_ccsbuildtools,
                                              "answer-sample.yaml"
@@ -219,7 +217,7 @@ def table_selection(options, topic_name):
     valid_opts = range(1, x)
     for i in valid_opts:
         i = repr(i)
-    num = _get_valid_input_or_option("Enter number: ", 0, valid_opts)
+    num = get_valid_input_or_option("Enter number: ", 0, valid_opts)
     table.header = False
     table.border = False
     return table.get_string(fields=[topic_name], start=int(num)-1,
@@ -273,8 +271,8 @@ def exit_input(site_dictionary, path_to_dump, exit):
     """exit input
     """
     if exit:
-        print "Data input for site terminated. use continue option to resume where you " \
-              "left off. If you do another stack create site without the --continue option" \
+        print "Data input for site terminated. use continue option to resume where you "\
+              "left off. If you do another stack create site without the --continue option"\
               " your data will get deleted."
     with open(path_to_dump, 'w') as f:
         f.write("---\n")
@@ -317,10 +315,9 @@ def _input_cloud_info(cloud, is_svc):
         _user_input_for_list(tc_nodes, tc_nodes_prompts, cloud['cloud_nodes'], True)
     else:
         _user_input_for_list(svc_nodes, svc_nodes_prompts, cloud['cloud_nodes'], True)
-    if _get_valid_input_or_option("Type 'c' to continue building site or "
-                                  "'q' to save changes, quit and resume data input "
-                                  "at a later time: ", 3, ['c', 'q']
-                                  ) == 'q':
+    if get_valid_input_or_option("Type 'c' to continue building site or "
+                                 "'q' to save changes, quit and resume data input "
+                                 "at a later time: ", 3, ['c', 'q']) == 'q':
         return 1
     else:
         return 0
@@ -347,22 +344,19 @@ def _edit_ip_ranges(ip_ranges):
             table.add_row([i[4:], ip_ranges[i]])
             valid_opts.append(i[4:])
         print table
-        choice = _get_valid_input_or_option("Confirm ranges or enter "
-                                            "vlan num you want to edit: ",
-                                            3, valid_opts
-                                            )
+        choice = get_valid_input_or_option("Confirm ranges or enter "
+                                           "vlan num you want to edit: ",
+                                           3, valid_opts)
         if choice.lower() == 'c':
             break
         else:
-            ip_ranges["vlan" + choice] = _get_valid_input_or_option("Enter new "
-                                                                    "range for vlan" +
-                                                                    choice + ": ",
-                                                                    3, []
-                                                                    )
-    if _get_valid_input_or_option("Type 'c' to continue building site or "
-                                  "'q' to save changes, quit and resume data input "
-                                  "at a later time: ", 3, ['c', 'q']
-                                  ) == 'q':
+            ip_ranges["vlan" + choice] = get_valid_input_or_option("Enter new "
+                                                                   "range for vlan" +
+                                                                   choice + ": ",
+                                                                   3, [])
+    if get_valid_input_or_option("Type 'c' to continue building site or "
+                                 "'q' to save changes, quit and resume data input "
+                                 "at a later time: ", 3, ['c', 'q']) == 'q':
         return 1
     else:
         return 0
@@ -381,18 +375,16 @@ def _user_input_for_list(input_fields, prompts, dictionary, is_int):
     """
     for i in input_fields:
         if is_int:
-            dictionary[i] = _get_valid_input_or_option("Enter " +
-                                                       prompts[input_fields.index(i)] + ": ",
-                                                       0, []
-                                                       )
+            dictionary[i] = get_valid_input_or_option("Enter " +
+                                                      prompts[input_fields.index(i)] + ": ",
+                                                      0, [])
         else:
-            dictionary[i] = _get_valid_input_or_option("Enter " +
-                                                       prompts[input_fields.index(i)] + ": ",
-                                                       3, []
-                                                       )
+            dictionary[i] = get_valid_input_or_option("Enter " +
+                                                      prompts[input_fields.index(i)] + ": ",
+                                                      3, [])
 
 
-def _get_valid_input_or_option(prompt, parameter_type, options):
+def get_valid_input_or_option(prompt, parameter_type, options):
     """Gets input from user, asks user to double check it and ensures it matches a list of
     options if one is provided.
 
