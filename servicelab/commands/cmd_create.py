@@ -56,7 +56,7 @@ def repo_new(ctx, repo_name, kind):
     """
     kinds = dict(project="Project", ansible="Ansible",
                  puppet="Puppet", empty="EmptyProject")
-    repo = create_repo.Repo.builder(kinds[kind], ctx, repo_name)
+    repo = create_repo.Repo.builder(kinds[kind], ctx.get_gerrit_server(), repo_name)
     repo.construct()
     return
 
