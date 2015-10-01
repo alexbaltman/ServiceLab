@@ -120,6 +120,7 @@ def list_repos(ctx):
 @click.option(
     '-ip',
     '--ip_address',
+    default=context_utils.get_jenkins_url(),
     help='Provide the jenkinsserv url ip address and port \
         no in format <ip:portno>.',
     required=True)

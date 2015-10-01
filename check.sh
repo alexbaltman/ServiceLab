@@ -16,7 +16,7 @@ sudo yum -y install httpd-tools
 wget http://download.go.cd/gocd-rpm/go-server-15.2.0-2248.noarch.rpm
 wget http://dl.bintray.com/gocd/gocd-rpm/go-agent-15.2.0-2248.noarch.rpm
 sudo yum -y install procps
-sudo htpasswd -cbs  /tmp/passwd raju badger
+sudo htpasswd -cbs  /tmp/passwd slab badger
 sudo yum -y localinstall go-server-15.2.0-2248.noarch.rpm
 sudo yum -y localinstall go-agent-15.2.0-2248.noarch.rpm
 sudo cp cruise-config.xml /etc/go
@@ -26,7 +26,7 @@ sudo cat /etc/go/cruise-config.xml
 sleep 60
 echo "Accessing Go : "
 curl http://localhost:8153
-curl 'http://localhost:8153/go/api/pipelines.xml'   -u 'raju:badger'
+curl 'http://localhost:8153/go/api/pipelines.xml'   -u 'slab:badger'
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]

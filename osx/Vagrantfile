@@ -76,7 +76,7 @@ sudo yum -y install httpd-tools
 wget http://dl.bintray.com/gocd/gocd-rpm/go-server-15.2.0-2248.noarch.rpm
 wget http://dl.bintray.com/gocd/gocd-rpm/go-agent-15.2.0-2248.noarch.rpm
 sudo yum -y install procps
-sudo htpasswd -cbs  /tmp/passwd raju badger
+sudo htpasswd -cbs  /tmp/passwd slab badger
 sudo yum -y localinstall go-server-15.2.0-2248.noarch.rpm
 sudo yum -y localinstall go-agent-15.2.0-2248.noarch.rpm
 #sudo echo "export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.85-2.6.1.2.el7_1.x86_64/jre" >> /etc/default/go-agent
@@ -90,6 +90,6 @@ sudo cat /etc/go/cruise-config.xml
 sleep 60
 echo "Accessing Go : "
 curl http://localhost:8153
-curl 'http://localhost:8153/go/api/pipelines.xml'   -u 'raju:badger'
+curl 'http://localhost:8153/go/api/pipelines.xml'   -u 'slab:badger'
    SHELL
 end

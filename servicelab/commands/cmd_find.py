@@ -152,6 +152,7 @@ def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
               required=True)
 @click.option('-ip',
               '--ip_address',
+              default=context_utils.get_jenkins_url(),
               help='Provide the jenkinsserv url ip address and port'
                    'no in format <ip:portno>.',
               required=True)
@@ -162,6 +163,6 @@ def find_build(_, search_term, user, password, ip_address):
     """
     server = jenkins_utils.get_server_instance(ip_address, user, password)
     for key in server.keys():
-        match_obj = re.search("^" + search_term + "$", key, re.M | re.I)
+        match_obj = re.search(search_term, key, re.M | re.I)
         if match_obj:
-            print match_obj.group()
+            click.echo(key)

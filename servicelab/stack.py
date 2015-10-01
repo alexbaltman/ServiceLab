@@ -82,6 +82,8 @@ class Context(object):
             {"url": "https://ccs-artifactory.cisco.com/artifactory"}
         self.__gocd_info = \
             {"ip": "10.202.44.100"}
+        self.__jenkins_info = \
+            {"url": "https://ccs-jenkins.cisco.com"}
 
     def get_gerrit_server(self):
         """
@@ -94,6 +96,12 @@ class Context(object):
         get_gocd_info get the gocd server
         """
         return self.__gocd_info
+
+    def get_jenkins_info(self):
+        """
+        get_jenkins_info get the gocd server
+        """
+        return self.__jenkins_info
 
     def get_gerrit_staging_server(self):
         """

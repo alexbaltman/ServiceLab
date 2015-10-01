@@ -22,7 +22,7 @@ class TestGoCdUtils(unittest.TestCase):
     """
 
     GOCD_SERVER = "localhost:8153"
-    GOCD_USER = "raju"
+    GOCD_USER = "slab"
     GOCD_PASS = "badger"
     PIPELINE_NAME = "servicelab-test-only-pipeline"
     T_SCHED = "{\"locked\":false,\"paused\":false,\"schedulable\":true}"

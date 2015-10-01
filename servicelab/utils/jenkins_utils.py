@@ -1,13 +1,18 @@
 """
 Set of utility functions for Jenkins server
 """
+import sys
+
 import requests
+import click
 
 from jenkinsapi.jenkins import Jenkins
+from jenkinsapi.custom_exceptions import JenkinsAPIException
 from requests.auth import HTTPBasicAuth
 from BeautifulSoup import BeautifulSoup
 
 
+START_LOG = "-------- Printing job log for build %s--------\n"
 END_LOG = "-------- End of job log for build --------"
 
 
@@ -17,8 +22,14 @@ def get_server_instance(jenkins_server, jenkinsuser, jenkinspass):
     Jenkins instance.
     """
     requests.packages.urllib3.disable_warnings()
-    server = Jenkins(jenkins_server, username=jenkinsuser,
-                     password=jenkinspass)
+    try:
+        server = Jenkins(jenkins_server, username=jenkinsuser,
+                         password=jenkinspass)
+    except Exception as ex:
+        click.echo("Unable to connect to Jenkins server : %s " %
+                   str(ex))
+        sys.exit(1)
+
     return server
 
 
@@ -59,7 +70,7 @@ def get_build_log(job_name, user, password, ip_address):
     # Find latest run info
     res = requests.post(log_url, auth=HTTPBasicAuth(user, password))
     soup = BeautifulSoup(res.content)
-    log = log + "-------- Printing job log for build " + log_url + "--------" + "\n"
+    log = log + START_LOG.format(log_url)
     log = log + str(soup) + "\n"
     log = log + END_LOG + "\n"
 

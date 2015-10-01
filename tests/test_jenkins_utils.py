@@ -57,6 +57,7 @@ class TestJenkinsUtils(unittest.TestCase):
                                 TestJenkinsUtils.JENKINS_PASS,
                                 '-ip',
                                 TestJenkinsUtils.JENKINS_SERVER])
+        print(result.output)
         self.assertTrue(TestJenkinsUtils.JOB_NAME in result.output.strip())
 
     def test_build_find(self):
@@ -73,7 +74,7 @@ class TestJenkinsUtils(unittest.TestCase):
                                 TestJenkinsUtils.JENKINS_PASS,
                                 '-ip',
                                 TestJenkinsUtils.JENKINS_SERVER])
-        self.assertItemsEqual(result.output.strip(), TestJenkinsUtils.JOB_NAME)
+        self.assertTrue(TestJenkinsUtils.JOB_NAME in result.output.strip())
 
     def test_build_log(self):
         """
