@@ -61,7 +61,7 @@ def find_repo(ctx, search_term):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=context_utils.getArtifactoryURL(),
+              default=context_utils.get_artifactory_url(),
               help='Provide the artifactory url ip address and port '
                    'no in format http://<ip:portno>.',
               required=True)
@@ -96,6 +96,7 @@ def find_artifact(_, search_term, ip_address, user, password):
               required=True)
 @click.option('-ip',
               '--ip_address',
+              default=context_utils.get_gocd_ip(),
               help='Provide the go server ip address and port number '
                    'in format <ip_address:portnumber>.',
               required=True)
@@ -106,7 +107,8 @@ def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
     """
     def _get_pipeline():
         """
-        internal function returns a list of the pipeline strings from the go server
+        internal function returns a list of the pipeline
+        strings from the go server
         """
         server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
         res = requests.get(server_url, auth=HTTPBasicAuth(user, password))
@@ -124,7 +126,7 @@ def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
         search_string = pipeline['href']
         split_string = search_string.split('/')
         search_string = search_term
-        match_obj = re.search("^" + search_string + "$",
+        match_obj = re.search(search_string,
                               split_string[len(split_string) - 2],
                               re.M | re.I)
         if match_obj:
@@ -133,9 +135,9 @@ def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
                     if sdir.startswith("service-"):
                         service = sdir.split("service-", 1)[1]
                         if service == match_obj.group():
-                            print match_obj.group()
+                            click.echo(split_string[len(split_string) - 2])
             else:
-                print match_obj.group()
+                click.echo(split_string[len(split_string) - 2])
 
 
 @cli.command('build', short_help='Find a build')
