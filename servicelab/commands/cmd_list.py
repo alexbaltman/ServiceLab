@@ -15,8 +15,8 @@ import click
 import json
 import requests
 
+from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
-from BeautifulSoup import BeautifulSoup
 
 from servicelab.stack import pass_context
 

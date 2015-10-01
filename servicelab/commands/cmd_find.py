@@ -13,10 +13,11 @@ import json
 import click
 import requests
 
+from bs4 import BeautifulSoup
+from requests.auth import HTTPBasicAuth
+
 from servicelab.stack import pass_context
 from servicelab.utils import jenkins_utils
-from requests.auth import HTTPBasicAuth
-from BeautifulSoup import BeautifulSoup
 from servicelab.utils import context_utils
 from servicelab.utils import gerrit_functions
 from servicelab.utils import helper_utils
@@ -61,15 +62,16 @@ def find_repo(ctx, search_term):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=context_utils.get_artifactory_url(),
               help='Provide the artifactory url ip address and port '
                    'no in format http://<ip:portno>.',
-              required=True)
+              default=None)
 @pass_context
-def find_artifact(_, search_term, ip_address, user, password):
+def find_artifact(ctx, search_term, ip_address, user, password):
     """
     Searches through Artifactory's API for artifacts using your search term.
     """
+    if ip_address is None:
+        ip_address = ctx.get_artifactory_info()
     click.echo('Searching for %s artifact in Artifactory' % search_term)
     find_url = ip_address + "/api/search/artifact?name=" + search_term
     requests.packages.urllib3.disable_warnings()
@@ -96,7 +98,7 @@ def find_artifact(_, search_term, ip_address, user, password):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=context_utils.get_gocd_ip(),
+              default=None,
               help='Provide the go server ip address and port number '
                    'in format <ip_address:portnumber>.',
               required=True)
@@ -115,6 +117,9 @@ def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
         soup = BeautifulSoup(res.content)
         pipelines = soup.findAll('pipeline')
         return pipelines
+
+    if ip_address is None:
+        ip_address = ctx.get_gocd_info()
 
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
@@ -152,15 +157,17 @@ def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=context_utils.get_jenkins_url(),
               help='Provide the jenkinsserv url ip address and port'
                    'no in format <ip:portno>.',
-              required=True)
+              default=None)
 @pass_context
 def find_build(_, search_term, user, password, ip_address):
     """
     Searches through the build search term.
     """
+    if ip_address is None:
+        ip_address = ctx.get_jenkins_info()
+
     server = jenkins_utils.get_server_instance(ip_address, user, password)
     for key in server.keys():
         match_obj = re.search(search_term, key, re.M | re.I)

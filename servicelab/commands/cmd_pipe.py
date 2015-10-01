@@ -8,8 +8,8 @@ import copy
 import requests
 
 import click
+from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
-from BeautifulSoup import BeautifulSoup
 import xml.etree.ElementTree as ET
 
 from servicelab.utils import gocd_utils
@@ -94,8 +94,8 @@ def display_pipeline_status(_, pipeline_name, user, password, ip_address):
     server_url = "http://{0}/go/api/pipelines/{1}/status"
     res = requests.get(server_url.format(ip_address, pipeline_name),
                        auth=HTTPBasicAuth(user, password))
-    soup = BeautifulSoup(res.content)
-    print soup
+    soup = BeautifulSoup(res.content, "html.parser")
+    print str(soup)
 
 
 @cli.command('run', short_help='Trigger a pipeline')

@@ -6,10 +6,10 @@ import sys
 import requests
 import click
 
+from bs4 import BeautifulSoup
 from jenkinsapi.jenkins import Jenkins
 from jenkinsapi.custom_exceptions import JenkinsAPIException
 from requests.auth import HTTPBasicAuth
-from BeautifulSoup import BeautifulSoup
 
 
 START_LOG = "-------- Printing job log for build %s--------\n"
@@ -69,7 +69,7 @@ def get_build_log(job_name, user, password, ip_address):
 
     # Find latest run info
     res = requests.post(log_url, auth=HTTPBasicAuth(user, password))
-    soup = BeautifulSoup(res.content)
+    soup = BeautifulSoup(res.content, "html.parser")
     log = log + START_LOG.format(log_url)
     log = log + str(soup) + "\n"
     log = log + END_LOG + "\n"
