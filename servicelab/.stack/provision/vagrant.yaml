@@ -325,15 +325,7 @@ hosts:
     mac: "000027000210"
     memory: 512
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
-  aio-001:
-    role: aio
-    domain: 1
-    profile: aio
-    ip: 192.168.100.21
-    mac: "000027000021"
-    memory: 1024
-    box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
-  aio-002:
+    aio-002:
     role: aio
     domain: 1
     profile: aio

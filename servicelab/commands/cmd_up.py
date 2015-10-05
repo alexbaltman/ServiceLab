@@ -234,9 +234,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
     service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
 
     if mini:
-        returncode, allmy_vms = yaml_utils.getmin_OS_vms(os.path.join(ctx.path,
-                                                                      'provision'),
-                                                         '001')
+        returncode, allmy_vms = yaml_utils.getmin_OS_vms(ctx.path)
     elif full:
         returncode, allmy_vms = yaml_utils.getfull_OS_vms(os.path.join(ctx.path,
                                                                        'provision'),
@@ -245,8 +243,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         ctx.logger.error("Couldn't get the vms from the vagrant.yaml.")
         sys.exit(1)
     try:
-        # Note: not sure if this will work w/ vm_name set
-        a = vagrant_utils.Connect_to_vagrant(vm_name='infra-001', path=ctx.path)
+        # Note: not sure if this will work w/ vm_name set to infra-001 arbitrarily
+        # Note: move path to ctx.path if able to boot OSP pieces via infra/heighliner
+        redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
+        a = vagrant_utils.Connect_to_vagrant(vm_name='infra-001',
+                                             path=os.path.join(redhouse_ten_path))
         myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
         returncode, float_net, mynets = os_ensure_network(ctx.path)
         if returncode > 0:
@@ -289,7 +290,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                 ctx.logger.error('writing to settings yaml failed on: ' + host)
             if remote:
                 myvfile.add_openstack_vm(i)
-                a.v.up(vm_name=host)
+                a.v.up(vm_name=host, provider='openstack')
             else:
                 myvfile.add_virtualbox_vm(i)
                 a.v.up(vm_name=host)
