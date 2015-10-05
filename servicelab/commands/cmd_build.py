@@ -8,6 +8,7 @@ import click
 
 from servicelab.stack import pass_context
 from servicelab.utils import jenkins_utils
+from servicelab.utils import context_utils
 
 
 @click.group('build', short_help='Build to work with.',
@@ -32,6 +33,7 @@ def cli(_):
               required=True)
 @click.option('-ip',
               '--ip_address',
+              default=context_utils.get_jenkins_url(),
               help="Provide the jenkinsserv url ip address and port "
                    "no in format <ip:portno>.",
               required=True)
@@ -63,6 +65,7 @@ def display_build_status(_,
               required=True)
 @click.option('-ip',
               '--ip_address',
+              default=context_utils.get_jenkins_url(),
               help="Provide the jenkinsserv url ip address and port "
                    "no in format <ip:portno>.",
               required=True)

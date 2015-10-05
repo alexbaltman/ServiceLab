@@ -98,7 +98,7 @@ def find_artifact(ctx, search_term, ip_address, user, password):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=None,
+              default=context_utils.get_gocd_ip(),
               help='Provide the go server ip address and port number '
                    'in format <ip_address:portnumber>.',
               required=True)
@@ -159,7 +159,8 @@ def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
               '--ip_address',
               help='Provide the jenkinsserv url ip address and port'
                    'no in format <ip:portno>.',
-              default=None)
+              default=context_utils.get_jenkins_url()
+              )
 @pass_context
 def find_build(_, search_term, user, password, ip_address):
     """

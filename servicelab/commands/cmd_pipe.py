@@ -13,6 +13,7 @@ from requests.auth import HTTPBasicAuth
 import xml.etree.ElementTree as ET
 
 from servicelab.utils import gocd_utils
+from servicelab.utils import context_utils
 from servicelab.stack import pass_context
 
 
@@ -38,6 +39,7 @@ def cli(_):
               required=True)
 @click.option('-ip',
               '--ip_address',
+              default=context_utils.get_gocd_ip(),
               help='Provide the go server ip address.',
               required=True)
 @pass_context
@@ -53,15 +55,22 @@ def display_pipeline_log(_, pipeline_name, user, password, ip_address):
     latest_job_info_url = soup.findAll('entry')[0].findAll('link')[0]['href']
 
     # Find all the job info for that run
-    job_info_res = requests.get(latest_job_info_url, auth=HTTPBasicAuth(user, password))
+    latest_job_info_url = latest_job_info_url.replace("gocd_java_server",
+                                                      ip_address)
+    job_info_res = requests.get(latest_job_info_url,
+                                auth=HTTPBasicAuth(user, password))
     soup = BeautifulSoup(job_info_res.content)
     job_urls = soup.findAll('job')
 
     # for each of the job, pull the log and display the log
     for job_url in job_urls:
-        job_url_res = requests.get(job_url['href'], auth=HTTPBasicAuth(user, password))
+        job_url['href'] = job_url['href'].replace("gocd_java_server",
+                                                  ip_address)
+        job_url_res = requests.get(job_url['href'],
+                                   auth=HTTPBasicAuth(user, password))
         soup = BeautifulSoup(job_url_res.content)
         log_url = soup.find('artifacts')['baseuri']
+        log_url = log_url.replace("gocd_java_server", ip_address)
         log_url_res = requests.get(log_url + "/cruise-output/console.log",
                                    auth=HTTPBasicAuth(user, password))
         soup = BeautifulSoup(log_url_res.content)
@@ -84,6 +93,7 @@ def display_pipeline_log(_, pipeline_name, user, password, ip_address):
               required=True)
 @click.option('-ip',
               '--ip_address',
+              default=context_utils.get_gocd_ip(),
               help='Provide the go server ip address and port no <ip:port>.',
               required=True)
 @pass_context
@@ -110,6 +120,7 @@ def display_pipeline_status(_, pipeline_name, user, password, ip_address):
               required=True)
 @click.option('-ip',
               '--ip_address',
+              default=context_utils.get_gocd_ip(),
               help='Provide the go server ip address and port <ip:port>.',
               required=True)
 @pass_context
@@ -137,6 +148,7 @@ def trigger_pipeline(_, pipeline_name, user, password, ip_address):
               required=True)
 @click.option('-ip',
               '--ip_address',
+              default=context_utils.get_gocd_ip(),
               help='Provide the go server ip address and port <ip:port>.',
               required=True)
 @pass_context
@@ -149,8 +161,10 @@ def clone_pipeline(_,
     """
     Clones a pipeline and assigns it the new name.
     """
-    config_xmlurl = "http://{0}/go/api/admin/config/current.xml".format(ip_address)
-    post_config_xmlurl = "http://{0}/go/api/admin/config.xml".format(ip_address)
+    config_xmlurl = "http://{0}/go/api/admin/config/current.xml".format(
+                                                                 ip_address)
+    post_config_xmlurl = "http://{0}/go/api/admin/config.xml".format(
+                                                                 ip_address)
     requests.post(config_xmlurl,
                   auth=HTTPBasicAuth(user, password))
 
