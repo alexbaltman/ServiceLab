@@ -16,13 +16,13 @@ For
 import os
 import shutil
 
-import string
 import yaml
 import click
 import logging
 
 from abc import ABCMeta, abstractmethod
 from servicelab.utils import service_utils
+from servicelab.utils import helper_utils
 
 LOGGER = logging.getLogger('click_application')
 logging.basicConfig()
@@ -34,44 +34,26 @@ class Repo(object):
     """
     __metaclass__ = ABCMeta
 
-    def builder(rtype, gsrvr, name):
+    def builder(rtype, gsrvr, path, name):
         """
         Static method Instantiates Concreate classes of type Repo.
         """
         if rtype is "Ansible":
-            return Ansible(gsrvr, name)
+            return Ansible(gsrvr, path, name)
         if rtype is "Puppet":
-            return Puppet(gsrvr, name)
+            return Puppet(gsrvr, path, name)
         if rtype is "Project":
-            return Project(gsrvr, name)
+            return Project(gsrvr, path, name)
         if rtype is "EmptyProject":
-            return EmptyProject(gsrvr, name)
+            return EmptyProject(gsrvr, path, name)
         assert 0, "unable to construct the project of type: " + rtype
     builder = staticmethod(builder)
 
-    def __init__(self, gsrvr, name):
+    def __init__(self, gsrvr, path, name):
         self.gsrvr = gsrvr
+        self.ctx_path = path
         self.name = name
         self.chk_script = None
-
-    def get_usr(self):
-        """
-        Get the gerrit user name
-
-        Returns:
-            str: The gerrit user name
-
-        Raises:
-            Raises Exception if unable to get the user name
-        """
-        cmd = "git config user.name"
-        ret_code, username = service_utils.run_this(cmd)
-        if ret_code == 1:
-            click.echo("Unable to fetch user name from git. Please provide")
-            username = click.prompt("username", type=str, default="")
-        username = string.strip(username)
-        assert username, "unable to proceed as username is not available"
-        return username
 
     def get_reponame(self):
         """
@@ -177,8 +159,8 @@ class Ansible(Repo):
     """
     Creates the Ansible Repo.
     """
-    def __init__(self, gsrvr, name):
-        super(Ansible, self).__init__(gsrvr, name)
+    def __init__(self, gsrvr, path, name):
+        super(Ansible, self).__init__(gsrvr, path, name)
         self.play_roles = []
 
     def create_nimbus(self):
@@ -294,7 +276,7 @@ class Ansible(Repo):
             6. Creating the roles directory.
         """
         try:
-            user = self.get_usr()
+            user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
             self.instantiate_template()
@@ -310,8 +292,8 @@ class Puppet(Repo):
     """
     Creates a Puppet Repo of the given name on the gerrit server and local directory.
     """
-    def __init__(self, gsrvr, name):
-        super(Puppet, self).__init__(gsrvr, name)
+    def __init__(self, gsrvr, path, name):
+        super(Puppet, self).__init__(gsrvr, path, name)
 
     def create_nimbus(self):
         """
@@ -437,7 +419,7 @@ class Puppet(Repo):
             5. Creating the nimbus
         """
         try:
-            user = self.get_usr()
+            user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
             self.instantiate_template()
@@ -451,8 +433,8 @@ class Project(Repo):
     """
     Create a Project of the given name on the gerrit server and local directory.
     """
-    def __init__(self, gsrvr, name):
-        super(Project, self).__init__(gsrvr, name)
+    def __init__(self, gsrvr, path, name):
+        super(Project, self).__init__(gsrvr, path, name)
 
     def download_template(self, username):
         """
@@ -520,7 +502,7 @@ class Project(Repo):
             4. Creating the nimbus
         """
         try:
-            user = self.get_usr()
+            user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
             self.instantiate_template()
@@ -533,8 +515,8 @@ class EmptyProject(Repo):
     """
     Create an Empty project of the given name on the gerrit server and local directory.
     """
-    def __init__(self, gsrvr, name):
-        super(EmptyProject, self).__init__(gsrvr, name)
+    def __init__(self, gsrvr, path, name):
+        super(EmptyProject, self).__init__(gsrvr, path, name)
 
     def download_template(self, username):
         """
@@ -570,7 +552,7 @@ class EmptyProject(Repo):
             4. Creating the nimbus
         """
         try:
-            user = self.get_usr()
+            user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
             self.instantiate_template()
