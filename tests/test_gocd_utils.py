@@ -4,13 +4,16 @@
 import unittest
 import requests
 
+from click.testing import CliRunner
+
+
 from servicelab.commands import cmd_pipe
 from servicelab.commands import cmd_list
 from servicelab.commands import cmd_find
 from requests.auth import HTTPBasicAuth
 from servicelab.stack import Context
-
-from click.testing import CliRunner
+from servicelab.utils import context_utils
+from servicelab.utils import gocd_utils
 
 
 class TestGoCdUtils(unittest.TestCase):
@@ -24,9 +27,13 @@ class TestGoCdUtils(unittest.TestCase):
     GOCD_SERVER = "localhost:8153"
     GOCD_USER = "slab"
     GOCD_PASS = "badger"
+    GOCD_REMOTE_USER = "ragkatti"
+    GOCD_REMOTE_PASS = "NEWjob2015"
     PIPELINE_NAME = "servicelab-test-only-pipeline"
+    SHOW_PIPELINE_NAME = "deploy-sdu-test-tempest"
     T_SCHED = "{\"locked\":false,\"paused\":false,\"schedulable\":true}"
     F_SCHED = "{\"locked\":false,\"paused\":false,\"schedulable\":false}"
+    REMOTE_STATUS = "{\"paused\":false,\"schedulable\":true,\"locked\":false}"
     ENDING_LOG = "End of job log for pipeline"
 
     def setUp(self):
@@ -36,11 +43,12 @@ class TestGoCdUtils(unittest.TestCase):
         url = "http://{}/go/tab/admin/" \
               "pipelines/{}.json".format(TestGoCdUtils.GOCD_SERVER,
                                          TestGoCdUtils.PIPELINE_NAME)
-        payload = {'url': 'https://github.com/Silverpop/sample-helloworld-ant.git',
-                   'scm': 'git',
-                   'builder': 'ant',
-                   'buildfile': 'build.xml',
-                   'target': 'main'}
+        payload = {
+            'url': 'https://github.com/Silverpop/sample-helloworld-ant.git',
+            'scm': 'git',
+            'builder': 'ant',
+            'buildfile': 'build.xml',
+            'target': 'main'}
         res = requests.post(url,
                             auth=HTTPBasicAuth(TestGoCdUtils.GOCD_USER,
                                                TestGoCdUtils.GOCD_PASS),
@@ -132,6 +140,16 @@ class TestGoCdUtils(unittest.TestCase):
                                 '-ip',
                                 TestGoCdUtils.GOCD_SERVER])
         self.assertTrue(TestGoCdUtils.ENDING_LOG in result.output.strip())
+
+    def test_cmd_show(self):
+        """ Tests show command.
+        """
+
+        result = gocd_utils.get_pipe_info(TestGoCdUtils.SHOW_PIPELINE_NAME,
+                                          TestGoCdUtils.GOCD_REMOTE_USER,
+                                          TestGoCdUtils.GOCD_REMOTE_PASS,
+                                          context_utils.get_gocd_ip())
+        self.assertTrue(TestGoCdUtils.REMOTE_STATUS in result)
 
 
 if __name__ == '__main__':

@@ -54,7 +54,7 @@ def validate_artifact_ip_cb(ctx, param, value):
     If ip is none then provide the default ip for artifactory.
     """
     if not value:
-        value = ctx.obj.get_artifactory_info()
+        value = ctx.obj.get_artifactory_info()['url']
     return value
 
 
@@ -94,7 +94,7 @@ def validate_pipe_ip_cb(ctx, param, value):
     If ip is none then provide the default ip for gocd.
     """
     if not value:
-        value = ctx.obj.get_gocd_info()
+        value = ctx.obj.get_gocd_info()['ip']
     return value
 
 
@@ -174,7 +174,7 @@ def validate_build_ip_cb(ctx, param, value):
     If ip is none then provide the default ip for jenkins.
     """
     if not value:
-        value = ctx.obj.get_jenkins_info()
+        value = ctx.obj.get_jenkins_info()['url']
     return value
 
 
