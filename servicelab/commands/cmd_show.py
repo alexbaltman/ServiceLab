@@ -13,6 +13,8 @@ from servicelab.utils import helper_utils
 from servicelab.utils import gerrit_functions
 from servicelab.utils import jenkins_utils
 from servicelab.utils import context_utils
+from servicelab.utils import artifact_utils
+from servicelab.utils import gocd_utils
 
 
 @click.group('show', short_help='Helps you show the details of a \
@@ -60,26 +62,66 @@ def show_build(ctx, build_number):
     username = helper_utils.get_username(ctx.path)
     servername = context_utils.get_jenkins_url()
     password = click.prompt("password", hide_input=True, type=str)
-    click.echo(jenkins_utils.get_build_status(build_number, username, password, servername))
-    click.echo(jenkins_utils.get_build_log(build_number, username, password, servername))
+    click.echo(jenkins_utils.get_build_status(build_number, username,
+                                              password, servername))
+    click.echo(jenkins_utils.get_build_log(build_number, username,
+                                           password, servername))
 
 
 @cli.command('artifact', short_help='Show the details of an artifact \
               in artifactory.')
-@click.argument('item')
+@click.argument('url')
+@click.option('-u',
+              '--user',
+              help='Provide artifactory server username',
+              default=None,
+              required=False)
+@click.option('-p',
+              '--password',
+              default=None,
+              help='Provide artifactory server password',
+              required=False)
 @pass_context
-def show_artifact(_, item):
+def show_artifact(ctx, user, password, url):
     """
     Show the details of an artifact using Artifactory's API.
     """
-    click.echo('Showing details of artifact %s' % item)
+    if not user:
+        user = helper_utils.get_username(ctx.path)
+    if not password:
+        password = click.prompt("password", hide_input=True, type=str)
+    click.echo('Showing details of artifact %s' % url)
+    click.echo(artifact_utils.get_artifact_info(url, user, password))
 
 
 @cli.command('pipe', short_help='Show the details of a GO deploy pipeline')
-@click.argument('item')
+@click.argument('pipeline_name', required=True)
+@click.option('-u',
+              '--user',
+              default=None,
+              help='Provide artifactory server username',
+              required=False)
+@click.option('-p',
+              '--password',
+              default=None,
+              help='Provide artifactory server password',
+              required=False)
+@click.option('-ip',
+              '--ip_address',
+              default=None,
+              help='Provide the go server ip address and port number '
+                   'in format <ip_address:portnumber>.')
 @pass_context
-def show_pipe(_, item):
+def show_pipe(ctx, pipeline_name, user, password, ip_address):
     """
     Show the details of a deployment pipline using GO's API.
     """
-    click.echo('Showing details of pipeline %s' % item)
+    if user is None:
+        user = helper_utils.get_username(ctx.path)
+    if password is None:
+        password = click.prompt("password", hide_input=True, type=str)
+    if ip_address is None:
+        ip_address = context_utils.get_gocd_ip()
+    click.echo('Showing details of pipeline %s' % pipeline_name)
+    click.echo(gocd_utils.get_pipe_info(pipeline_name, user,
+                                        password, ip_address))

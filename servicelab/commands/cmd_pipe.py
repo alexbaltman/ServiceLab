@@ -13,7 +13,6 @@ from requests.auth import HTTPBasicAuth
 import xml.etree.ElementTree as ET
 
 from servicelab.utils import gocd_utils
-from servicelab.utils import context_utils
 from servicelab.stack import pass_context
 
 
@@ -39,7 +38,8 @@ def cli(_):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=context_utils.get_gocd_ip(),
+              default=None,
+              callback=gocd_utils.validate_pipe_ip_cb,
               help='Provide the go server ip address.',
               required=True)
 @pass_context
@@ -93,7 +93,8 @@ def display_pipeline_log(_, pipeline_name, user, password, ip_address):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=context_utils.get_gocd_ip(),
+              default=None,
+              callback=gocd_utils.validate_pipe_ip_cb,
               help='Provide the go server ip address and port no <ip:port>.',
               required=True)
 @pass_context
@@ -120,7 +121,8 @@ def display_pipeline_status(_, pipeline_name, user, password, ip_address):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=context_utils.get_gocd_ip(),
+              default=None,
+              callback=gocd_utils.validate_pipe_ip_cb,
               help='Provide the go server ip address and port <ip:port>.',
               required=True)
 @pass_context
@@ -148,7 +150,8 @@ def trigger_pipeline(_, pipeline_name, user, password, ip_address):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=context_utils.get_gocd_ip(),
+              default=None,
+              callback=gocd_utils.validate_pipe_ip_cb,
               help='Provide the go server ip address and port <ip:port>.',
               required=True)
 @pass_context
@@ -162,9 +165,9 @@ def clone_pipeline(_,
     Clones a pipeline and assigns it the new name.
     """
     config_xmlurl = "http://{0}/go/api/admin/config/current.xml".format(
-                                                                 ip_address)
+        ip_address)
     post_config_xmlurl = "http://{0}/go/api/admin/config.xml".format(
-                                                                 ip_address)
+        ip_address)
     requests.post(config_xmlurl,
                   auth=HTTPBasicAuth(user, password))
 
