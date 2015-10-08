@@ -1,3 +1,0 @@
-Host 192.168.78.*, vm-00*
-  StrictHostKeyChecking no
-  UserKnownHostsFile=/dev/null
