@@ -8,10 +8,10 @@ echo "OS value is ..... $OS"
 if [ "$OS" == "Red" ]
 then
 sudo yum -y install wget
+sudo yum -y install gettext
 wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.rpm -O vagrant_1.7.2_x86_64.rpm
 sudo yum -y localinstall vagrant_1.7.2_x86_64.rpm
 sudo yum -y install java-1.7.0-openjdk
-sudo yum -y install git
 sudo yum -y install httpd-tools
 wget http://download.go.cd/gocd-rpm/go-server-15.2.0-2248.noarch.rpm
 wget http://dl.bintray.com/gocd/gocd-rpm/go-agent-15.2.0-2248.noarch.rpm
@@ -27,6 +27,18 @@ sleep 60
 echo "Accessing Go : "
 curl http://localhost:8153
 curl 'http://localhost:8153/go/api/pipelines.xml'   -u 'slab:badger'
+wget https://www.kernel.org/pub/software/scm/git/git-2.0.0.tar.gz
+tar -xzvf git-2.0.0.tar.gz
+sudo yum install -y libcurl-devel zlib-devel
+sudo yum install -y autoconf
+sudo yum install -y perl-ExtUtils-MakeMaker
+cd git-2.0.0
+sudo make configure
+sudo ./configure --prefix=/usr
+sudo make all
+sudo make install
+cd ..
+git --version
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]
