@@ -1,47 +1,36 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import getpass
 import hashlib
 import os
 import unittest
-
+from servicelab.utils import helper_utils
 from servicelab.utils import service_utils
 from tests.helpers import temporary_dir
+from servicelab.stack import Context
 
 
 class TestServiceUtils(unittest.TestCase):
     cleanup_paths = []
 
     def setUp(self):
+        self.ctx = Context()
         pass
 
-    # TODO (Alex Altman): getpass.getuser may be brittle--maybe pickup user from git config?
     def test_sync_service(self):
+        username = helper_utils.get_username(self.ctx.path)
         with temporary_dir() as temp_dir:
             out = service_utils.sync_service(path=temp_dir,
                                              branch='master',
-                                             username=getpass.getuser(),
+                                             username=username,
                                              service_name='service-heighliner')
 
             self.assertEqual(out, True)
             out = service_utils.sync_service(path=temp_dir,
                                              branch='master',
-                                             username=getpass.getuser(),
+                                             username=username,
                                              service_name='service-heighliner')
             self.assertEqual(out, True)
-
-    # def test_sync_data(self):
-    #     with temporary_dir() as temp_dir:
-    #         out = service_utils.sync_data(path=temp_dir,
-    #                                       username=getpass.getuser(),
-    #                                       branch='master')
-    #
-    #         self.assertEqual(out, True)
-    #         out = service_utils.sync_data(path=temp_dir,
-    #                                       username=getpass.getuser(),
-    #                                       branch='master')
-    #         self.assertEqual(out, True)
 
     def test_build_data(self):
         pass
@@ -64,9 +53,11 @@ class TestServiceUtils(unittest.TestCase):
             key_path = os.path.join(temp_dir, 'id_rsa')
             self.assertEqual(os.path.isfile(key_path), True)
             self.assertEqual(os.path.isfile(key_path + '.pub'), True)
-            first_key_hash = hashlib.md5(open(key_path, 'rb').read()).hexdigest()
+            first_key_hash = hashlib.md5(open(key_path,
+                                              'rb').read()).hexdigest()
             service_utils.setup_vagrant_sshkeys(temp_dir)
-            second_key_hash = hashlib.md5(open(key_path, 'rb').read()).hexdigest()
+            second_key_hash = hashlib.md5(open(key_path,
+                                               'rb').read()).hexdigest()
             self.assertEqual(first_key_hash, second_key_hash)
 
     def test_link(self):

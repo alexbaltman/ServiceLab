@@ -1,0 +1,95 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure(2) do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://atlas.hashicorp.com/search.
+  config.vm.box = 'ccs-rhel-7'
+  config.vm.box_url = 'http://cis-kickstart.cisco.com/ccs-rhel-7.box'
+
+  # Disable automatic box update checking. If you disable this, then
+  # boxes will only be checked for updates when the user runs
+  # `vagrant box outdated`. This is not recommended.
+  # config.vm.box_check_update = false
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine. In the example below,
+  # accessing "localhost:8080" will access port 80 on the guest machine.
+  # config.vm.network "forwarded_port", guest: 80, host: 8080
+   config.vm.network "forwarded_port", guest: 8153, host: 8153
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  # config.vm.network "private_network", ip: "192.168.33.10"
+
+  # Create a public network, which generally matched to bridged network.
+  # Bridged networks make the machine appear as another physical device on
+  # your network.
+  # config.vm.network "public_network"
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  # config.vm.synced_folder "../data", "/vagrant_data"
+
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  # Example for VirtualBox:
+  #
+  # config.vm.provider "virtualbox" do |vb|
+  #   # Display the VirtualBox GUI when booting the machine
+  #   vb.gui = true
+  #
+  #   # Customize the amount of memory on the VM:
+  #   vb.memory = "1024"
+  # end
+  #
+  # View the documentation for the provider you are using for more
+  # information on available options.
+
+  # Define a Vagrant Push strategy for pushing to Atlas. Other push strategies
+  # such as FTP and Heroku are also available. See the documentation at
+  # https://docs.vagrantup.com/v2/push/atlas.html for more information.
+  # config.push.define "atlas" do |push|
+  #   push.app = "YOUR_ATLAS_USERNAME/YOUR_APPLICATION_NAME"
+  # end
+
+  # Enable provisioning with a shell script. Additional provisioners such as
+  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+  # documentation for more information about their specific syntax and use.
+   config.vm.provision "shell", inline: <<-SHELL
+sudo yum -y install wget
+wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.rpm -O vagrant_1.7.2_x86_64.rpm
+sudo yum -y localinstall vagrant_1.7.2_x86_64.rpm
+sudo yum -y install java-1.7.0-openjdk
+sudo yum -y install git
+sudo yum -y install httpd-tools
+wget http://dl.bintray.com/gocd/gocd-rpm/go-server-15.2.0-2248.noarch.rpm
+wget http://dl.bintray.com/gocd/gocd-rpm/go-agent-15.2.0-2248.noarch.rpm
+sudo yum -y install procps
+sudo htpasswd -cbs  /tmp/passwd slab badger
+sudo yum -y localinstall go-server-15.2.0-2248.noarch.rpm
+sudo yum -y localinstall go-agent-15.2.0-2248.noarch.rpm
+#sudo echo "export JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.85-2.6.1.2.el7_1.x86_64/jre" >> /etc/default/go-agent
+chmod 777 /etc/go/
+curl  https://gist.githubusercontent.com/rkatti/d58aafe3041ea29999ed/raw/c997b3f06561c3ea214eaf996b709379803c61aa/gistfile1.txt > cruise-config.xml
+cp cruise-config.xml /etc/go/cruise-config.xml
+chmod 777 /etc/go/cruise-config.xml
+sudo /etc/init.d/go-server restart
+sudo /etc/init.d/go-agent restart
+sudo cat /etc/go/cruise-config.xml
+sleep 60
+echo "Accessing Go : "
+curl http://localhost:8153
+curl 'http://localhost:8153/go/api/pipelines.xml'   -u 'slab:badger'
+   SHELL
+end

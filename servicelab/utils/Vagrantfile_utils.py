@@ -1,4 +1,3 @@
-from servicelab.utils import yaml_utils
 import logging
 import yaml
 import os
@@ -10,218 +9,228 @@ Vagrantfile_utils_logger = logging.getLogger('click_application')
 logging.basicConfig()
 
 
-def overwrite_vagrantfile(path):
-    Vfile = "Vagrantfile"
-    with open(os.path.join(path, Vfile), 'w') as f:
-        h1, h2, h3 = _set_vagrantfile_header()
-        f.write(h1)
-        f.write(h2)
-        f.write(h3)
-        f.write("\n")
-        returncode, ruby_modules = _required_ruby_modules(path)
-        if returncode > 0:
+class SlabVagrantfile(object):
+
+    def __init__(self, path):
+        self.path = path
+        self.set_header = False
+        # OS RC file vars
+        self.env_vars = {}
+        # passed in from yaml_utils calls
+        self.host_dict = {}
+        # ccs-data flavor image settings
+        self.host_vars = {}
+        self.default_flavor = '2cpu.4ram.20sas'
+        self.default_image = 'slab-RHEL7.1v7'
+
+    def init_vagrantfile(self):
+
+        def _set_header():
+            h1 = ("# -*- mode: ruby -*-\n"
+                  "# vi: set ft=ruby :\n")
+            h2 = "VAGRANTFILE_API_VERSION = \"2\"\n"
+            req_plugin = ("required_plugins = %w( vagrant-hostmanager ",
+                          "vagrant-openstack-provider )\n",
+                          "required_plugins.each do |plugin|\n",
+                          "  system \"vagrant plugin install #{plugin}\" unless\n",
+                          "Vagrant.has_plugin? plugin\n",
+                          "end\n")
+
+            return h1, h2, req_plugin
+
+        def _beg_vm_config():
+            startvms = "Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|\n"
+            return startvms
+
+        h1, h2, req_plugin = _set_header()
+        startvms = _beg_vm_config()
+        # Note: until write_it is fixed, have to move list out from middle
+        self.write_it(h1, h2, req_plugin, startvms)
+        self.set_header = True
+
+    def write_it(self, *text):
+        # Note: Doesn't close the vagrant loop w/ an 'end'. Use append_it for that.
+        mystr = ''
+        with open(os.path.join(self.path, "Vagrantfile"), 'w') as f:
+            for i in text:
+                if isinstance(i, (list, tuple)):
+                    for x in i:
+                        mystr += x
+                else:
+                    mystr += i
+            f.write(mystr)
+            # Note: This buffers us from append_it function
+            f.write("\n")
+
+    def append_it(self, *text):
+        lines = ''
+        with open(os.path.join(self.path, "Vagrantfile"), 'r') as f:
+            lines = f.readlines()
+            # Note: Remove the last line always so we get rid of the 'end' and
+            #       add our own.
+            lines = lines[:-1]
+        with open(os.path.join(self.path, "Vagrantfile"), 'w') as f:
+            for line in lines:
+                f.write(line)
+            for i in text:
+                try:
+                    f.write(text)
+                except TypeError:
+                    for x in i:
+                        f.write(x)
+            f.write('end\n')
+            f.write('end')
+            f.write('\n')
+
+    def add_virtualbox_vm(self, host_dict):
+        '''
+        Vbox expecting in host_dict:
+            hostname
+
+        '''
+        setitup = ''
+        self.host_dict = host_dict
+        self.hostname = self.host_dict.keys()[0]
+        ip = self.host_dict[self.hostname]['ip']
+        try:
+            setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n"
+                       "  config.hostmanager.enabled = true\n"
+                       "  config.hostmanager.manage_host = true\n"
+                       "  config.hostmanager.include_offline = true\n"
+                       "  config.vm.box = \"" + self.host_dict[self.hostname]['box'] + "\"\n"
+                       # RFI: non-win config --> use hosts keypair so set insert_key to F
+                       #      then enable agent forwarding.
+                       "  config.ssh.insert_key = false\n"
+                       "  config.ssh.forward_agent = true\n"
+                       "  config.vm.provider :virtualbox do |vb, override|\n")
+
+            for k, v in host_dict[self.hostname].iteritems():
+                # TODO: incorporate the storage and storage controller here too.
+                if k in ['memory', 'cpus']:
+                    try:
+                        setitup += ("    vb.customize [\"modifyvm\", :id, \"--{0}\", \"" +
+                                    str(v) + "\"]\n").format(k)
+                    except KeyError as e:
+                        Vagrantfile_utils_logger.debug('Non-fatal - may not be set')
+                        Vagrantfile_utils_logger.debug('Failed to set vm attribute: ' + e)
+            setitup += '  end\n'
+            setitup += "  config.vm.hostname = \"" + self.hostname + "\"\n"
+            try:
+                setitup += "  config.vm.network :private_network, ip: \"" + ip
+                setitup += "\", mac: \"" + host_dict[self.hostname]['mac'] + "\"\n"
+            except KeyError:
+                setitup += "  config.vm.network :private_network, ip: \"" + ip + "\"\n"
+            self.append_it(setitup)
+            return 0
+        except KeyError:
+            Vagrantfile_utils_logger.error('Can not add host b/c of missing Key')
             return 1
-        else:
-            f.write(ruby_modules)
-        returncode, vagrant_plugins = _required_vagrant_plugins(path)
-        if returncode > 0:
-            return 1
-        else:
-            f.write(str(vagrant_plugins))
-        users = _set_vagrant_user_and_group()
-        f.write(users)
-        set_current_service = _set_current_service(path)
-        for item in set_current_service:
-            f.write(item)
-        load_vagrantyaml = _load_vagrantyaml(path)
-        f.write(load_vagrantyaml)
-        vbox_config = _vbox_provider_configure()
-        f.write(vbox_config)
 
+    def add_openstack_vm(self, host_dict):
+        '''
+        host_dict 'flavor', host_dict[hostname].get('image')
+        '''
+        self.host_dict = host_dict
+        self.hostname = self.host_dict.keys()[0]
+        env_vars = self.env_vars
+        self._vbox_os_provider_host_vars(self.path)
+        setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n",
+                   "  cluster.ssh.username = 'cloud-user' \n",
+                   "  config.hostmanager.enabled = true\n"
+                   "  config.hostmanager.manage_host = true\n"
+                   "  config.hostmanager.include_offline = true\n"
+                   "  config.vm.provider :openstack do |os, override|\n")
 
-def _set_vagrantfile_header():
-    h1 = "# -*- mode: ruby -*-"
-    h2 = "# vi: set ft=ruby :"
-    h3 = "VAGRANTFILE_API_VERSION = \"2\""
-    return h1, h2, h3
+        setitup += ("    os.openstack_auth_url   = \"" + env_vars['openstack_auth_url'] +
+                    "\"\n",
+                    "    os.username             = \"" + env_vars['username'] + "\"\n",
+                    "    os.password              = \"" + env_vars['password'] + "\"\n",
+                    "    os.tenant_name          = \"" + env_vars['tenant_name'] + "\"\n")
 
+        try:
+            setitup += ("    os.flavor               = \"" + self.host_vars['flavor'],
+                        "\"\n",
+                        "    os.image                = \"" + self.host_vars['image'],
+                        "\"\n")
 
-def _required_ruby_modules(path):
-    path_to_utils = os.path.join(path, "utils")
-    path_to_ruby_modules = os.path.join(path_to_utils, "ruby_modules.yaml")
-    returncode = yaml_utils.validate_syntax(path_to_ruby_modules)
-    s = ""
-    if returncode == 0:
-        stream = file(path_to_ruby_modules, 'r')
-        ruby_modules = yaml.load(stream)
-        for item in ruby_modules:
-            s += "require \'" + item + "\'\n"
-        return 0, s
-    else:
-        Vagrantfile_utils_logger.error("ruby_modules.yaml did not have valid\
-                                        syntax.")
-        return 1, s
+        except KeyError:
+            Vagrantfile_utils_logger.error('Could not set host flavor or img from\
+                                            ccs-data')
+        setitup += ("    os.floating_ip_pool     = \"" + env_vars['floating_ip_pool'] +
+                    "\"\n",
+                    "    os.openstack_network_url=\"" + env_vars['openstack_network_url'] +
+                    "\"\n",
+                    "    os.openstack_image_url  = \"" + env_vars['openstack_image_url'] +
+                    "\"\n",
+                    "    os.networks             = " + env_vars['networks'] + "\n",
+                    "    override.vm.box = \"openstack\"\n"
+                    "  end\n")
+        self.append_it(setitup)
 
+    def _vbox_os_provider_env_vars(self, float_net, tenant_nets):
+        '''Function will accept a float_net string and a tenant_nets list of dicts.
+            The dicts are of the format {'name':'network_name', 'ip':True}.
+            The ip key will be true if vagrant.yaml has an ip for the host.
+            It will return a dict with the OpenStack username, password,
+            tenant_name, auth_url, network_url, image_url, floating_ip_pool and networks
+            to be used for developing the Vagrant file'''
+        self.env_vars['username'] = os.environ.get('OS_USERNAME')
+        self.env_vars['password'] = os.environ.get('OS_PASSWORD')
+        self.env_vars['openstack_auth_url'] = os.environ.get('OS_AUTH_URL')
+        self.env_vars['tenant_name'] = os.environ.get('OS_TENANT_NAME')
+        self.env_vars['floating_ip_pool'] = str(float_net)
+        networks = self._vbox_os_provider_parse_multiple_networks(tenant_nets)
+        self.env_vars['networks'] = networks
+        openstack_network_url = None
+        openstack_image_url = None
+        if (self.env_vars.get('openstack_auth_url')):
+            proto, baseurl, port = self.env_vars.get('openstack_auth_url').split(':')
+            openstack_network_url = proto + ':' + baseurl + ":9696/v2.0"
+            openstack_image_url = proto + ':' + baseurl + ":9292/v2/"
+            self.env_vars['openstack_network_url'] = openstack_network_url
+            self.env_vars['openstack_image_url'] = openstack_image_url
 
-def _required_vagrant_plugins(path):
-    path_to_utils = os.path.join(path, "utils")
-    path_to_vagrant_plugins = os.path.join(
-        path_to_utils, "vagrant_plugins.yaml")
-    returncode = yaml_utils.validate_syntax(path_to_vagrant_plugins)
-    if returncode == 0:
-        stream = file(path_to_vagrant_plugins, 'r')
-        vagrant_plugins = yaml.load(stream)
-        vagrant_plugin_string = ""
-        vagrant_plugin_string += " ".join(vagrant_plugins)
-        # Note: We can either 1) force install plugins every time 2) place
-        #       plugin requirements in vagrantfile for vagrant up to consume
-        #       or check for vagrant plugins in local env and then do 1 or 2.
+    def _vbox_os_provider_parse_multiple_networks(self, tenant_nets):
+        '''Function accepts a list of dicts with each dict containing
+           the tenant network name and a boolean to indicate if there is an ip in
+           the vagrant.yaml. It will return a string of networks to be used in
+           the construction of the Vagrantfile'''
+        stl_without_ip = "{name: '%s'},"
+        stl_with_ip = "{name: '%s', address: ho['ip']},"
+        vagrant_network = ''
+        for net in tenant_nets:
+            try:
+                if net['ip']:
+                    vagrant_network = vagrant_network + stl_with_ip % net['name']
+                else:
+                    vagrant_network = vagrant_network + stl_without_ip % net['name']
+            except KeyError:
+                vagrant_network = vagrant_network + stl_without_ip % net['name']
+        vagrant_network = '[' + vagrant_network.strip(",") + ']'
+        return vagrant_network
 
-        s = "required_plugins = %w( " + vagrant_plugin_string + ")"
-        # Note: in the vagrant file we need to do "something" in ruby with the
-        # plugins
-        s2 = "required_plugins.each do |plugin|"
-        s3 = ("  system \"vagrant plugin install #{plugin}\" "
-              "unless Vagrant.has_plugin? plugin")
-        s4 = "end"
-        all_strings = [s, s2, s3, s4]
-        return 0, all_strings
-    else:
-        Vagrantfile_utils_logger.error("vagrant_plugins.yaml did not have valid\
-                                        syntax.")
-
-        return 1, all_strings
-
-
-def _set_vagrant_user_and_group(user="vagrant", group="vagrant"):
-    s = "$data = {:user => '%s', :group => '%s'}" % (user, group)
-    return s
-
-
-def _set_current_service(path):
-    current_file = os.path.join(path, "current")
-    f = open(current_file, 'r')
-    # TODO: verify that current is set to something sane.
-    current_service = f.readline()
-    return current_service
-
-
-# Ruby Yaml merge - allow settings to be set here? prob not,
-# do in stack.py w/ configparser
-# default_settings in yaml file:
-# cache_packages: false
-# puppet_mode: apply
-# provision_on_boot: true
-#
-# $default_settings = YAML::load_file('.default_settings.yaml')
-# if File.exists?('settings.yaml')
-#   $user_settings = YAML::load_file('settings.yaml')
-#   $settings = $default_settings.merge($user_settings)
-# else
-#   $settings = $default_settings
-# end
-
-
-# Load environment config
-def _load_vagrantyaml(path):
-    # Note: This should be the vagrant.yaml in the working directory
-    vagrantyaml = os.path.join(path, "vagrant.yaml")
-    s = "$envyaml = YAML::load_file('{0}')".format(vagrantyaml)
-    return s
-# Ruby: "$envyaml['hosts'].each do |name, h|"
-# Ruby: File.open(".ccs_vagrant_hosts", "w") {|f|
-# f.write(host_entries.join("\n")) }
-
-
-def _vbox_provider_configure():
-
-    # Init. Config.
-    s = (
-        "Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|\n\n"
-        "  $envyaml['hosts'].each do |name, ho|\n"
-        "    config.vm.define name.split('.')[0] do |h|\n"
-        "      if ho['box']\n"
-        "        h.vm.box = ho['box']\n"
-        "      else\n"
-        "        h.vm.box = 'ccs-rhel-7'\n"
-        "        h.vm.box_url = "
-        "'http://cis-kickstart.cisco.com/ccs-rhel-7.box'\n"
-        "      end\n\n")
-
-    # Private Networking
-    net = ("      h.vm.network 'private_network', "
-           "ip: ho['ip'], mac: ho['mac']\n"
-           "      h.vm.host_name = '#{name}.cis.local'\n"
-           "      h.vm.synced_folder './services/ccs-data/out/ccs-dev-1"
-           "/dev/etc/ccs/data/', '/etc/ccs/data/environments/dev'\n"
-           "      h.vm.synced_folder './services/ccs-data/out/ccs-dev-1"
-           "/dev/etc/puppet/data/hiera_data', '/etc/puppet/data/hiera_data'\n"
-           "      h.vm.synced_folder './services/service-redhouse-svc', "
-           "'/opt/ccs/services/redhouse-svc'\n"
-           "      h.vm.synced_folder './services/service-redhouse-tenant', "
-           "'/opt/ccs/services/redhouse-tenant'\n\n"
-
-           "      if ho['ports']\n"
-           "        ho['ports'].each do |port|\n"
-           "          h.vm.network 'forwarded_port', guest: port['guest'], "
-           "host: port['host']\n"
-           "        end\n"
-           "      end\n"
-           )
-
-    # Virtualbox Hardware
-    hw = (
-        "      h.vm.provider :virtualbox do |vb|\n"
-        "        if ho['memory']\n"
-        "          vb.customize ['modifyvm', :id, '--memory', "
-        "ho['memory']]\n"
-        "        end\n"
-        "        vb.customize ['modifyvm', :id, '--usb', 'off']\n"
-        "        if ho['storage_disks']\n"
-        "          vb.customize ['storagectl', :id, '--name', "
-        "'SATA Controller', '--add', 'sata']\n"
-        "          disk_port_num = 2\n"
-        "          ho['storage_disks'].each do |sd|\n"
-        "            disk_port_num += 1\n"
-        "            file_to_disk = '#{name}-disk-#{sd}'\n"
-        "            unless File.exist?(file_to_disk)\n"
-        "              vb.customize ['createhd', '--filename', file_to_disk, "
-        "'--size', 102400]\n"
-        "            end\n"
-        "            vb.customize ['storageattach', :id, '--storagectl', "
-        "'SATA Controller', '--port', disk_port_num, '--device', 0, "
-        "'--type', 'hdd', '--medium', 'file_to_disk' + '.vdi']\n"
-        "         end\n"
-        "       end\n"
-        "     end\n")
-
-    # Provision
-    p = ("h.vm.provision :shell, inline: echo 'role=#{ho['role']} > "
-         "/etc/facter/facts.d/role.txt'\n"
-         "      if name = 'infra-001' or name = 'infra-002'\n"
-         "        config.vm.define 'infra-001' do |node|\n"
-         "          h.vm.provision :hostmanager\n"
-         "          h.vm.provision :file, source: './provision/ssh-config', "
-         "destination: '/home/vagrant/.ssh/config'\n"
-         "          h.vm.provision :file, source: './id_rsa', destination: "
-         "'/home/vagrant/.ssh/id_rsa'\n"
-         "          h.vm.provision :file, source: './hosts', destination: "
-         "'/etc/ansible/hosts'\n"
-         "          h.vm.synced_folder './services', '/opt/ccs/services'\n"
-         "          h.vm.provision 'shell', path: './provision/infra.sh'\n"
-         # There is no out ansible group_vars
-         # h.vm.synced_folder './services/ccs-data/out/ccs-dev-1/dev/etc/ \
-         # ansible/group_vars', '/etc/ansible/group_vars'
-         "        end\n"
-         "      else:\n"
-         "        h.vm.provision :shell, path: './provision/node.sh'\n"
-         "        h.vm.provision :shell, inline: 'ansible-playbook /opt/ccs/"
-         "services/redhouse-svc/dev/provision.yml -e"
-         " hostname=#{name}.cis.local'\n"
-         "      end\n"
-         "    end\n"
-         "  end\n\n"
-         "end"
-         )
-
-    return s + net + hw + p
+    def _vbox_os_provider_host_vars(self, path):
+        '''Func_vbox_os_provider_env_vars(stion will accept a path to the .stack
+           directory and the host being booted. It will navigate to the ccs-devel directory,
+           find the corresponding host.yaml file, parse it and return a dict with flavor,
+           and image used for the host'''
+        relpath_toyaml = 'services/ccs-data/sites/ccs-dev-1/environments/dev-tenant/hosts.d/'
+        if (os.path.exists(path)):
+            path = os.path.join(path, relpath_toyaml)
+            if (os.path.exists(path)):
+                path = os.path.join(path, self.hostname.lower() + '.yaml')
+                if os.path.exists(path):
+                    try:
+                        with open(path) as host_yaml:
+                            host_data = yaml.load(host_yaml)
+                            self.host_vars['image'] = host_data['deploy_args']['image']
+                            self.host_vars['flavor'] = host_data['deploy_args']['flavor']
+                    except:
+                        Vagrantfile_utils_logger.error('Could not set host flavor or img from\
+                                                        ccs-data')
+                        self.host_vars['image'] = self.default_image
+                        self.host_vars['flavor'] = self.default_flavor
+        if self.host_vars.get('image') is None:
+            self.host_vars['image'] = self.default_image
+        if self.host_vars.get('flavor') is None:
+            self.host_vars['flavor'] = self.default_flavor

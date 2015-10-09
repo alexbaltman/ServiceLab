@@ -4,12 +4,31 @@ Stack Documentation
 .. toctree::
    :maxdepth: 2
 
-   introduction
-   why
-   quickstart
+   installation
+   overview
+   examples
    commands
-   utils
-   api
+   encryption
+
+Stack Packages
+--------------
+.. toctree::
+   :maxdepth: 2
+
+   servicelab
+   servicelab.utils.rst
+   servicelab.commands.rst
+
+
+CCS-Data Documentation
+----------------------
+.. toctree::
+   :maxdepth: 2
+
+   introduction
+   ccsdata
+   schema
+   templating
 
 Additional Information
 ----------------------
@@ -18,4 +37,3 @@ Additional Information
    :maxdepth: 2
 
    faq
-   changelog

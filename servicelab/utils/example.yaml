@@ -1,0 +1,428 @@
+---
+# general
+zzzzzzzz: 'this will check the order'
+admin_password: 'openstack_admin_password'
+build_node_name: infra-001
+bind_address: "%%{}{ipaddress_eth1}"
+controller_names: []
+controller_public_protocol: http
+controller_public_url: http://dev-aio.cis.local:5000
+# MAKE HOSTNAME
+controller_public_address: 192.168.100.20
+controller_internal_url: http://dev-aio.cis.local:35357
+controller_internal_address: 192.168.100.20
+# Replace the below hierra lookup for an IP address if MySQL is placed under a separate VIP on the HA-proxy
+mysql_vip: "%%{}{hiera('controller_internal_address')}"
+controller_admin_url: http://dev-aio.cis.local:35357
+# MAKE HOSTNAME
+controller_admin_address: 192.168.100.20
+data_package: dev
+domain_name: cis.local
+enable_ssl: false
+env_type: service_cloud
+external_interface: eth3
+internal_ip: "%%{}{ipaddress_eth1}"
+public_interface: eth1
+private_interface: eth2
+region: dev-csi-a
+site_name: dev
+site_repo: ccs-dev-1
+site_fqdn: 'dev.cis.local'
+
+site_addtional_hosts:
+  - ip: "%{hiera('controller_internal_address')}"
+    host: "%{hiera('controller_public_address')}"
+  - ip: "%{hiera('swift_public_vip')}"
+    host: "%{hiera('swift_public_address')}"
+
+ntp_servers: &ntp_servers
+  - '1.ntp.esl.cisco.com'
+  - '2.ntp.esl.cisco.com'
+rabbit_hostnames: &rabbit_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+keystone_hostnames: &keystone_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+keystone_ips: &keystone_ips
+  - 192.168.100.21
+  - 192.168.100.22
+  - 192.168.100.23
+glance_hostnames: &glance_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+glance_ips: &glance_ips
+  - 192.168.100.21
+  - 192.168.100.22
+  - 192.168.100.23
+nova_hostnames: &nova_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+nova_ips: &nova_ips
+  - 192.168.100.21
+  - 192.168.100.22
+  - 192.168.100.23
+neutron_hostnames: &neutron_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+neutron_ips: &neutron_ips
+  - 192.168.100.21
+  - 192.168.100.22
+  - 192.168.100.23
+cinder_hostnames: &cinder_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+cinder_ips: &cinder_ips
+  - 192.168.100.21
+  - 192.168.100.22
+  - 192.168.100.23
+ceilometer_hostnames: &ceilometer_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+ceilometer_ips: &ceilometer_ips
+  - 192.168.100.21
+  - 192.168.100.22
+  - 192.168.100.23
+heat_hostnames: &heat_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+heat_ips: &heat_ips
+  - 192.168.100.21
+  - 192.168.100.22
+  - 192.168.100.23
+horizon_hostnames: &horizon_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+horizon_ips: &horizon_ips
+  - 192.168.100.21
+  - 192.168.100.22
+  - 192.168.100.23
+galera_hostnames: &galera_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+galera_ips: &galera_ips
+  - 192.168.100.21
+  - 192.168.100.22
+  - 192.168.100.23
+rados_hostnames: &rados_hostnames
+  - ceph-001
+  - ceph-002
+  - ceph-003
+rados_ips: &rados_ips
+  - 192.168.100.71
+  - 192.168.100.72
+  - 192.168.100.73
+proxyinternal_hostnames: &proxyinternal_hostnames
+  - aio-001
+  - aio-002
+  - aio-003
+
+# swift
+swift_storage_interface: eth1
+swift_local_net_ip: "%%{}{ipaddress_eth1}"
+swift_storage_netmask: 255.255.255.0
+swift_internal_address: 192.168.100.20
+swift_admin_address: 192.168.100.20
+swift_public_address: "dev.cis.local"
+swift_public_vip: 192.168.200.20
+swift::keystone::auth::password: 'swift_password'
+
+# db passwords
+mysql::server::root_password: 'database_root_password'
+keystone::db::mysql::password: 'keystone_db_password'
+nova::db::mysql::password: 'nova_db_password'
+glance::db::mysql::password: 'glance_db_password'
+neutron::db::mysql::password: 'network_db_password'
+cinder::db::mysql::password: 'cinder_db_password'
+ceilometer::db::mysql::password: 'ceilometer_db_password'
+heat::db::mysql::password: 'heat_db_password'
+
+# service passwords
+glance_service_password: 'glance_service_password'
+cinder_service_password: 'cinder_service_password'
+network_service_password: 'neutron_service_password'
+nova_service_password: 'nova_service_password'
+swift_service_password: 'swift_service_password'
+ceilometer_service_password: 'ceilometer_pass'
+heat_service_password: 'heat_pass'
+
+# ntp settings
+ntp::servers: *ntp_servers
+chrony::servers: *ntp_servers
+
+# rabbit servers
+rabbitmq::server::cluster_nodes: *rabbit_hostnames
+keystone::rabbit_hosts: *rabbit_hostnames
+glance::notify::rabbitmq::rabbit_hosts: *rabbit_hostnames
+nova::rabbit_hosts: *rabbit_hostnames
+neutron::rabbit_hosts: *rabbit_hostnames
+cinder::rabbit_hosts: *rabbit_hostnames
+ceilometer::rabbit_hosts: *rabbit_hostnames
+heat::rabbit_hosts: *rabbit_hostnames
+# Compatibility with data_mapper
+rabbit_hosts: *rabbit_hostnames
+
+# rabbitmq
+rpc_user: openstack_rabbit_user
+rpc_password: openstack_rabbit_password
+
+# ceilometer
+ceilometer::metering_secret: ceilometer_metering_secret
+
+# cobbler
+cobbler::ip: &cobbler_server '192.168.100.30'
+cobbler::node_subnet: '192.168.100.0'
+cobbler::node_netmask: '255.255.255.0'
+cobbler::node_gateway: '192.168.100.2'
+cobbler::node_proxymask: '255.255.255.0'
+cobbler::domain_name: 'cis.local'
+cobbler::name_servers_search: 'cis.local'
+cobbler::node_dns: '64.102.6.247'
+# $nic,$dhcp_start,$dhcp_end, $gateway
+cobbler::dnsmasq_interfaces:
+  - name: eth0
+    start_range: 192.168.100.10
+    end_range: 192.168.100.253
+    gateway: 192.168.100.1
+    netmask: 255.255.255.0
+    server: *cobbler_server
+
+# galera
+galera::server::wsrep_sst_username: wsrep_user
+galera::server::wsrep_sst_password: wsrep_password
+galera::galera_master: 'aio-001.cis.local'
+galera::galera_servers: *galera_ips
+
+# horizon
+horizon::secret_key: horizon_secret_key
+
+# neutron
+neutron::agents::metadata::shared_secret: metadata_shared_secret
+neutron::agents::ml2::ovs::bridge_uplinks:
+  - "br-ex:eth2"
+neutron::plugins::ml2::network_vlan_ranges:
+  - "physnet1:100:200"
+
+# nova
+nova::memcached_servers:
+  - aio-001:11211
+  - aio-002:11211
+  - aio-003:11211
+nova::config::nova_config:
+  'DEFAULT/force_config_drive':
+    value: 'true'
+  'DEFAULT/flat_injected':
+    value: 'true'
+  'DEFAULT/dhcp_domain':
+    value: 'dev.cis.local'
+
+# keystone
+keystone::admin_token: keystone_admin_token
+keystone::wsgi::apache::bind_host: "%%{}{ipaddress_eth1}"
+keystone::config::keystone_config:
+  'ldap/builtin_users':
+    value: 'admin,nova,glance,neutron,cinder,heat,demo,swift,ceilometer,heat-cfn'
+keystone::memcache_servers:
+  - aio-001:11211
+  - aio-002:11211
+  - aio-003:11211
+
+# cinder
+ceph_cinder_user: 'aio-cinder-user'
+cinder_rbd_pool: 'aio-cinder-volume-1'
+cinder_secret: 'AQA+mvxTEBBrFRAA+cnEq3QiqZoFO5F4nnG9lA=='
+cinder_rbd_secret_uuid: e80afa94-a64c-486c-9e34-d55e85f26406
+
+# ceph
+ceph_primary_mon: 'ceph-001'
+ceph_monitor_fsid: 'fa2e0156-7251-4e33-99cf-097b76bcdc92'
+ceph_monitor_secret: 'AQAJzNxR+PNRIRAA7yUp9hJJdWZ3PVz242Xjiw=='
+ceph_public_network: '192.168.100.0/24'
+ceph_cluster_network: '192.168.100.0/24'
+ceph_mon_initial_members: 'ceph-001,ceph-002,ceph-003'
+ceph_monitor_address: '192.168.100.71,192.168.100.72,192.168.100.73'
+
+# glance
+ceph_glance_user: 'dev-aio-glance-user'
+glance_ceph_pool: 'dev-aio-glance-image-1'
+glance_secret: 'AQA+mvxT2FhhHRAAH+GvgwBBuKSaU34KKyehpw=='
+
+# ccs
+ccs::neutron::dnsmasq_conf::nameservers:
+  - 171.70.168.183
+  - 173.36.131.10
+  - 173.37.87.157
+
+# loadbalancer
+ccs::proxy_internal::haproxy_instances:
+  keystone_admin:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 35357
+    ssl: false
+    server_names: *keystone_hostnames
+    server_ips: *keystone_ips
+  keystone_public:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 5000
+    ssl: false
+    server_names: *keystone_hostnames
+    server_ips: *keystone_ips
+  glance_api:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 9292
+    ssl: false
+    frontend_options:
+      option:
+        - tcpka
+        - httpchk
+        - tcplog
+      balance: source
+    server_names: *glance_hostnames
+    server_ips: *glance_ips
+  glance_registry:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 9191
+    ssl: false
+    server_names: *glance_hostnames
+    server_ips: *glance_ips
+  cinder_api:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 8776
+    ssl: false
+    frontend_options:
+      option:
+        - tcpka
+        - httpchk
+        - tcplog
+      balance: source
+    server_names: *cinder_hostnames
+    server_ips: *cinder_ips
+  neutron_server:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 9696
+    ssl: false
+    frontend_options:
+      option:
+        - tcpka
+        - httpchk
+        - tcplog
+      balance: source
+    server_names: *neutron_hostnames
+    server_ips: *neutron_ips
+  nova_metadata:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 8775
+    ssl: false
+    server_names: *nova_hostnames
+    server_ips: *nova_ips
+  nova_osapi:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 8774
+    ssl: false
+    frontend_options:
+      option:
+        - tcpka
+        - httpchk
+        - tcplog
+      balance: source
+    server_names: *nova_hostnames
+    server_ips: *nova_ips
+  novnc:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 6080
+    ssl: false
+    server_names: *nova_hostnames
+    server_ips: *nova_ips
+  ceilometer:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 8777
+    ssl: false
+    has_backup: true
+    frontend_options:
+      option:
+        - tcpka
+        - httpchk
+        - tcplog
+      balance: source
+    server_names: *ceilometer_hostnames
+    server_ips: *ceilometer_ips
+  dashboard:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 80
+    ssl: false
+    server_names: *horizon_hostnames
+    server_ips: *horizon_ips
+  heat_api:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 8004
+    ssl: false
+    frontend_options:
+      option:
+        - tcpka
+        - httpchk
+        - tcplog
+      balance: source
+    server_names: *heat_hostnames
+    server_ips: *heat_ips
+  heat_cfn:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 8000
+    ssl: false
+    frontend_options:
+      option:
+        - tcpka
+        - httpchk
+        - tcplog
+      balance: source
+    server_names: *heat_hostnames
+    server_ips: *heat_ips
+  heat_cloudwatch:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 8003
+    ssl: false
+    frontend_options:
+      option:
+        - tcpka
+        - httpchk
+        - tcplog
+      balance: source
+    server_names: *heat_hostnames
+    server_ips: *heat_ips
+  galera:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 3306
+    ssl: false
+    has_backup: true
+    frontend_options:
+      option:
+        - httpchk
+      mode: tcp
+      balance: source
+    backend_options: 'check port 9200 inter 2000 rise 2 fall 3'
+    server_names: *galera_hostnames
+    server_ips: *galera_ips
+  swift:
+    vip: "%%{}{hiera('controller_internal_address')}"
+    port: 8080
+    ssl: false
+    backend_port: 80
+    server_names: *rados_hostnames
+    server_ips: *rados_ips
+
+ccs::proxy_internal::keepalived_instances:
+  controller:
+    id: 50
+    vip: "%%{}{hiera('controller_internal_address')}"
+    members: *proxyinternal_hostnames
+    interface: eth1
+    base_priority: 100

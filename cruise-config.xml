@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="75">
+  <server artifactsdir="artifacts" commandRepositoryLocation="default" serverId="9fa0bbc4-e700-4150-8d2e-aeb976423a65">
+    <security>
+      <passwordFile path="/tmp/passwd" />
+    </security>
+  </server>
+  <repositories>
+    <repository id="92e58f21-59de-4378-90cd-0e1ab46328c0" name="ora">
+      <pluginConfiguration id="yum" version="2" />
+      <configuration>
+        <property>
+          <key>REPO_URL</key>
+          <value>http://public-yum.oracle.com/repo/OracleLinux/OL6/latest/x86_64</value>
+        </property>
+      </configuration>
+    </repository>
+  </repositories>
+  <pipelines group="defaultGroup">
+    <pipeline name="servicelab-test-only-pipeline" isLocked="false">
+      <materials>
+        <git url="https://github.com/Silverpop/sample-helloworld-ant.git" />
+      </materials>
+      <stage name="defaultStage">
+        <jobs>
+          <job name="defaultJob">
+            <tasks>
+              <ant buildfile="build.xml" target="main">
+                <runif status="passed" />
+              </ant>
+            </tasks>
+            <artifacts>
+              <artifact src="test" dest="reports" />
+            </artifacts>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+  </pipelines>
+  <agents>
+    <agent hostname="localhost.localdomain" ipaddress="10.0.2.15" uuid="445c8658-1fc8-4d4d-8883-80764ce7def2" />
+  </agents>
+</cruise>

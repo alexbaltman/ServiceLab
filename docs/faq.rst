@@ -1,5 +1,5 @@
-Frequently Asked Questions
-==========================
+FAQ
+===
 
 This page answers some of the often asked questions about Stack.
 
@@ -13,7 +13,11 @@ and pop, which removes the last element that was added.
 
 Why is my create repo not working?
 ----------------------------------
-Because user error.
+Are your ssh keys configured to work with Gerrit?
+
+Did you give the repo a name?
+
+Check if the repo already exists.
 
 Why is there no Python 2.3/2.4/2.5/3.1/3.2 support?
 ---------------------------------------------------
@@ -21,9 +25,4 @@ Because Python 2.7 is what we use.
 
 How do I request a bug fix?
 ---------------------------
-Please email ___@cisco.com
-
-Why doesn't this thing work?
-----------------------------
-Please try doing this.
-
+Please email slab@cisco.com

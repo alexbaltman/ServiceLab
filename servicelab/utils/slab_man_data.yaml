@@ -1,0 +1,24 @@
+---
+# Child pages of https://confluence.sco.cisco.com/display/
+# These are grabbed from SDLC's internal wiki pages
+confluence_pages:
+  CCS/Puppet+introduction+and+primitives: ['puppet']
+  CCS/Ansible+site+variable+framework: ['ansible']
+  CCS/Ansible+playbook+runtime+commands: ['ansible']
+  CCS/Ansible+introduction+and+primitives: ['ansible']
+  CCS/Heighliner+Workflow: ['nimbus', 'heighliner']
+  CCS/SDLC+Setup+Process: []
+  CCS/SDLC+Gerrit+Branching+and+Workflow: ['git', 'feature']
+  CCS/SDLC+Gerrit+Release+Tagging: ['tag']
+# Documents created by SLAB members, located in the docs 
+# folder. THE HEADINGS OF THESE MUST MATCH THEIR TITLES.
+slab_docs:
+  installation: ['quickstart', 'virtualenv']
+  overview: ['folder', 'directory']
+  examples: ['examples', 'workflow']
+  commands: ['command']
+  encryption: ['encryption', 'SSL']
+  introduction: ['SDLC', 'chain', 'overview']
+  ccsdata: ['site', 'environment', 'BOM', 'hierarchy', 'fact', 'data', 'schema']
+  templating: ['lightfuse', 'BOM']
+  faq: ['stack', 'question']

@@ -1,4 +1,0 @@
----
-cache_packages: false
-puppet_mode: apply
-provision_on_boot: true
