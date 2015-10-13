@@ -27,16 +27,23 @@ class TestStatusUtils(unittest.TestCase):
     REPO_INCOMING_CHANGE = "To Pull"
     REPO_OUTGOING_CHANGE = "To Review"
     VM_STATUS = "Showing VM status of services"
-    SHA_COMMIT = "2e957178ab4176b5d55c1edfbda3ae20503d1eae"
 
     def setUp(self):
         """ Setup variables required to test the os_provider functions
         """
         self.ctx = Context()
-        cmd = "git config --global user.email \"ragkatti@cisco.com\"; "\
-              "git config --global user.name \"Raghu Katti\";stack "\
-              "workon service-sdlc-pulp"
-        retcode, _ = service_utils.run_this(cmd)
+
+        set_git_cmd = "git config --global user.email"\
+                      " \"ragkatti@cisco.com\"; "\
+            "git config --global user.name \"Raghu Katti\";"
+        check_git_cmd = "git config user.email"
+        retcode, check_val = service_utils.run_this(check_git_cmd)
+
+        if "@cisco.com" not in check_val:
+            retcode, _ = service_utils.run_this(set_git_cmd)
+
+        workon_cmd = "stack workon service-sdlc-pulp"
+        retcode, _ = service_utils.run_this(workon_cmd)
         self.assertEqual(0, retcode,
                          "Unable to run stack workon service-sdlc-pulp")
 
@@ -77,8 +84,8 @@ class TestStatusUtils(unittest.TestCase):
         """
         service_path = os.path.join(self.ctx.path,
                                     TestStatusUtils.SERVICE_PATH)
-        reset_command = 'cd {}; git reset {}'.\
-            format(service_path, TestStatusUtils.SHA_COMMIT)
+        reset_command = "cd {}; git reset `git log --format=\"%H\" -n 3 "\
+                        " | tail -n 1`".format(service_path)
         retcode, _ = service_utils.run_this(reset_command)
         self.assertEqual(0, retcode,
                          "Unable to run reset command")
