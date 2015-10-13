@@ -1,9 +1,10 @@
 """
     TestClass to test various go cd functions.
 """
+import time
+
 import unittest
 import requests
-
 from click.testing import CliRunner
 
 
@@ -86,6 +87,7 @@ class TestGoCdUtils(unittest.TestCase):
                                 TestGoCdUtils.GOCD_PASS,
                                 '-ip',
                                 TestGoCdUtils.GOCD_SERVER])
+        time.sleep(2)
         result = runner.invoke(cmd_pipe.cli,
                                ['status',
                                 TestGoCdUtils.PIPELINE_NAME,
@@ -130,6 +132,7 @@ class TestGoCdUtils(unittest.TestCase):
         """ Tests log command.
         """
         runner = CliRunner()
+        time.sleep(25)
         result = runner.invoke(cmd_pipe.cli,
                                ['log',
                                 TestGoCdUtils.PIPELINE_NAME,
@@ -139,6 +142,7 @@ class TestGoCdUtils(unittest.TestCase):
                                 TestGoCdUtils.GOCD_PASS,
                                 '-ip',
                                 TestGoCdUtils.GOCD_SERVER])
+        time.sleep(25)
         self.assertTrue(TestGoCdUtils.ENDING_LOG in result.output.strip())
 
     def test_cmd_show(self):
