@@ -94,7 +94,10 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
         click.echo("%s is an invalid env. Please select one from "
                    "stack list envs" % env_name)
         return 1
-    groups = ['virtual', str(group)]
+    if not group:
+        groups = ['virtual']
+    else:
+        groups = ['virtual', str(group)]
     if sec_groups:
         sec_groups = 'default,' + sec_groups
     else:

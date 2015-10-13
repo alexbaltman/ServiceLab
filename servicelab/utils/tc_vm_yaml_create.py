@@ -1,12 +1,14 @@
 import os
 import re
-import sys
 import yaml
 import socket
-import pprint
-import argparse
+import logging
 import ipaddress
-import yaml_utils
+
+
+# Logger creation
+tcvm_logger = logging.getLogger('click_application')
+logging.basicConfig()
 
 
 def open_yaml(filename):
@@ -23,9 +25,9 @@ def open_yaml(filename):
     """
     try:
         with open(filename, 'r') as stream:
-            return(yaml.load(stream))
+            return yaml.load(stream)
     except IOError:
-        print 'Unable to open %s' % filename
+        tcvm_logger.error('Unable to open %s' % filename)
         return 1
 
 
@@ -47,14 +49,13 @@ def write_file(yaml_data, output_file):
         write_file(yaml_data, output_file)
     """
     if os.path.isfile(output_file):
-        print '%s already exists.  Aborting host create.' % output_file
+        tcvm_logger.error('%s already exists.  Aborting host create.' % output_file)
         return 1
     # default_flow_style=False breaks lists into individual lines with leading '-'
     with open(output_file, 'w') as outfile:
         outfile.write(yaml.dump(yaml_data, default_flow_style=False))
-    print output_file
-    print "File created successfully"
-    # print yaml.dump(yaml_data, default_flow_style=False)
+    tcvm_logger.info(output_file)
+    tcvm_logger.info('File created successfully')
 
 
 def find_vlan(source_data):
@@ -83,8 +84,8 @@ def find_vlan(source_data):
                 if source_data['ip'] == str(subnet_ip):
                     return key
 
-    print "Unable to find the vlan for %s within %s" \
-          % (source_data['ip'], source_data['tc_name'])
+    tcvm_logger.error('Unable to find the vlan for %s within %s'
+                      % (source_data['ip'], source_data['tc_name']))
     return 1
 
 
@@ -119,12 +120,11 @@ def find_ip(env_path, vlan):
                 for interface in host_data['interfaces']:
                     # Not all interfaces have an ip_address
                     if 'ip_address' in host_data['interfaces'][interface]:
-                        addy = unicode(host_data['interfaces']['eth0']['ip_address'])
+                        addy = unicode(host_data['interfaces'][interface]['ip_address'])
                         # Turn IP into ipaddress module object for list search
                         ipaddy = ipaddress.IPv4Address(addy)
                         if ipaddy in all_ips:
                             all_ips.remove(ipaddy)
-    remove_ips = list()
     for ip in all_ips:
         try:
             # Host lookup
@@ -164,7 +164,7 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
                                     sec_groups='default,something,somethingelse,maybe')
     """
     if sc_name == tc_name:
-        print 'Please select a tenant cloud within %s' % sc_name
+        tcvm_logger.error('Please select a tenant cloud within %s' % sc_name)
         return 1
     source_data = {'repo_path': repo_path,
                    'hostname': str(hostname),
@@ -184,19 +184,29 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
     source_data['az'] = source_data['sc_region'] + determine_az(hostname)
     source_data['vlan_id'] = str(source_data['vlan_prefix']) + source_data['vlan_id']
     if vlan_id not in source_data:
-        print('Vlan%s was not found within %s.  Please try a different vlan'
-              % (vlan_id, source_data['tc_name']))
+        tcvm_logger.error(('Vlan%s was not found within %s.  Please try a different vlan'
+                          % (vlan_id, source_data['tc_name'])))
         return 1
     if not ip_address:
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
         source_data['ip'] = find_ip(source_data['env_path'], vlan)
+        if not source_data['ip']:
+            if str(vlan_id + '-sup') in source_data:
+                vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id + '-sup')]))
+                source_data['ip'] = find_ip(source_data['env_path'], vlan)
+                source_data['sup'] = True
     else:
         source_data['ip'] = ip_address
         vlan_id = find_vlan(source_data)
         if vlan_id == 1:
             return 1
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
+    if not source_data['ip']:
+        tcvm_logger.error('Vlan%s does not have any IP addresses available' % vlan_id)
+        return 1
     yaml_data = build_yaml_data(source_data, vlan)
+    if 'sup' in source_data:
+        yaml_data['deploy_args']['subnet_name'] += '2'
     output_file = os.path.join(source_data['tc_path'], 'hosts.d',
                                str(source_data['hostname'] + '.yaml'))
     write_file(yaml_data, output_file)
@@ -241,24 +251,17 @@ def build_yaml_data(source_data, vlan):
         my_vlan = ipaddress.IPv4Network(unicode(10.11.12.0/24))
         host_data = build_yaml_data(source_data, my_vlan)
     """
-    # Create the core settings for all the VM types
     fqdn = str(source_data['hostname'] + '.' + source_data['tc_name'] + '.' +
                source_data['domain'])
     yaml_data = {
         'deploy_args': {
-            # 'allowed_address_pairs': [],
-            # 'auth_url': 'http://%s:5000/v2.0/' % str(source_data['cont_int_vip']),
             'availability_zone': source_data['az'],
             'flavor': source_data['flavor'],
             'image': 'RHEL-7',
-            # 'key_name': 'tenant_deploy_key',
             'network_name': 'Nimbus-Management-iv%s' % source_data['vlan_id'],
-            # 'password': source_data['admin_password'],
-            # 'region': source_data['sc_region'],
             'security_groups': source_data['sec_groups'],
             'subnet_name': 'Nimbus-Management-iv%s-subnet' % source_data['vlan_id'],
             'tenant': source_data['tc_name'],
-            # 'username': 'admin',
         },
         'groups': source_data['groups'],
         'hostname': fqdn,
@@ -270,7 +273,6 @@ def build_yaml_data(source_data, vlan):
             },
         },
         'role': source_data['role'],
-        # 'server': source_data['server'],
         'type': 'virtual',
     }
     return yaml_data
@@ -310,18 +312,15 @@ def extract_env_data(source_data):
         source_data['domain'] = env_data['domain_name']
     if 'region' in env_data:
         source_data['sc_region'] = env_data['region']
-    # if 'cobbler::ip' in env_data:
-        # source_data['server'] = env_data['cobbler::ip']
-    # if 'controller_internal_vip' in env_data:
-        # source_data['cont_int_vip'] = env_data['controller_internal_vip']
-    # else:
-        # print 'Unable to find controller_internal_vip in %s' % source_data['sc_name']
-        # return 1
-    # if 'admin_password' in env_data:
-        # source_data['admin_password'] = env_data['admin_password']
-    # else:
-        # print 'Unable to find admin_password in %s' % source_data['sc_name']
-        # return 1
+    if 'site_name' in env_data:
+        regex = re.escape(env_data['site_name']) + '\.([\w.]+)'
+        match = re.search(regex, source_data['domain'])
+        if match:
+            source_data['domain'] = match.group(1)
+    if 'domain' in source_data:
+        pass
+    else:
+        return 1
 
     # Open the tenant cloud environment.yaml
     env_file = os.path.join(source_data['tc_path'], 'data.d', 'environment.yaml')
@@ -331,12 +330,15 @@ def extract_env_data(source_data):
     if 'tc_region' in env_data:
         source_data['tc_region'] = env_data['tc_region']
     else:
-        print 'Unable to find ServiceLab data in %s' % env_file
+        tcvm_logger.error('Unable to find ServiceLab data in %s' % env_file)
         return 1
     for vlan_key in env_data:
-        match = re.search('^vlan(\d{0,2})(6[67])$', vlan_key)
+        match = re.search('^vlan(\d{0,2})(6[367])(-sup)?$', vlan_key)
         if match:
-            source_data[match.group(2)] = env_data[vlan_key]
+            if match.group(3):
+                source_data[match.group(2) + match.group(3)] = env_data[vlan_key]
+            else:
+                source_data[match.group(2)] = env_data[vlan_key]
             source_data['vlan_prefix'] = match.group(1)
 
     return source_data
