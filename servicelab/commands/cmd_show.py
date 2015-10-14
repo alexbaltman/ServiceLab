@@ -34,7 +34,7 @@ def show_repo(ctx, repo):
     """
     Shows the details of git repos using Gerrit's API.
     """
-    username = helper_utils.get_username(ctx.path)
+    username = ctx.get_username()
     gfx = gerrit_functions.GerritFns(username, repo, ctx)
     gfx.print_gerrit("summary")
 
@@ -46,7 +46,7 @@ def show_review(ctx, review):
     """
     Shows the details ofa review using Gerrit's API.
     """
-    username = helper_utils.get_username(ctx.path)
+    username = ctx.get_username()
     project = helper_utils.get_current_service(ctx.path)[1]
     gfx = gerrit_functions.GerritFns(username, project, ctx)
     gfx.print_gerrit("detail", review)
@@ -59,7 +59,7 @@ def show_build(ctx, build_number):
     """
     Shows the details of a build in Jekins.
     """
-    username = helper_utils.get_username(ctx.path)
+    username = ctx.get_username()
     servername = context_utils.get_jenkins_url()
     password = click.prompt("password", hide_input=True, type=str)
     click.echo(jenkins_utils.get_build_status(build_number, username,
@@ -72,7 +72,7 @@ def show_build(ctx, build_number):
               in artifactory.')
 @click.argument('url')
 @click.option('-u',
-              '--user',
+              '--username',
               help='Provide artifactory server username',
               default=None,
               required=False)
@@ -81,23 +81,27 @@ def show_build(ctx, build_number):
               default=None,
               help='Provide artifactory server password',
               required=False)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def show_artifact(ctx, user, password, url):
+def show_artifact(ctx, username, password, url, interactive):
     """
     Show the details of an artifact using Artifactory's API.
     """
-    if not user:
-        user = helper_utils.get_username(ctx.path)
+    if not username:
+        username = ctx.get_username()
     if not password:
-        password = click.prompt("password", hide_input=True, type=str)
+        password = ctx.get_password(interactive)
     click.echo('Showing details of artifact %s' % url)
-    click.echo(artifact_utils.get_artifact_info(url, user, password))
+    click.echo(artifact_utils.get_artifact_info(url, username, password))
 
 
 @cli.command('pipe', short_help='Show the details of a GO deploy pipeline')
 @click.argument('pipeline_name', required=True)
 @click.option('-u',
-              '--user',
+              '--username',
               default=None,
               help='Provide artifactory server username',
               required=False)
@@ -111,17 +115,21 @@ def show_artifact(ctx, user, password, url):
               default=None,
               help='Provide the go server ip address and port number '
                    'in format <ip_address:portnumber>.')
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def show_pipe(ctx, pipeline_name, user, password, ip_address):
+def show_pipe(ctx, pipeline_name, username, password, ip_address, interactive):
     """
     Show the details of a deployment pipline using GO's API.
     """
-    if user is None:
-        user = helper_utils.get_username(ctx.path)
-    if password is None:
-        password = click.prompt("password", hide_input=True, type=str)
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
     if ip_address is None:
         ip_address = context_utils.get_gocd_ip()
     click.echo('Showing details of pipeline %s' % pipeline_name)
-    click.echo(gocd_utils.get_pipe_info(pipeline_name, user,
+    click.echo(gocd_utils.get_pipe_info(pipeline_name, username,
                                         password, ip_address))

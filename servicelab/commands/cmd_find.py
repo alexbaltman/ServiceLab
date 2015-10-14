@@ -19,7 +19,6 @@ from requests.auth import HTTPBasicAuth
 from servicelab.stack import pass_context
 from servicelab.utils import jenkins_utils
 from servicelab.utils import gerrit_functions
-from servicelab.utils import helper_utils
 
 
 @click.group('find', short_help='Helps you search \
@@ -40,7 +39,7 @@ def find_repo(ctx, search_term):
     """
     Searches through Gerrit's API for a repo using your search term.
     """
-    username = helper_utils.get_username(ctx.path)
+    username = ctx.get_username()
     gfn = gerrit_functions.GerritFns(username, "", ctx)
     repo_list = gfn.repo_list()
     for elem in repo_list:
@@ -61,9 +60,8 @@ def validate_artifact_ip_cb(ctx, param, value):
 @cli.command('artifact', short_help='Find an artifact in artifactory')
 @click.argument('search_term')
 @click.option('-u',
-              '--user',
-              help='Provide artifactory username',
-              required=True)
+              '--username',
+              help='Provide artifactory username')
 @click.option('-p',
               '--password',
               help='Provide artifactory password',
@@ -75,16 +73,18 @@ def validate_artifact_ip_cb(ctx, param, value):
               default=None,
               callback=validate_artifact_ip_cb)
 @pass_context
-def find_artifact(ctx, search_term, ip_address, user, password):
+def find_artifact(ctx, search_term, ip_address, username, password):
     """
     Searches through Artifactory's API for artifacts using your search term.
     """
+    if not username:
+        username = ctx.get_username()
     if ip_address is None:
         ip_address = ctx.get_artifactory_info()
     click.echo('Searching for %s artifact in Artifactory' % search_term)
     find_url = ip_address + "/api/search/artifact?name=" + search_term
     requests.packages.urllib3.disable_warnings()
-    res = requests.get(find_url, auth=HTTPBasicAuth(user, password))
+    res = requests.get(find_url, auth=HTTPBasicAuth(username, password))
     for val in json.loads(res.content)["results"]:
         click.echo(val["uri"])
 
@@ -107,9 +107,8 @@ def validate_pipe_ip_cb(ctx, param, value):
               is_flag=True,
               required=False)
 @click.option('-u',
-              '--user',
-              help='Provide go server username',
-              required=True)
+              '--username',
+              help='Provide go server username')
 @click.option('-p',
               '--password',
               help='Provide go server password',
@@ -121,7 +120,7 @@ def validate_pipe_ip_cb(ctx, param, value):
                    'in format <ip_address:portnumber>.',
               callback=validate_pipe_ip_cb)
 @pass_context
-def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
+def find_pipe(ctx, search_term, localrepo, username, password, ip_address):
     """
     Searches through GO's API for pipelines using your search term.
     """
@@ -131,7 +130,7 @@ def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
         strings from the go server
         """
         server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
-        res = requests.get(server_url, auth=HTTPBasicAuth(user, password))
+        res = requests.get(server_url, auth=HTTPBasicAuth(username, password))
         soup = BeautifulSoup(res.content)
         pipelines = soup.findAll('pipeline')
         return pipelines
@@ -157,6 +156,8 @@ def find_pipe(ctx, search_term, localrepo, user, password, ip_address):
                 return split_string[len(split_string) - 2]
         return None
 
+    if not username:
+        username = ctx.get_username()
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
         servicesdirs = os.listdir(os.path.join(ctx.path, "services"))
@@ -181,9 +182,8 @@ def validate_build_ip_cb(ctx, param, value):
 @cli.command('build', short_help='Find a build')
 @click.argument('search_term')
 @click.option('-u',
-              '--user',
-              help='Provide jenkins username',
-              required=True)
+              '--username',
+              help='Provide jenkins username')
 @click.option('-p',
               '--password',
               help='Provide jenkins server password',
@@ -195,11 +195,14 @@ def validate_build_ip_cb(ctx, param, value):
               default=None,
               callback=validate_build_ip_cb)
 @pass_context
-def find_build(_, search_term, user, password, ip_address):
+def find_build(ctx, search_term, username, password, ip_address):
     """
     Searches through the build search term.
     """
-    server = jenkins_utils.get_server_instance(ip_address, user, password)
+    if not username:
+        username = ctx.get_username()
+
+    server = jenkins_utils.get_server_instance(ip_address, username, password)
     for key in server.keys():
         match_obj = re.search(search_term, key, re.M | re.I)
         if match_obj:

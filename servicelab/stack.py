@@ -5,8 +5,9 @@ import os
 import sys
 
 import logging
-
 import click
+
+from servicelab.utils import helper_utils
 
 # Global Variables
 # auto envvar prefix will take in any env vars that are prefixed with STK
@@ -84,6 +85,8 @@ class Context(object):
             {"ip": "10.202.44.100"}
         self.__jenkins_info = \
             {"url": "https://ccs-jenkins.cisco.com"}
+        self.username = helper_utils.get_username(self.path)
+        self.password = None
 
     def get_gerrit_server(self):
         """
@@ -130,6 +133,19 @@ class Context(object):
         """
         return os.path.join(self.reporoot_path(), self.pkey_name)
 
+    def get_username(self):
+        """
+        username
+        """
+        return self.username
+
+    def get_password(self, interactive=False):
+        """
+        user password
+        """
+        if interactive and not self.password:
+            self.password = click.prompt("password", hide_input=True, type=str)
+
 
 pass_context = click.make_pass_decorator(Context, ensure=True)
 
@@ -165,6 +181,8 @@ class ComplexCLI(click.MultiCommand):
 
 
 @click.command(cls=ComplexCLI, context_settings=CONTEXT_SETTINGS)
+@click.option('--username', '-u', help="user")
+@click.option('--password', '-p', help="password")
 @click.option('--path', '-p',
               type=click.Path(exists=True,
                               file_okay=False,
@@ -183,7 +201,7 @@ class ComplexCLI(click.MultiCommand):
               help="You can specify a config file for "
               "stack to pull information from.")
 @pass_context
-def cli(ctx, verbose, vverbose, debug, path, config):
+def cli(ctx, verbose, vverbose, debug, path, config, username, password):
     """A CLI for Cisco Cloud Services."""
     ctx.verbose = verbose
     ctx.vverbose = vverbose
@@ -200,3 +218,7 @@ def cli(ctx, verbose, vverbose, debug, path, config):
         ctx.path = path
     if config is not None:
         ctx.config = config
+    if username:
+        ctx.username = username
+    if password:
+        ctx.password = password

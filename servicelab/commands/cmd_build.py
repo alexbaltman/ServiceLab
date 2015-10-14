@@ -24,9 +24,8 @@ def cli(_):
 @cli.command('status', short_help='Display build status')
 @click.argument('job_name', required=True)
 @click.option('-u',
-              '--user',
-              help='Provide jenkins username',
-              required=True)
+              '--username',
+              help='Provide jenkins username')
 @click.option('-p',
               '--password',
               help='Provide jenkins server password',
@@ -37,17 +36,26 @@ def cli(_):
               help="Provide the jenkinsserv url ip address and port "
                    "no in format <ip:portno>.",
               required=True)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def display_build_status(_,
+def display_build_status(ctx,
                          job_name,
-                         user,
+                         username,
                          password,
-                         ip_address):
+                         ip_address,
+                         interactive):
     """
     Displays a build status.
     """
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
     status = jenkins_utils.get_build_status(job_name,
-                                            user,
+                                            username,
                                             password,
                                             ip_address)
     click.echo(status)
@@ -56,9 +64,8 @@ def display_build_status(_,
 @cli.command('log', short_help='Display build status log')
 @click.argument('job_name', required=True)
 @click.option('-u',
-              '--user',
-              help='Provide jenkins username',
-              required=True)
+              '--username',
+              help='Provide jenkins username')
 @click.option('-p',
               '--password',
               help='Provide jenkins server password',
@@ -69,10 +76,18 @@ def display_build_status(_,
               help="Provide the jenkinsserv url ip address and port "
                    "no in format <ip:portno>.",
               required=True)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def display_build_log(_, job_name, user, password, ip_address):
+def display_build_log(ctx, job_name, username, password, ip_address, interactive):
     """
     Displays a build log.
     """
-    log = jenkins_utils.get_build_log(job_name, user, password, ip_address)
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
+    log = jenkins_utils.get_build_log(job_name, username, password, ip_address)
     click.echo(log)

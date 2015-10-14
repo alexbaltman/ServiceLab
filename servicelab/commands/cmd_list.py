@@ -20,7 +20,6 @@ from requests.auth import HTTPBasicAuth
 
 from servicelab.stack import pass_context
 
-from servicelab.utils import helper_utils
 from servicelab.utils import ccsdata_utils
 from servicelab.utils import jenkins_utils
 from servicelab.utils import artifact_utils
@@ -86,7 +85,7 @@ def list_reviews(ctx, inout):
     """
     Lists reviews using Gerrit's API.
     """
-    username = helper_utils.get_username(ctx.path)
+    username = ctx.get_username()
     gfn = gerrit_functions.GerritFns(username, "", ctx)
     if inout:
         gfn.print_gerrit(pformat="summary", number=None, owner=username,
@@ -102,7 +101,7 @@ def list_repos(ctx):
     """
     Lists repos using Gerrit's API.
     """
-    username = helper_utils.get_username(ctx.path)
+    username = ctx.get_username()
     gfn = gerrit_functions.GerritFns(username, "", ctx)
     gfn.print_list()
 
@@ -110,7 +109,7 @@ def list_repos(ctx):
 @cli.command('builds', short_help='List a Jenkins\' builds.')
 @click.option(
     '-u',
-    '--user',
+    '--username',
     help='Provide jenkins username',
     required=True)
 @click.option(
@@ -126,13 +125,17 @@ def list_repos(ctx):
     default=None,
     callback=jenkins_utils.validate_build_ip_cb)
 @pass_context
-def list_build(_, ip_address, user, password):
+def list_build(ctx, ip_address, username, password):
     """
     Searches through Jenkins API for pipelines using your search term.
     """
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        username = ctx.get_password()
     click.echo('Listing builds in Jenkins.')
     server = jenkins_utils.get_server_instance(ip_address,
-                                               user,
+                                               username,
                                                password)
     for key in server.keys():
         click.echo(key)
@@ -141,9 +144,8 @@ def list_build(_, ip_address, user, password):
 @cli.command('artifacts', short_help='List artifacts in artifactory')
 @click.option(
     '-u',
-    '--user',
-    help='Provide artifactory username',
-    required=True)
+    '--username',
+    help='Provide artifactory username')
 @click.option(
     '-p',
     '--password',
@@ -157,14 +159,16 @@ def list_build(_, ip_address, user, password):
     default=None,
     callback=artifact_utils.validate_artifact_ip_cb)
 @pass_context
-def list_artifact(_, ip_address, user, password):
+def list_artifact(ctx, ip_address, username, password):
     """
     Lists artifacts using Artifactory's API.
     """
+    if not username:
+        username = ctx.get_username()
     click.echo('Listing artifacts in Artifactory.')
     list_url = ip_address + "/api/search/creation?from=968987355"
     requests.packages.urllib3.disable_warnings()
-    res = requests.get(list_url, auth=HTTPBasicAuth(user, password))
+    res = requests.get(list_url, auth=HTTPBasicAuth(username, password))
     click.echo(res.content)
     for val in json.loads(res.content)["results"]:
         click.echo(val["uri"])
@@ -178,9 +182,8 @@ def list_artifact(_, ip_address, user, password):
               is_flag=True,
               required=False)
 @click.option('-u',
-              '--user',
-              help='Provide go server username',
-              required=True)
+              '--username',
+              help='Provide go server username')
 @click.option('-p',
               '--password',
               help='Provide go server password',
@@ -193,17 +196,19 @@ def list_artifact(_, ip_address, user, password):
               callback=gocd_utils.validate_pipe_ip_cb,
               required=True)
 @pass_context
-def list_pipe(ctx, localrepo, user, password, ip_address):
+def list_pipe(ctx, localrepo, username, password, ip_address):
     """
     Lists piplines using GO's API.
     """
+    if not username:
+        username = ctx.get_username()
     server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
         servicesdirs = os.listdir(os.path.join(ctx.path, "services"))
 
     # Find latest run info
-    res = requests.get(server_url, auth=HTTPBasicAuth(user, password))
+    res = requests.get(server_url, auth=HTTPBasicAuth(username, password))
     soup = BeautifulSoup(res.content)
     pipelines = soup.findAll('pipeline')
     display_pipelines(pipelines, localrepo, servicesdirs)

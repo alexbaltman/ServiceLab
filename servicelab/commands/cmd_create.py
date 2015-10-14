@@ -16,7 +16,6 @@ import servicelab.utils.ccsdata_haproxy_utils as haproxy
 
 from servicelab.stack import pass_context
 from servicelab.utils import create_repo
-from servicelab.utils import helper_utils
 from servicelab.utils import service_utils
 from servicelab.utils import ccsbuildtools_utils
 from servicelab.utils import ccsdata_utils
@@ -113,7 +112,7 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
 @click.option('--continue', 'cont', flag_value='continue',
               help="If you did not finish creating your site and paused midway;"
                    " you can continue or abort it.")
-@click.option('-u', '--username', help='Enter the password for the username')
+@click.option('-u', '--username', help='Enter the username')
 @pass_context
 def site_new(ctx, username, cont):
     """Compiles data for a new site in the ccs-data repo.
@@ -150,10 +149,7 @@ def site_new(ctx, username, cont):
     """
     click.echo("Creating a new site in ccs-data")
     if not username:
-        retcode, username = helper_utils.set_user(ctx.path)
-        if retcode != 0:
-            click.echo("unable to determine username")
-            return
+        username = ctx.get_username()
 
     click.echo("Retrieving latest ccs-data branch")
     service_utils.sync_service(ctx.path, "master", username, "ccs-data")
@@ -193,7 +189,7 @@ def site_new(ctx, username, cont):
 
 
 @cli.command('env')
-@click.option('-u', '--username', help='Enter the password for the username')
+@click.option('-u', '--username', help='Enter the username')
 @pass_context
 def env_new(ctx, username):
     """Compiles data for a new environment to be built on top of an existing
@@ -228,11 +224,9 @@ def env_new(ctx, username):
     click.echo('Creating a new environment')
 
     # Get username
-    if username is None or "":
-        returncode, username = helper_utils.set_user(ctx.path)
-        if returncode != 0:
-            click.echo("unable to determine username from path {}".format(ctx.path))
-            return
+    if not username:
+        username = ctx.get_username()
+
     click.echo("Retrieving latest ccs-data branch")
     service_utils.sync_service(ctx.path, "master", username, "ccs-data")
     click.echo("Retrieving latest ccs-build-tools branch")
