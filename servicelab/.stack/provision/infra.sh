@@ -14,6 +14,7 @@ sudo chown -R vagrant:vagrant /etc/ccs/
 sudo chown -R vagrant:vagrant /usr/share/
 sudo chown -R vagrant:vagrant /etc/puppet
 sudo chown -R vagrant:vagrant /etc/ansible
+sudo chown -R vagrant:vagrant /var/lib/cobbler
 sudo chown -R vagrant:vagrant /etc/yum.repos.d
 
 
@@ -32,10 +33,10 @@ chmod +x /etc/ansible/nimbus.py
 chmod +x /usr/share/ansible_plugins/lookup_plugins/hiera.py
 
 
-echo "Defaults env_keep += \"CCS_ENVIRONMENT\""
-echo "export CCS_ENVIRONMENT=dev-tenant" >> /root/.bashrc
 echo "localhost ansible_connection=local" > /etc/ansible/hosts
 echo "export CCS_ENVIRONMENT=dev-tenant" >> /home/vagrant/.bashrc
+echo "export CCS_ENVIRONMENT=dev-tenant" | sudo tee -a /root/.bashrc
+sudo echo "Defaults env_keep += \"CCS_ENVIRONMENT\"" | sudo tee -a /etc/sudoers
 
 
 # SSH stuff
