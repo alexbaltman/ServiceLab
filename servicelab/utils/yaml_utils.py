@@ -306,7 +306,7 @@ def getfull_OS_vms(pathto_yaml, vmname_ending_in):
 
 def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
                          box='http://cis-kickstart.cisco.com/ccs-rhel-7.box',
-                         role=None, profile=None, domain=1, storage=0,
+                         role='none', profile=None, domain=1, storage=0,
                          mac_nocolon=None, ip=None):
     """Add a host to the working (servicelab/servicelab/.stack/) vagrant.yaml file.
 
@@ -747,7 +747,7 @@ def gen_mac_from_ip(ip):
         return 1, mac_colon, mac_nocolon
 
 
-def write_dev_hostyaml_out(path, hostname, role=None, site="ccs-dev-1",
+def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
                            env="dev-tenant", flavor='2cpu.4ram.20sas',
                            image='slab-RHEL7.1v7'):
     """Given an ip address generate a mac address.
