@@ -9,6 +9,7 @@ sudo mkdir -p /etc/ccs/data/environments/dev-tenant
 sudo mkdir -p /usr/share/ansible_plugins/lookup_plugins
 
 
+sudo chown vagrant:vagrant /etc/hosts
 sudo chown -R vagrant:vagrant /etc/ccs/
 sudo chown -R vagrant:vagrant /usr/share/
 sudo chown -R vagrant:vagrant /etc/puppet
@@ -21,6 +22,7 @@ cp /vagrant/provision/hiera.yaml /etc/puppet/hiera.yaml
 cp /etc/hosts /var/lib/cobbler/cobbler_hosts_additional
 cp /vagrant/provision/ansible.cfg /etc/ansible/ansible.cfg
 cp /vagrant/provision/build_mirror.repo /etc/yum.repos.d/build_mirror.repo
+cp /vagrant/provision/hiera.py /usr/share/ansible_plugins/lookup_plugins/hiera.py
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /etc/puppet/data/hiera_data/site.yaml
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /etc/ccs/data/environments/dev-tenant/site.yaml
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/hosts.yaml /etc/ccs/data/environments/dev-tenant/hosts.yaml
@@ -30,6 +32,7 @@ chmod +x /etc/ansible/nimbus.py
 chmod +x /usr/share/ansible_plugins/lookup_plugins/hiera.py
 
 
+echo "Defaults env_keep += \"CCS_ENVIRONMENT\""
 echo "export CCS_ENVIRONMENT=dev-tenant" >> /root/.bashrc
 echo "localhost ansible_connection=local" > /etc/ansible/hosts
 echo "export CCS_ENVIRONMENT=dev-tenant" >> /home/vagrant/.bashrc

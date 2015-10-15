@@ -1,5 +1,8 @@
 #!/bin/bash
 
+sudo rm -f /etc/yum.repos.d/epel*
+cp /vagrant/provision/build_mirror.repo /etc/yum.repos.d/build_mirror.repo
+
 sudo mkdir /root/.ssh/
 sudo mkdir /etc/puppet
 sudo mkdir /var/lib/cobbler
@@ -28,4 +31,3 @@ sed -i 's/\s//g' /etc/puppet/puppet.conf
 sed -r -i 's/search.*/search cis.local/g' /etc/resolv.conf
 
 
-sudo rm -f /etc/yum.repos.d/epel*

@@ -26,7 +26,7 @@ def cli(_):
 
 @cli.command('inc', short_help='Find incoming reviews Gerrit.')
 @click.option('-p', '--project', help='Enter the project')
-@click.option('-u', '--username', help='Enter the desired username')
+@click.option('-u', '--username', help='Enter the gerrit username')
 @click.option('-d', '--detail', help='Show detailed description',
               flag_value=True, default=False)
 @pass_context
@@ -35,8 +35,7 @@ def review_inc(ctx, project, username, detail):
     Searches through Gerrit's API for incoming reviews for your username.
     """
     if not username:
-        username = click.prompt("User Name",
-                                default=helper_utils.get_username(ctx.path))
+        username = ctx.get_username()
 
     if not project:
         project = click.prompt("Project Name",
@@ -52,7 +51,7 @@ def review_inc(ctx, project, username, detail):
 
 @cli.command('out', short_help='Find outgoing reviews in Gerrit.')
 @click.option('-p', '--project', help='Enter the project')
-@click.option('-u', '--username', help='Enter the desired username')
+@click.option('-u', '--username', help='Enter the gerrit username')
 @click.option('-d', '--detail', help='Show detailed description', default=False)
 @pass_context
 def review_out(ctx, project, username, detail):
@@ -61,8 +60,7 @@ def review_out(ctx, project, username, detail):
     """
     click.echo('Grabbing outgoing reviews from Gerrit')
     if not username:
-        username = click.prompt("User Name",
-                                default=helper_utils.get_username(ctx.path))
+        username = ctx.get_username()
 
     if not project:
         project = click.prompt("Project Name",
@@ -79,7 +77,7 @@ def review_out(ctx, project, username, detail):
 @cli.command('plustwo', short_help='Plus two gerrit change set.')
 @click.argument('item')
 @click.option('-p', '--project', help='Enter the project')
-@click.option('-u', '--username', help='Enter the desired username')
+@click.option('-u', '--username', help='Enter the gerrit username')
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @pass_context
 def review_plustwo(ctx, review, project, username, message):
@@ -87,8 +85,7 @@ def review_plustwo(ctx, review, project, username, message):
     Approves and merges a gerrit change set.
     """
     if not username:
-        username = click.prompt("User Name",
-                                default=helper_utils.get_username(ctx.path))
+        username = ctx.get_username()
 
     if not project:
         project = click.prompt("Project Name",
@@ -104,7 +101,7 @@ def review_plustwo(ctx, review, project, username, message):
 @cli.command('plusone', short_help='Plus one gerrit change set.')
 @click.argument('review')
 @click.option('-p', '--project', help='Enter the project')
-@click.option('-u', '--username', help='Enter the desired username')
+@click.option('-u', '--username', help='Enter the gerrit username')
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @pass_context
 def review_plusone(ctx, review, project, username, message):
@@ -113,8 +110,7 @@ def review_plusone(ctx, review, project, username, message):
     requires another approver.
     """
     if not username:
-        username = click.prompt("User Name",
-                                default=helper_utils.get_username(ctx.path))
+        username = ctx.get_username()
 
     if not project:
         project = click.prompt("Project Name",
@@ -130,7 +126,7 @@ def review_plusone(ctx, review, project, username, message):
 @cli.command('minusone', short_help='Minus one gerrit change set.')
 @click.argument('review')
 @click.option('-p', '--project', help='Enter the project')
-@click.option('-u', '--username', help='Enter the desired username')
+@click.option('-u', '--username', help='Enter the gerrit username')
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @pass_context
 def review_minusone(ctx, review, project, username, message):
@@ -138,8 +134,7 @@ def review_minusone(ctx, review, project, username, message):
     Prefer the code is not submitted.
     """
     if not username:
-        username = click.prompt("User Name",
-                                default=helper_utils.get_username(ctx.path))
+        username = ctx.get_username()
 
     if not project:
         project = click.prompt("Project Name",
@@ -155,7 +150,7 @@ def review_minusone(ctx, review, project, username, message):
 @cli.command('minustwo', short_help='Minus two gerrit change set.')
 @click.argument('review')
 @click.option('-p', '--project', help='Enter the project')
-@click.option('-u', '--username', help='Enter the desired username')
+@click.option('-u', '--username', help='Enter the gerrit username')
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @pass_context
 def review_minustwo(ctx, review, project, username, message):
@@ -163,8 +158,7 @@ def review_minustwo(ctx, review, project, username, message):
     Do not submit the code
     """
     if not username:
-        username = click.prompt("User Name",
-                                default=helper_utils.get_username(ctx.path))
+        username = ctx.get_username()
 
     if not project:
         project = click.prompt("Project Name",
@@ -188,8 +182,7 @@ def review_abandon(ctx, review, project, username, message):
     Abandon a gerrit change set.
     """
     if not username:
-        username = click.prompt("User Name",
-                                default=helper_utils.get_username(ctx.path))
+        username = ctx.get_username()
 
     if not project:
         project = click.prompt("Project Name",
@@ -212,8 +205,7 @@ def review_show(ctx, review, project, username):
     Display the review
     """
     if not username:
-        username = click.prompt("User Name",
-                                default=helper_utils.get_username(ctx.path))
+        username = ctx.get_username()
 
     if not project:
         project = click.prompt("Project Name",
@@ -233,8 +225,7 @@ def review_code(ctx, review, project, username):
     Display the review
     """
     if not username:
-        username = click.prompt("User Name",
-                                default=helper_utils.get_username(ctx.path))
+        username = ctx.get_username()
 
     if not project:
         project = click.prompt("Project Name",

@@ -42,15 +42,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
         sys.exit(1)
 
     if not username:
-        returncode, username = helper_utils.set_user(ctx.path)
-        if returncode > 0:
-            import getpass
-            ctx.logger.debug("Couldn't set user from .git/config will try\
-                              to use current running user.")
-            username = getpass.getuser()
-            if not username:
-                ctx.logger.debug("Still couldn't set username. Exiting.")
-                sys.exit(1)
+        username = ctx.get_username()
 
     if not any([full, mini, rhel7, target, service]):
         try:
@@ -455,6 +447,7 @@ def vm_isrunning(hostname, path):
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
         return 2, False
+    return 2, False
 
 
 def os_ensure_network(path):
