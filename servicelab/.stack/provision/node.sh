@@ -13,9 +13,9 @@ cp /etc/hosts /var/lib/cobbler/cobbler_hosts_additional
 
 
 # SSH stuff
-if [ -f /vagrant/.stack/id_rsa.pub ]; then
-  cat /vagrant/.stack/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
-  cat /vagrant/.stack/id_rsa.pub >> /root/.ssh/authorized_keys
+if [ -f /vagrant/id_rsa.pub ]; then
+  cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
+  cat /vagrant/id_rsa.pub >> /root/.ssh/authorized_keys
 fi
 
 
