@@ -19,14 +19,13 @@ class TestStatusUtils(unittest.TestCase):
     Attributes:
         ctx:  Context object of servicelab module.
     """
-    REPO_STATUS = "Showing repo status of services"
     SERVICE_PATH = "services/service-sdlc-pulp"
     NEW_FILE_PATH = "services/service-sdlc-pulp/somefile.txt"
     REPO_NOCHANGE = "servicelab/.stack/services/service-sdlc-pulp/master"
     REPO_COMMIT_CHANGE = "To Commit"
     REPO_INCOMING_CHANGE = "To Pull"
     REPO_OUTGOING_CHANGE = "To Review"
-    VM_STATUS = "Showing VM status of services"
+    VM_STATUS = "Showing vm status of services"
 
     def setUp(self):
         """ Setup variables required to test the os_provider functions
@@ -78,6 +77,12 @@ class TestStatusUtils(unittest.TestCase):
         result = runner.invoke(cmd_status.cli,
                                ['repo'])
         self.assertTrue(TestStatusUtils.REPO_OUTGOING_CHANGE in result.output)
+        revert_command = 'cd {}; git fetch origin master; git reset --hard \
+                         origin/master'.format(service_path)
+
+        retcode, _ = service_utils.run_this(revert_command)
+        self.assertEqual(0, retcode,
+                         "Unable to run revert command")
 
     def test_cmd_repo_status_incoming(self):
         """ Tests pipeline status command.
@@ -94,13 +99,23 @@ class TestStatusUtils(unittest.TestCase):
         result = runner.invoke(cmd_status.cli,
                                ['repo'])
         self.assertTrue(TestStatusUtils.REPO_INCOMING_CHANGE in result.output)
-        revert_command = 'cd {}; git fetch origin master; git reset --hard \
-                         origin/master'.format(service_path)
 
-        retcode, _ = service_utils.run_this(revert_command)
-        self.assertEqual(0, retcode,
-                         "Unable to run revert command")
+    def test_cmd_vm_status(self):
+        """ Tests VM status command.
+        """
+        runner = CliRunner()
+        result = runner.invoke(cmd_status.cli,
+                               ['vm'])
+        self.assertTrue(TestStatusUtils.VM_STATUS in result.output)
 
+    def test_cmd_all_status(self):
+        """ Tests all status command.
+        """
+        runner = CliRunner()
+        result = runner.invoke(cmd_status.cli,
+                               ['all'])
+        self.assertTrue(TestStatusUtils.REPO_NOCHANGE in result.output)
+        self.assertTrue(TestStatusUtils.VM_STATUS in result.output)
 
 if __name__ == '__main__':
     unittest.main()
