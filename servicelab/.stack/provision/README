@@ -1,0 +1,15 @@
+=== FOR YOUR INFORMATION ===
+
+
+ansible.cfg derived from cis-tools/ansible/roles/ansible/templates/ansible.cfg.j2
+nimbus.py pulled from cis-tools/ansible/roles/ansible/files/inventory_nimbus.py
+
+
+hiera.py pulled from cis-tools/ansible/roles/ansible/files/lookup_hiera.py
+Not convinced yet ^^ is needed yet. Wasnt for puppet service-sonarqube, need to test on ansible i.e. service-sdlc-pulp
+
+
+hiera.yaml derived from /etc/puppet/hiera.yaml from POD4 rtp10-svc-1
+
+
+/etc/puppet/hiera/data/hiera_data/site.yaml is derived from ccs-data --> ./lightfuse -c hiera-bom-unenc.yaml --site ccs-dev-1 --> out/ccs-dev-1/dev-tenant/etc/ccs/data/{ site.yaml, hosts.yaml} --> which is the same as what's in /etc/ccs/data/environments/dev-tenant/{site.yaml, hosts.yaml}

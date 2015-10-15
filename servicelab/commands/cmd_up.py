@@ -447,6 +447,7 @@ def vm_isrunning(hostname, path):
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
         return 2, False
+    return 2, False
 
 
 def os_ensure_network(path):

@@ -1,0 +1,11 @@
+---
+:backends:
+  - yaml
+:hierarchy:
+  - site
+  - "role/%{::role}"
+  - "caller/%{calling_class}"
+  - "caller/%{calling_modules}"
+  - common
+:yaml:
+   :datadir: /etc/puppet/data/hiera_data
