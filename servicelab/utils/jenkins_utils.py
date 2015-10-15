@@ -8,7 +8,6 @@ import click
 
 from bs4 import BeautifulSoup
 from jenkinsapi.jenkins import Jenkins
-from jenkinsapi.custom_exceptions import JenkinsAPIException
 from requests.auth import HTTPBasicAuth
 
 
@@ -75,3 +74,12 @@ def get_build_log(job_name, user, password, ip_address):
     log = log + END_LOG + "\n"
 
     return log
+
+
+def validate_build_ip_cb(ctx, param, value):
+    """
+    If ip is none then provide the default ip for jenkins.
+    """
+    if not value:
+        value = ctx.obj.get_jenkins_info()['url']
+    return value

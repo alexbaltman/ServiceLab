@@ -20,10 +20,11 @@ from requests.auth import HTTPBasicAuth
 
 from servicelab.stack import pass_context
 
-from servicelab.utils import context_utils
 from servicelab.utils import helper_utils
 from servicelab.utils import ccsdata_utils
 from servicelab.utils import jenkins_utils
+from servicelab.utils import artifact_utils
+from servicelab.utils import gocd_utils
 from servicelab.utils import gerrit_functions
 
 
@@ -120,10 +121,10 @@ def list_repos(ctx):
 @click.option(
     '-ip',
     '--ip_address',
-    default=context_utils.get_jenkins_url(),
-    help='Provide the jenkinsserv url ip address and port \
-        no in format <ip:portno>.',
-    required=True)
+    help='Provide the jenkinsserv url ip address and port'
+         'no in format <ip:portno>.',
+    default=None,
+    callback=jenkins_utils.validate_build_ip_cb)
 @pass_context
 def list_build(_, ip_address, user, password):
     """
@@ -151,10 +152,10 @@ def list_build(_, ip_address, user, password):
 @click.option(
     '-ip',
     '--ip_address',
-    default=context_utils.get_artifactory_url(),
-    help='Provide the artifactory url ip address and port \
-        no in format http://<ip:portno>.',
-    required=True)
+    help='Provide the artifactory url ip address and port '
+         'no in format http://<ip:portno>.',
+    default=None,
+    callback=artifact_utils.validate_artifact_ip_cb)
 @pass_context
 def list_artifact(_, ip_address, user, password):
     """
@@ -186,9 +187,10 @@ def list_artifact(_, ip_address, user, password):
               required=True)
 @click.option('-ip',
               '--ip_address',
-              default=context_utils.get_gocd_ip(),
-              help="Provide the go server ip address and port no in "
-                   "format <ip:portno>.",
+              help='Provide the go server url ip address and port'
+                   'no in format <ip:portno>.',
+              default=None,
+              callback=gocd_utils.validate_pipe_ip_cb,
               required=True)
 @pass_context
 def list_pipe(ctx, localrepo, user, password, ip_address):
@@ -196,8 +198,6 @@ def list_pipe(ctx, localrepo, user, password, ip_address):
     Lists piplines using GO's API.
     """
     server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
-    server_string_prefix = "http://(.*?)/go/api/pipelines/"
-    server_string_suffix = "/stages.xml"
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
         servicesdirs = os.listdir(os.path.join(ctx.path, "services"))
@@ -206,6 +206,15 @@ def list_pipe(ctx, localrepo, user, password, ip_address):
     res = requests.get(server_url, auth=HTTPBasicAuth(user, password))
     soup = BeautifulSoup(res.content)
     pipelines = soup.findAll('pipeline')
+    display_pipelines(pipelines, localrepo, servicesdirs)
+
+
+def display_pipelines(pipelines, localrepo, servicesdirs):
+    """
+    Displays pipelines
+    """
+    server_string_prefix = "http://(.*?)/go/api/pipelines/"
+    server_string_suffix = "/stages.xml"
     for pipeline in pipelines:
         exp = re.compile(server_string_prefix + '(.*?)' + server_string_suffix)
         match = exp.search(pipeline['href'])

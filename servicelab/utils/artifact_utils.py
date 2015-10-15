@@ -25,3 +25,12 @@ def get_artifact_info(url, user, password):
         raise Exception("Cannot connect to artifactory : %s " % ex)
 
     return res.content
+
+
+def validate_artifact_ip_cb(ctx, param, value):
+    """
+    If ip is none then provide the default ip for artifactory.
+    """
+    if not value:
+        value = ctx.obj.get_artifactory_info()['url']
+    return value

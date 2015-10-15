@@ -34,26 +34,27 @@ class Repo(object):
     """
     __metaclass__ = ABCMeta
 
-    def builder(rtype, gsrvr, path, name):
+    def builder(rtype, gsrvr, path, name, interactive):
         """
         Static method Instantiates Concreate classes of type Repo.
         """
         if rtype is "Ansible":
-            return Ansible(gsrvr, path, name)
+            return Ansible(gsrvr, path, name, interactive)
         if rtype is "Puppet":
-            return Puppet(gsrvr, path, name)
+            return Puppet(gsrvr, path, name, interactive)
         if rtype is "Project":
-            return Project(gsrvr, path, name)
+            return Project(gsrvr, path, name, interactive)
         if rtype is "EmptyProject":
-            return EmptyProject(gsrvr, path, name)
+            return EmptyProject(gsrvr, path, name, interactive)
         assert 0, "unable to construct the project of type: " + rtype
     builder = staticmethod(builder)
 
-    def __init__(self, gsrvr, path, name):
+    def __init__(self, gsrvr, path, name, interactive):
         self.gsrvr = gsrvr
         self.ctx_path = path
         self.name = name
-        self.chk_script = None
+        self.chk_script = "./check.sh"
+        self.interactive = interactive
 
     def get_reponame(self):
         """
@@ -159,8 +160,8 @@ class Ansible(Repo):
     """
     Creates the Ansible Repo.
     """
-    def __init__(self, gsrvr, path, name):
-        super(Ansible, self).__init__(gsrvr, path, name)
+    def __init__(self, gsrvr, path, name, interactive):
+        super(Ansible, self).__init__(gsrvr, path, name, interactive)
         self.play_roles = []
 
     def create_nimbus(self):
@@ -169,9 +170,9 @@ class Ansible(Repo):
         is created. For downward compatability we create .nimbus.yml as a link to
         .nimbus.yaml.
         """
-        if not self.chk_script:
+        if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
-                                           default="", type=str)
+                                           default="./check.sh", type=str)
 
         nimbusdict = dict(service=self.name + "-ansible", version="0.0.1",
                           deploy=dict(type="ansible", playbook=self.name + ".yaml"),
@@ -190,28 +191,48 @@ class Ansible(Repo):
         """
         Create the ansible directory for the ansible project.
         """
+        def _add_roles():
+            """
+            add the roles. If command is invoked with interactive flag, then user can
+            enter the various roles.
+            """
+            if not self.interactive:
+                self.play_roles.append(self.name)
+                return
+
+            if not self.play_roles:
+                while True:
+                    role = click.prompt("role", default=self.name, type=str)
+                    if not role:
+                        break
+                    if role in self.play_roles:
+                        lst = [astr.encode('ascii') for astr in self.play_roles]
+                        click.echo(" entered roles:" + str(lst))
+                        if click.confirm(' do you want to continue?'):
+                            continue
+                        break
+                    self.play_roles.append(role)
+
         ansibledir = "./{}/ansible".format(self.get_reponame())
         if not os.path.isdir(ansibledir):
             os.mkdir(ansibledir)
 
-        if not self.play_roles:
-            while True:
-                role = click.prompt("role", default="", type=str)
-                if not role:
-                    break
-                self.play_roles.append(role)
+        def _write_playfile(playdict):
+            """
+            write the ansible project yaml file.
+            """
+            playfile = "./{}/ansible/{}".format(self.get_reponame(),
+                                                self.name + ".yaml")
+            with open(playfile, "w") as playbook:
+                playbook.write(yaml.dump(playdict, default_flow_style=False))
 
+            os.link(playfile, "./{}/ansible/{}".format(
+                self.get_reponame(), self.name + ".yml"))
+
+        _add_roles()
         playdict = dict(hosts="{}-ansible".format(self.name),
                         remote_user=user, roles=self.play_roles)
-
-        playfile = "./{}/ansible/{}".format(self.get_reponame(),
-                                            self.name + ".yaml")
-        with open(playfile, "w") as playbook:
-            playbook.write(yaml.dump(playdict, default_flow_style=False))
-
-        os.link(playfile, "./{}/ansible/{}".format(
-            self.get_reponame(), self.name + ".yml"))
-
+        _write_playfile(playdict)
         return self.play_roles
 
     def create_roles(self, roles):
@@ -292,8 +313,8 @@ class Puppet(Repo):
     """
     Creates a Puppet Repo of the given name on the gerrit server and local directory.
     """
-    def __init__(self, gsrvr, path, name):
-        super(Puppet, self).__init__(gsrvr, path, name)
+    def __init__(self, gsrvr, path, name, interactive):
+        super(Puppet, self).__init__(gsrvr, path, name, interactive)
 
     def create_nimbus(self):
         """
@@ -301,9 +322,9 @@ class Puppet(Repo):
         is created. For downward compatability we create .nimbus.yml as a link to
         .nimbus.yaml.
         """
-        if not self.chk_script:
-            self.chk_script = click.prompt(
-                "enter the script to check", default="./check.sh", type=str)
+        if self.interactive:
+            self.chk_script = click.prompt("enter the script to check",
+                                           default="./check.sh", type=str)
         nimbusdict = dict(service=self.name + "-puppet",
                           version="0.0.1",
                           deploy=dict(type="puppet", manifest="manifests/site.pp"),
@@ -433,8 +454,8 @@ class Project(Repo):
     """
     Create a Project of the given name on the gerrit server and local directory.
     """
-    def __init__(self, gsrvr, path, name):
-        super(Project, self).__init__(gsrvr, path, name)
+    def __init__(self, gsrvr, path, name, interactive):
+        super(Project, self).__init__(gsrvr, path, name, interactive)
 
     def download_template(self, username):
         """
@@ -476,7 +497,7 @@ class Project(Repo):
         is created. For downward compatability we create .nimbus.yml as a link to
         .nimbus.yaml.
         """
-        if not self.chk_script:
+        if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
                                            default="/bin/true",
                                            type=str)
@@ -515,8 +536,8 @@ class EmptyProject(Repo):
     """
     Create an Empty project of the given name on the gerrit server and local directory.
     """
-    def __init__(self, gsrvr, path, name):
-        super(EmptyProject, self).__init__(gsrvr, path, name)
+    def __init__(self, gsrvr, path, name, interactive):
+        super(EmptyProject, self).__init__(gsrvr, path, name, interactive)
 
     def download_template(self, username):
         """

@@ -33,10 +33,12 @@ def cli(_):
 
 @cli.command('repo', short_help='Create repo')
 @click.argument('repo_name', required=True)
-@click.option('--kind', prompt=True, default='ansible',
+@click.option('--repo_type', prompt=True, default='ansible',
               type=click.Choice(['project', 'ansible', 'puppet', "empty"]))
+@click.option('-i', '--interactive', flag_value=True,
+              help="interactive editor")
 @pass_context
-def repo_new(ctx, repo_name, kind):
+def repo_new(ctx, repo_name, repo_type, interactive):
     """Creates a repository in gerrit production, does 1st commit,
     sets up directory structure, and creates nimbus.yml.
 
@@ -49,15 +51,15 @@ def repo_new(ctx, repo_name, kind):
     Add an interactive mode so they can choose options.
 
     :param repo_name:    The name of the repository
-    :param kind:         The type of repo (EmptyProject, Project, Ansible, Puppet)
+    :param repo_type:    The type of repo (EmptyProject, Project, Ansible, Puppet)
                          Project will create a project of normal type.
                          Ansible will create a service repo of ansible type.
                          Puppet will create a service repo of ansible type.
     """
     kinds = dict(project="Project", ansible="Ansible",
                  puppet="Puppet", empty="EmptyProject")
-    repo = create_repo.Repo.builder(kinds[kind], ctx.get_gerrit_server(), ctx.path,
-                                    repo_name)
+    repo = create_repo.Repo.builder(kinds[repo_type], ctx.get_gerrit_server(), ctx.path,
+                                    repo_name, interactive)
     repo.construct()
     return
 
@@ -92,7 +94,10 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
         click.echo("%s is an invalid env. Please select one from "
                    "stack list envs" % env_name)
         return 1
-    groups = ['virtual', str(group)]
+    if not group:
+        groups = ['virtual']
+    else:
+        groups = ['virtual', str(group)]
     if sec_groups:
         sec_groups = 'default,' + sec_groups
     else:

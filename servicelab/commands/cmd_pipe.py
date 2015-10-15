@@ -40,8 +40,7 @@ def cli(_):
               '--ip_address',
               default=None,
               callback=gocd_utils.validate_pipe_ip_cb,
-              help='Provide the go server ip address.',
-              required=True)
+              help='Provide the go server ip address.')
 @pass_context
 def display_pipeline_log(_, pipeline_name, user, password, ip_address):
     """
