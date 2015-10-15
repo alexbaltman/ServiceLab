@@ -42,7 +42,6 @@ def validate_syntax(file_name):
         yaml_utils_logger.error("Invalid yaml: ")
         yaml_utils_logger.error(cmd_info)
         return 1
-    yaml_utils_logger.info("Valid yaml.")
     return 0
 
 

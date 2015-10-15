@@ -25,6 +25,7 @@ from servicelab.utils import jenkins_utils
 from servicelab.utils import artifact_utils
 from servicelab.utils import gocd_utils
 from servicelab.utils import gerrit_functions
+from servicelab.utils import yaml_utils
 
 
 @click.group('list', short_help='You can list available pipeline objects',
@@ -233,3 +234,17 @@ def display_pipelines(pipelines, localrepo, servicesdirs):
                             click.echo(pipeline_name)
             else:
                 click.echo(pipeline_name)
+
+
+@cli.command('ospvms', short_help='List all OpenStack Platform VMs')
+@pass_context
+def ospvms_list(ctx):
+    """
+    Lists Openstack Platform VMs
+    """
+    provision_path = os.path.join(ctx.path, 'provision')
+    hosts_list = []
+    osp_vms = yaml_utils.getfull_OS_vms(provision_path, '001')
+    for host_data in osp_vms[1]:
+        for host in host_data:
+            click.echo(host)
