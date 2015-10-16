@@ -26,6 +26,7 @@ class TestVagrantUtils(unittest.TestCase):
 
     def setUp(self):
         with temporary_dir() as temp_dir:
+            os.mkdir(os.path.join(temp_dir, "services"))
             self.vagrant_dir = temp_dir
             self.connect_to_vagrant = Connect_to_vagrant(
                 TestVagrantUtils.VM_NAME, os.path.join(self.vagrant_dir, "services"))

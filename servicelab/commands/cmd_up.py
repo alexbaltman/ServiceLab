@@ -1,17 +1,18 @@
-from servicelab.utils import Vagrantfile_utils
+import os
+import sys
+import time
+from subprocess import CalledProcessError
+
+import click
+import yaml
+
 from servicelab.utils import openstack_utils
 from servicelab.utils import service_utils
 from servicelab.utils import vagrant_utils
 from servicelab.utils import helper_utils
 from servicelab.stack import pass_context
-from subprocess import CalledProcessError
 from servicelab.utils import yaml_utils
-import multiprocessing
-import click
-import time
-import yaml
-import sys
-import os
+from servicelab.utils import Vagrantfile_utils
 
 
 @click.option('--full', is_flag=True, default=False, help='Boot complete openstack stack without ha, \
@@ -97,10 +98,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             sys.exit(0)
     # SERVICE VM WORKFLOW ==========================
     elif service:
-        if remote:
-            returncode = infra_ensure_up(path=ctx.path, remote=True)
-        else:
-            returncode = infra_ensure_up(path=ctx.path)
+        returncode = infra_ensure_up(path=ctx.path, remote=remote)
         if returncode == 1:
             ctx.logger.error("Could not boot infra-001")
             sys.exit(1)
@@ -420,6 +418,7 @@ def infra_ensure_up(hostname="infra-001", path=None, remote=False):
             thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
             if not os.path.exists(os.path.join(path, 'Vagrantfile')):
                 thisvfile.init_vagrantfile()
+
             thisvfile.add_virtualbox_vm(idic)
             try:
                 infra_connection.v.up(vm_name=hostname)
