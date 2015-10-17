@@ -59,6 +59,20 @@ class Connect_to_vagrant(object):
             quiet_stderr=False)
         v = self.v
 
+        # check for installed plugins
+
+        # over here we will install the plugins.
+        # this is an extra step but by this we can avoid extra command repitition
+        # the other alternative is to put it in vagrantfile but this can be a problem
+        # as we may have to exec over the running  process
+        # please see stack discussion
+        # http://stackoverflow.com/questions/19492738/demand-a-vagrant-plugin-within-the-vagrantfile
+        req_lst = ["vagrant-hostmanager", "vagrant-openstack-provider"]
+        plugin_lst = self.v.plugin_list()
+        for plugin in req_lst:
+            if plugin not in plugin_lst:
+                service_utils.run_this('vagrant plugin install {}'.format(plugin))
+
     def add_box(self):
         """
         Member function which adds a virtualbox to the Vagrant environment.
