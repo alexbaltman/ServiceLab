@@ -28,8 +28,7 @@ def cli(_):
               help='Provide jenkins username')
 @click.option('-p',
               '--password',
-              help='Provide jenkins server password',
-              required=True)
+              help='Provide jenkins server password')
 @click.option('-ip',
               '--ip_address',
               default=context_utils.get_jenkins_url(),
@@ -68,8 +67,7 @@ def display_build_status(ctx,
               help='Provide jenkins username')
 @click.option('-p',
               '--password',
-              help='Provide jenkins server password',
-              required=True)
+              help='Provide jenkins server password')
 @click.option('-ip',
               '--ip_address',
               default=context_utils.get_jenkins_url(),

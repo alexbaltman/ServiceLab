@@ -125,15 +125,19 @@ def list_repos(ctx):
          'no in format <ip:portno>.',
     default=None,
     callback=jenkins_utils.validate_build_ip_cb)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def list_build(ctx, ip_address, username, password):
+def list_build(ctx, ip_address, username, password, interactive):
     """
     Searches through Jenkins API for pipelines using your search term.
     """
     if not username:
         username = ctx.get_username()
     if not password:
-        username = ctx.get_password()
+        password = ctx.get_password(interactive)
     click.echo('Listing builds in Jenkins.')
     server = jenkins_utils.get_server_instance(ip_address,
                                                username,
@@ -159,13 +163,19 @@ def list_build(ctx, ip_address, username, password):
          'no in format http://<ip:portno>.',
     default=None,
     callback=artifact_utils.validate_artifact_ip_cb)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def list_artifact(ctx, ip_address, username, password):
+def list_artifact(ctx, ip_address, username, password, interactive):
     """
     Lists artifacts using Artifactory's API.
     """
     if not username:
         username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
     click.echo('Listing artifacts in Artifactory.')
     list_url = ip_address + "/api/search/creation?from=968987355"
     requests.packages.urllib3.disable_warnings()
@@ -196,13 +206,19 @@ def list_artifact(ctx, ip_address, username, password):
               default=None,
               callback=gocd_utils.validate_pipe_ip_cb,
               required=True)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def list_pipe(ctx, localrepo, username, password, ip_address):
+def list_pipe(ctx, localrepo, username, password, ip_address, interactive):
     """
     Lists piplines using GO's API.
     """
     if not username:
         username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
     server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
@@ -243,7 +259,6 @@ def ospvms_list(ctx):
     Lists Openstack Platform VMs
     """
     provision_path = os.path.join(ctx.path, 'provision')
-    hosts_list = []
     osp_vms = yaml_utils.getfull_OS_vms(provision_path, '001')
     for host_data in osp_vms[1]:
         for host in host_data:

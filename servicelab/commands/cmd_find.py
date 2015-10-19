@@ -64,21 +64,26 @@ def validate_artifact_ip_cb(ctx, param, value):
               help='Provide artifactory username')
 @click.option('-p',
               '--password',
-              help='Provide artifactory password',
-              required=True)
+              help='Provide artifactory password')
 @click.option('-ip',
               '--ip_address',
               help='Provide the artifactory url ip address and port '
                    'no in format http://<ip:portno>.',
               default=None,
               callback=validate_artifact_ip_cb)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def find_artifact(ctx, search_term, ip_address, username, password):
+def find_artifact(ctx, search_term, ip_address, username, password, interactive):
     """
     Searches through Artifactory's API for artifacts using your search term.
     """
     if not username:
         username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
     if ip_address is None:
         ip_address = ctx.get_artifactory_info()
     click.echo('Searching for %s artifact in Artifactory' % search_term)
@@ -111,16 +116,19 @@ def validate_pipe_ip_cb(ctx, param, value):
               help='Provide go server username')
 @click.option('-p',
               '--password',
-              help='Provide go server password',
-              required=True)
+              help='Provide go server password')
 @click.option('-ip',
               '--ip_address',
               default=None,
               help='Provide the go server ip address and port number '
                    'in format <ip_address:portnumber>.',
               callback=validate_pipe_ip_cb)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def find_pipe(ctx, search_term, localrepo, username, password, ip_address):
+def find_pipe(ctx, search_term, localrepo, username, password, ip_address, interactive):
     """
     Searches through GO's API for pipelines using your search term.
     """
@@ -158,6 +166,8 @@ def find_pipe(ctx, search_term, localrepo, username, password, ip_address):
 
     if not username:
         username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
         servicesdirs = os.listdir(os.path.join(ctx.path, "services"))
@@ -186,21 +196,26 @@ def validate_build_ip_cb(ctx, param, value):
               help='Provide jenkins username')
 @click.option('-p',
               '--password',
-              help='Provide jenkins server password',
-              required=True)
+              help='Provide jenkins server password')
 @click.option('-ip',
               '--ip_address',
               help='Provide the jenkinsserv url ip address and port'
                    'no in format <ip:portno>.',
               default=None,
               callback=validate_build_ip_cb)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
 @pass_context
-def find_build(ctx, search_term, username, password, ip_address):
+def find_build(ctx, search_term, username, password, ip_address, interactive):
     """
     Searches through the build search term.
     """
     if not username:
         username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
 
     server = jenkins_utils.get_server_instance(ip_address, username, password)
     for key in server.keys():
