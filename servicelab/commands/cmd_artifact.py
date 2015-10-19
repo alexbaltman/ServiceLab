@@ -32,8 +32,7 @@ def cli(_):
               help='Provide artifactory username')
 @click.option('-p',
               '--password',
-              help='Provide artifactory password',
-              required=True)
+              help='Provide artifactory password')
 @click.option('-i',
               '--interactive',
               flag_value=True,
@@ -63,8 +62,7 @@ def display_artifact_status(ctx,
               help='Provide artifactory username')
 @click.option('-p',
               '--password',
-              help='Provide artifactory password',
-              required=True)
+              help='Provide artifactory password')
 @click.option('-d',
               '--destintaion',
               help='Provide destination folder',
