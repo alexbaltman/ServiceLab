@@ -98,11 +98,6 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             sys.exit(0)
     # SERVICE VM WORKFLOW ==========================
     elif service:
-        returncode = infra_ensure_up(path=ctx.path, remote=remote)
-        if returncode == 1:
-            ctx.logger.error("Could not boot infra-001")
-            sys.exit(1)
-
         hostname = name_vm(service, ctx.path)
 
         returncode, host_dict = yaml_utils.get_dev_hostyaml(ctx.path, hostname)
@@ -111,6 +106,15 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             if returncode2 == 1:
                 ctx.logger.error("Couldn't write vm yaml to ccs-dev-1 for " + hostname)
                 sys.exit(1)
+            retc, myinfo = service_utils.build_data(ctx.path)
+            if retc > 0:
+                 ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
+
+        returncode = infra_ensure_up(path=ctx.path, remote=remote)
+        if returncode == 1:
+            ctx.logger.error("Could not boot infra-001")
+            sys.exit(1)
+
         returncode = yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml",
                                                      hostname, "ccs-dev-1")
         if returncode == 1:
@@ -150,12 +154,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             sys.exit(1)
         else:
             sys.exit(0)
-        # TODO: Figure out a better way to execute this. The ssh can be very
-        #       fragile. May not be 001.
+        # TODO: Support for more than 001.
         service_utils.run_this('vagrant ssh infra-001 -c cp "/etc/ansible"; \
                                 cd "/opt/ccs/services/%s; sudo heighliner \
-                                --dev --debug deploy"' % (os.path.join(ctx.path, "hosts"),
-                                                          service))
+                                --dev --debug deploy"' % (ctx.path, service))
     elif target:
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
         service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
@@ -167,9 +169,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             service_utils.sync_service(ctx.path, branch, username, 'ccs-data')
 
         if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data', 'out')):
-            returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml'
-                                          '--site ccs-dev-1',
-                                          cwd=os.path.join(ctx.path, "services", 'ccs-data'))
+            returncode, myinfo = service_utils.run_this('./lightfuse.rb -c hiera-bom-unenc.yaml'
+                                                        '--site ccs-dev-1',
+                                                        cwd=os.path.join(ctx.path,
+                                                                         "services",
+                                                                         'ccs-data'))
             if returncode > 0:
                 ctx.logger.error('Failed to build ccs-data data b/c ' + myinfo)
                 sys.exit(1)

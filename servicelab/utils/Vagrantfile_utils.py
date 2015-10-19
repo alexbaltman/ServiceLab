@@ -98,10 +98,6 @@ class SlabVagrantfile(object):
                        "  config.hostmanager.manage_host = true\n"
                        "  config.hostmanager.include_offline = true\n"
                        "  config.vm.box = \"" + self.host_dict[self.hostname]['box'] + "\"\n"
-                       # RFI: non-win config --> use hosts keypair so set insert_key to F
-                       #      then enable agent forwarding.
-                       "  config.ssh.insert_key = false\n"
-                       "  config.ssh.forward_agent = true\n"
                        "  config.vm.provider :virtualbox do |vb, override|\n")
 
             for k, v in host_dict[self.hostname].iteritems():
@@ -120,6 +116,11 @@ class SlabVagrantfile(object):
                 setitup += "\", mac: \"" + host_dict[self.hostname]['mac'] + "\"\n"
             except KeyError:
                 setitup += "  config.vm.network :private_network, ip: \"" + ip + "\"\n"
+                setitup += "  config.vm.provision \"shell\"\, path: \"provision/infra.sh\"\n"
+                setitup += "  config.vm.provision \"shell\"\, path: \"provision/node.sh\"\n"
+                setitup += "  config.vm.provision \"file\"\, source: \"provision/ssh-config\"\, destination:\"/home/vagrant/.ssh/config\"\n"
+                setitup += "  config.vm.provision \"file\"\, source: \"hosts\"\, destination: \"/etc/hosts\"\n"
+                setitup += "  config.vm.synced_folder \"services\"\, \"/opt/ccs/services/\"\n"
             self.append_it(setitup)
             return 0
         except KeyError:
@@ -165,6 +166,12 @@ class SlabVagrantfile(object):
                     "    os.networks             = " + env_vars['networks'] + "\n",
                     "    override.vm.box = \"openstack\"\n"
                     "  end\n")
+        setitup += "  config.vm.provision \"shell\"\, path: \"provision/infra.sh\"\n"
+        setitup += "  config.vm.provision \"shell\"\, path: \"provision/node.sh\"\n"
+        setitup += "  config.vm.provision \"file\"\, source: \"provision/ssh-config\"\, destination:\"/home/vagrant/.ssh/config\"\n"
+        setitup += "  config.vm.provision \"file\"\, source: \"hosts\"\, destination: \"/etc/hosts\"\n"
+        setitup += "  config.vm.synced_folder \"services\"\, \"/opt/ccs/services/\"\n"
+
         self.append_it(setitup)
 
     def _vbox_os_provider_env_vars(self, float_net, tenant_nets):
