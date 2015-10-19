@@ -103,7 +103,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             ctx.logger.error("Could not boot infra-001")
             sys.exit(1)
 
-        hostname = name_vm(service, ctx.path)
+        hostname = str(name_vm(service, ctx.path))
 
         returncode, host_dict = yaml_utils.get_dev_hostyaml(ctx.path, hostname)
         if returncode == 1:

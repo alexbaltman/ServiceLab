@@ -8,7 +8,6 @@ deploy_args:
   tenant: dev-tenant
 groups:
   - virtual
-  - redhouse-tenant
 hostname: db-001
 interfaces:
   eth0:
