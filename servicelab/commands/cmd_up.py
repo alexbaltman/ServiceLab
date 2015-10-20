@@ -111,11 +111,16 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
 
     ## SERVICE VM remaining workflow  ================================
     if service:
-        # TODO: should return infra hostname as well
-        returncode = infra_ensure_up(path=ctx.path, remote=remote)
-        if returncode == 1:
-            ctx.logger.error("Could not boot infra-001")
-            sys.exit(1)
+        if remote:
+            returncode, infra_hostname = infra_ensure_up(mynets, float_net, path=ctx.path)
+            if returncode == 1:
+                ctx.logger.error("Could not boot a remote infra node")
+                sys.exit(1)
+        else:
+            returncode, infra_hostname = infra_ensure_up(path=ctx.path)
+            if returncode == 1:
+                ctx.logger.error("Could not boot a local infra node")
+                sys.exit(1)
 
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
@@ -128,7 +133,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
                              'vagrant ssh {0} -c \"cd /opt/ccs/services/{1}/'
                              ' && sudo heighliner --dev --debug deploy"'.format(infra_hostname, service))
         if returncode > 0:
-            ctx.logger.error('Had a failure during the heighliner deploy phase of"
+            ctx.logger.error('There was a failure during the heighliner deploy phase of"
                              "your service. Please see the following information"
                              "for debugging: ")
             ctx.logger.error(myinfo)
@@ -169,12 +174,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
                        os.path.join(redhouse_ten_path,
                                     "dev",
                                     "ccs-data"))
-        # TODO: if the infra node is up we should add to authorized_keys -
-        #       local/remote based on servicelab's Vagrantfile not redhouse's
 
-        # Note: from python-vagrant up function (self, no_provision=False,
-        #                                        provider=None, vm_name=None,
-        #                                        provision=None, provision_with=None)
         if remote:
             settingsyaml = {'openstack_provider': True}
             returncode = wr_settingsyaml(ctx.path, settingsyaml, hostname=target)
@@ -282,123 +282,133 @@ def name_vm(name, path):
             return hostname
 
 
-def infra_ensure_up(hostname="infra-001", path=None, remote=False):
-    '''
-    #Out[3]: [Status(name='rhel7-001', state='running', provider='virtualbox')]
-    #CalledProcessError --> subprocess exit 1 triggers this exception
-    #Do we really care if infra is vbox or remote??? --> can prob execute from either
-    #if that's true then we'd always want one local b/c we can go out, but not in
-    '''
-    infra_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra-001",
-                                                        path=path)
-    returncode, isremote = vm_isrunning(hostname=hostname, path=path)
-    if remote:
-        if isremote and returncode == 0:
-                return 0
-        elif isremote and returncode == 1:
-            try:
-                infra_connection.v.up(vm_name=hostname)
-            except CalledProcessError:
-                return 1
-        elif not isremote or returncode == 2:
-            thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
-            if not os.path.exists(os.path.join(path, 'Vagrantfile')):
-                thisvfile.init_vagrantfile()
-            hostst = yaml_utils.host_exists_vagrantyaml(hostname, path)
-            if hostst and returncode != 2:
-                hostname = 'infra-002'
-            returncode, float_net, mynets = os_ensure_network(path)
-            if returncode > 0:
-                return 1
-            thisvfile._vbox_os_provider_env_vars(float_net, mynets)
-            returncode, idic = yaml_utils.gethost_byname(hostname, os.path.join(path,
-                                                                                'provision')
-                                                         )
-            if returncode > 0:
-                return 1
-            retcode = yaml_utils.host_add_vagrantyaml(path=path,
-                                                      file_name="vagrant.yaml",
-                                                      hostname=hostname,
-                                                      memory=(idic[hostname]['memory']/512),
-                                                      box=idic[hostname]['box'],
-                                                      role=idic[hostname]['role'],
-                                                      profile=idic[hostname]['profile'],
-                                                      domain=idic[hostname]['domain'],
-                                                      mac_nocolon=idic[hostname]['mac'],
-                                                      ip=idic[hostname]['ip'],
-                                                      site='ccs-dev-1')
-            if retcode > 0:
-                return 1
-            thisvfile.add_openstack_vm(idic)
-            try:
-                infra_connection.v.up(vm_name=hostname)
-                return 0
-            except CalledProcessError:
-                return 1
+def infra_ensure_up(mynets, float_net, path=None):
+    '''Best effort to ensure infra-001 or -002 will be booted in correct env.
 
+    Args:
+        mynets (list): Comes from ensure_os_network.
+                       See 'check_for_network' in openstack_utils data strctures.
+        float_net(str): comes from ensure_os_network. looks like: 'Public-floating-602'
+        path (str): The path to your working .stack directory
+
+    Returns:
+        0 - success, infra node has been sucessfully booted
+        1 - failure
+
+    Example:
+        >>> infra_ensure_up()
+            0
+
+    Data Structure:
+        From python-vagrant's status call.
+        Out[3]: [Status(name='rhel7-001', state='running', provider='virtualbox')]
+
+    Misc.:
+        CalledProcessError --> subprocess exit 1 triggers this exception
+    '''
+    hostname = 'infra-001'
+    if mynets and float_net:
+        remote = True
     else:
-        if not isremote and returncode == 0:
-            return 0
-        if not isremote and returncode == 1:
+        remote = False
+
+    ispoweron, isremote = vm_isrunning(hostname=hostname, path=path)
+    infra_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
+                                                        path=path)
+
+    # Note: Ensure 001 is in inventory even if we're using 002.
+    if addto_inventory(hostname, path) > 0:
+        return 1, hostname
+
+    # Note: if requested remote or local and our vm's state is same then just
+    #       make sure it's booted w/ ispoweron being 0 for that.
+    if isremote == remote and ispoweron == 0:
+        return 0, hostname
+    # Note: it's what we want just not booted, so boot it.
+    elif isremote == remote and ispoweron == 1:
+        try:
+            infra_connection.v.up(vm_name=hostname)
+        except CalledProcessError:
+            return 1, hostname
+        return 0, hostname
+
+    ## Shared code b/w remote and local vbox
+    thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
+
+    # vm_isrunning currently doesn't manage these alternative states
+    # so we fail
+    if ispoweron == 3:
+        # TODO: ERROR msg here
+        return 1, hostname
+
+    # Note: b/c the infra exists but isn't in desired location we alter hostname
+    if isremote != remote:
+        hostname = 'infra-002'
+        infra_connection.vm_name = hostname
+        if addto_inventory(hostname, path) > 0:
+            return 1, hostname
+        ispoweron, isremote = vm_isrunning(hostname=hostname, path=path)
+        if isremote == remote and ispoweron == 0:
+            return 0, hostname
+        elif isremote == remote and ispoweron == 1:
             try:
                 infra_connection.v.up(vm_name=hostname)
             except CalledProcessError:
-                return 1
-        elif isremote or returncode == 2:
-            hostst = yaml_utils.host_exists_vagrantyaml(hostname, path)
-            if hostst and returncode != 2:
-                hostname = 'infra-002'
-            returncode, idic = yaml_utils.gethost_byname(hostname, os.path.join(path,
-                                                                                'provision')
-                                                         )
-            if returncode > 0:
-                return 1
-            retcode = yaml_utils.host_add_vagrantyaml(path=path,
-                                                      file_name="vagrant.yaml",
-                                                      hostname=hostname,
-                                                      memory=(idic[hostname]['memory']/512),
-                                                      box=idic[hostname]['box'],
-                                                      role=idic[hostname]['role'],
-                                                      profile=idic[hostname]['profile'],
-                                                      domain=idic[hostname]['domain'],
-                                                      mac_nocolon=idic[hostname]['mac'],
-                                                      ip=idic[hostname]['ip'],
-                                                      site='ccs-dev-1')
-            if retcode > 0:
-                return 1
+                return 1, hostname
+            return 0, hostname
+        elif ispoweron == 3:
+            return 1, hostname
+        elif isremote != remote and ispoweron != 2:
+            return 1, hostname
 
-            thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
-            if not os.path.exists(os.path.join(path, 'Vagrantfile')):
-                thisvfile.init_vagrantfile()
-
-            thisvfile.add_virtualbox_vm(idic)
-            try:
-                infra_connection.v.up(vm_name=hostname)
-                return 0
-            except CalledProcessError:
-                return 1
+    # Note: If we're here we need to create an infra node where it was requested
+    #       by the user.
+    if remote:
+        thisvfile._vbox_os_provider_env_vars(float_net, mynets)
+        thisvfile.add_openstack_vm(host_dict)
+        try:
+            infra_connection.v.up(vm_name=hostname)
+            return 0, hostname
+        except CalledProcessError:
+            return 1, hostname
+    else:
+        thisvfile.add_virtualbox_vm(host_dict)
+        try:
+            infra_connection.v.up(vm_name=hostname)
+            return 0, hostname
+        except CalledProcessError:
+            return 1, hostname
 
 
 def vm_isrunning(hostname, path):
     '''
     on/off then second return value is if it's remote.
+
+    From python-vagrant up function (self, no_provision=False,
+                                     provider=None, vm_name=None,
+                                     provision=None, provision_with=None)
     '''
     vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                                      path=path)
     try:
         status = vm_connection.v.status()
+        # Note: local vbox value: running
         if status[0][1] == 'running':
             return 0, False
+        # Note: local vbox value: poweroff
         elif status[0][1] == 'poweroff':
             return 1, False
+        # Note: remote OS value: active
         elif status[0][1] == 'active':
             return 0, True
+        # Note: remote OS value: shutoff
         elif status[0][1] == 'shutoff':
             return 1, True
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
         return 2, False
-    return 2, False
+    # Note: 3 represent some other state --> suspended, aborted, etc.
+    return 3, False
 
 
 def os_ensure_network(path):
@@ -518,3 +528,43 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
         # TODO: Log - don't have access to settings under
         # service-redhouse-tenant
         return 1
+
+
+def addto_inventory(hostname, path):
+    """Add a pre-defined host to inventory vagrant.yaml file, meaning
+    it was created in the provision/vagrant.yaml and committed.
+
+    Args:
+        hostname (str): A string representing the hostname
+        path (str):     The path to working .stack directory
+
+    Returns:
+        0 - success
+        1 - failure
+
+    Example:
+        >>> addto_inventory('infra-001', ctx.path)
+        0
+    """
+    hostexists = yaml_utils.host_exists_vagrantyaml(hostname, path)
+    if not hostexists:
+        returncode, host_dict = yaml_utils.gethost_byname(hostname,
+                                                      os.path.join(path,
+                                                                   'provision'))
+        if returncode > 0:
+            return 1
+        returncode = yaml_utils.host_add_vagrantyaml(path=path,
+                                                     file_name="vagrant.yaml",
+                                                     hostname=hostname,
+                                                     memory=(host_dict[hostname]['memory']/512),
+                                                     box=host_dict[hostname]['box'],
+                                                     role=host_dict[hostname]['role'],
+                                                     profile=host_dict[hostname]['profile'],
+                                                     domain=host_dict[hostname]['domain'],
+                                                     mac_nocolon=host_dict[hostname]['mac'],
+                                                     ip=host_dict[hostname]['ip'],
+                                                     site='ccs-dev-1')
+        if returncode > 0:
+            return 1
+    return 0
+

@@ -57,7 +57,6 @@ class Connect_to_vagrant(object):
             root=vagrant_dir,
             quiet_stdout=False,
             quiet_stderr=False)
-        v = self.v
 
         # check for installed plugins
 
