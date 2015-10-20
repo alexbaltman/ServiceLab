@@ -211,6 +211,7 @@ def _submodule_pull_ff(path, branch):
 
 def _check_for_git():
     """Check if git is available on the current system.
+
     Returns:
         returncode (int) -- 0 if git exists, otherwise doesn't
         myinfo (str)     -- stderr/stdout logs of the attempted "type git"
@@ -225,6 +226,29 @@ def _check_for_git():
     #       systems returns 0, which is bad.
     if os.name == "posix":
         returncode, myinfo = run_this('type git')
+        return(returncode, myinfo)
+    elif os.name == "nt":
+        # test windows for git
+        pass
+
+
+def _check_for_libpup():
+    """Check if librarian-puppet is available on the current system.
+
+    Returns:
+        returncode (int) -- 0 if git exists, otherwise doesn't
+        myinfo (str)     -- stderr/stdout logs of the attempted "type git"
+
+    Example Usage:
+        >>> print _check_for_libpup()
+        (0, "")
+    """
+    # Note: Using 'type' here to establish if posix system has a binary
+    #       called librarian-puppet instead of 'which' b/c which often doesn't return
+    #       proper 0 or 1 exit status' and type does. Which blah on many
+    #       systems returns 0, which is bad.
+    if os.name == "posix":
+        returncode, myinfo = run_this('type librarian-puppet')
         return(returncode, myinfo)
     elif os.name == "nt":
         # test windows for git

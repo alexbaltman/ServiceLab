@@ -29,15 +29,14 @@ from servicelab.utils import Vagrantfile_utils
               by booting the necessary extra VMs.')
 @click.option('-b', '--branch', default="master", help='Choose a branch to run against \
               for service redhouse tenant and svc.')
+@click.option('--data-branch', default="master", help='Choose a branch of ccs-data")
+@click.option('--service-branch', default="master", help='Choose a branch of your service")
 @click.option('-u', '--username', help='Enter the desired username')
 @click.option('-i', '--interactive', help='Walk through booting VMs')
-# @click.option('--osp-aio', help='Boot a full CCS implementation of the \
-#              OpenStack Platform on one VM. Note: This is not the same as \
-#              the AIO node deployed in the service cloud.')
 @click.group('up', invoke_without_command=True, short_help="Boots VM(s).")
 @pass_context
-def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
-        interactive):
+def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch, service_branch,
+        username, interactive):
     if mini is True and full is True:
         ctx.logger.error("You can not use the mini flag with the full flag.")
         sys.exit(1)
@@ -113,7 +112,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
                 sys.exit(1)
             retc, myinfo = service_utils.build_data(ctx.path)
             if retc > 0:
-                 ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
+                ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
 
         returncode = infra_ensure_up(path=ctx.path, remote=remote)
         if returncode == 1:
@@ -171,7 +170,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
 
         # service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
         if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
-            service_utils.sync_service(ctx.path, branch, username, 'ccs-data')
+            service_utils.sync_service(ctx.path, data_branch, username, 'ccs-data')
 
         if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data', 'out')):
             returncode, myinfo = service_utils.run_this('./lightfuse.rb -c hiera-bom-unenc.yaml'
@@ -230,7 +229,6 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
             sys.exit(0)
 
     service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
-    service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
 
     if mini:
         returncode, allmy_vms = yaml_utils.getmin_OS_vms(ctx.path)
@@ -296,34 +294,6 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, username,
     except IOError as e:
         ctx.logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
         sys.exit(1)
-'''
-    a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=ctx.path)
-    if os.name == "posix":
-        for k in allmy_vms:
-            for i in k:
-                a.v.up(vm_name=i, no_provision=True)
-        # Note: Provision VMS using 4 CPUs from a pool
-        pool = multiprocessing.Pool(4)
-        for k in allmy_vms:
-            for i in k:
-                pool.map(a.v.provision(vm_name=i))
-        pool.close()
-        returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
-        if returncode > 0:
-            ctx.logger.error("Could not run vagrant hostmanager because\
-                             {0}".format(myinfo))
-            sys.exit(1)
-        sys.exit(0)
-    elif os.name == "nt":
-        for k in allmy_vms:
-            for i in k:
-                a.v.up(vm_name=i)
-        if returncode > 0:
-            ctx.logger.error("Could not run vagrant hostmanager because\
-                             {0}".format(myinfo))
-            sys.exit(1)
-        sys.exit(0)
-'''
 
 
 def name_vm(name, path):
