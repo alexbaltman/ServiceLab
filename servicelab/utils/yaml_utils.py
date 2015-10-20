@@ -306,7 +306,7 @@ def getfull_OS_vms(pathto_yaml, vmname_ending_in):
 
 def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
                          box='http://cis-kickstart.cisco.com/ccs-rhel-7.box',
-                         role=None, profile=None, domain=1, storage=0,
+                         role='none', profile=None, domain=1, storage=0,
                          mac_nocolon=None, ip=None):
     """Add a host to the working (servicelab/servicelab/.stack/) vagrant.yaml file.
 
@@ -661,37 +661,17 @@ def next_macip_for_devsite(path, site):
     """
     # Note: We're assuming a pre-sorted list here from
     #       get_allips_forsite, otherwise we'd have to here.
-    # l = get_allips_forsite(path, site)
     env_path = os.path.join(path, 'services', 'ccs-data', 'sites', 'ccs-dev-1',
                             'environments')
     subnet = ipaddress.IPv4Network(unicode('192.168.100.0/24'))
-    l = [tc_vm_yaml_create.find_ip(env_path, subnet)]
-    # [i.split(".")[0] for i in l]
-    for ip in l:
-        # Note: oct, meaning octet of an ip.
-        # oct1, oct2, oct3, oct4 = ip.split(".")
-        # if int(oct1) == 192 and int(oct2) == 168 and int(oct3) == 100:
-            # Note: oct4 is str so to add 1 need to make int and then
-            #       to compare to list need to make str again.
-            # oct4 = str(int(oct4)+1)
-            # Note: Recreate string w/ new oct 4 for list comparison.
-            # ip = ".".join([oct1, oct2, oct3, oct4])
-            # if ip == "192.168.100.1":
-                # Note: Don't want to match the gateway.
-                # continue
-            # elif ip == "192.168.100.255":
-                # yaml_utils_logger.error("No ips remaining on the \
-                                        # 192.168.100.0/24 block.")
-                # return 1
-
-            # if ip not in l:
-                returncode, mac_colon, mac_nocolon = gen_mac_from_ip(ip)
-                if returncode == 0:
-                    return 0, ip, mac_colon, mac_nocolon
-                else:
-                    # Note: everything after the 1 should be None b/c
-                    #       of the failure in that function.
-                    return 1, ip, mac_colon, mac_nocolon
+    ip = tc_vm_yaml_create.find_ip(env_path, subnet)
+    returncode, mac_colon, mac_nocolon = gen_mac_from_ip(ip)
+    if returncode == 0:
+        return 0, ip, mac_colon, mac_nocolon
+    else:
+        # Note: everything after the 1 should be None b/c
+        #       of the failure in that function.
+        return 1, ip, mac_colon, mac_nocolon
 
 
 def gen_mac_from_ip(ip):
@@ -747,7 +727,7 @@ def gen_mac_from_ip(ip):
         return 1, mac_colon, mac_nocolon
 
 
-def write_dev_hostyaml_out(path, hostname, role=None, site="ccs-dev-1",
+def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
                            env="dev-tenant", flavor='2cpu.4ram.20sas',
                            image='slab-RHEL7.1v7'):
     """Given an ip address generate a mac address.
@@ -857,6 +837,16 @@ def write_dev_hostyaml_out(path, hostname, role=None, site="ccs-dev-1",
         doc['hostname'] = hostname
         doc['interfaces']['eth0']['ip_address'] = ip
         doc['role'] = role
+        match = re.search('^(?:cs[lmsx]-\w\d?-)?(?:service-)?([\w-]+)-\d+$', hostname)
+        if match:
+            osp_list = ('ceilometerctl', 'ceph-mon', 'ceph-osd', 'ceph-rgw', 'cinderctl',
+                        'db', 'glancectl', 'heatctl', 'horizon', 'infra', 'keystonectl',
+                        'net', 'neutronapi', 'nova', 'novactl', 'proxyexternal',
+                        'proxyinternal')
+            if match.group(1) in osp_list:
+                doc['groups'].append('redhouse-tenant')
+            else:
+                doc['groups'].append(match.group(1))
 
         if os.path.exists(os.path.join(deploy_hostyaml_to, hostname + ".yaml")):
             yaml_utils_logger.error("Host yaml already exists.")
