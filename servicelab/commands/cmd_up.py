@@ -59,7 +59,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
             sys.exit(1)
 
     if rhel7:
-        hostname = name_vm("rhel7", ctx.path)
+        hostname = str(name_vm("rhel7", ctx.path))
     elif service:
         hostname = str(name_vm(service, ctx.path))
 
@@ -142,20 +142,17 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
             sys.exit(0)
     elif target:
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
-        service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
+        service_utils.sync_service(ctx.path, service_branch, username, "service-redhouse-tenant")
         a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=redhouse_ten_path)
-        # TODO: Add to vagrant.yaml
+        if addto_inventory(target, ctx.path) > 0:
+            ctx.logger.error('Could not add {0} to vagrant.yaml'.format(target))
+            sys.exit(1)
 
-        # service_utils.sync_service(ctx.path, branch, username, "service-redhouse-svc")
         if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
             service_utils.sync_service(ctx.path, data_branch, username, 'ccs-data')
 
         if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data', 'out')):
-            returncode, myinfo = service_utils.run_this('./lightfuse.rb -c hiera-bom-unenc.yaml'
-                                                        '--site ccs-dev-1',
-                                                        cwd=os.path.join(ctx.path,
-                                                                         "services",
-                                                                         'ccs-data'))
+            returncode, myinfo = service_utils.build_data(ctx.path)
             if returncode > 0:
                 ctx.logger.error('Failed to build ccs-data data b/c ' + myinfo)
                 sys.exit(1)
