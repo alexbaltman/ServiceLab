@@ -67,9 +67,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
     yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
                                     "ccs-dev-1")
     yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
-    retc, myinfo = service_utils.build_data(ctx.path)
-    if retc > 0:
-        ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
+    if service:
+        retc, myinfo = service_utils.build_data(ctx.path)
+        if retc > 0:
+            ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
 
     # Prep class Objects
     myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
