@@ -118,7 +118,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
                 ctx.logger.error("Could not boot a remote infra node")
                 sys.exit(1)
         else:
-            returncode, infra_hostname = infra_ensure_up(path=ctx.path)
+            returncode, infra_hostname = infra_ensure_up(None, None, path=ctx.path)
             if returncode == 1:
                 ctx.logger.error("Could not boot a local infra node")
                 sys.exit(1)
@@ -324,6 +324,7 @@ def infra_ensure_up(mynets, float_net, path=None):
     # Note: if requested remote or local and our vm's state is same then just
     #       make sure it's booted w/ ispoweron being 0 for that.
     if isremote == remote and ispoweron == 0:
+        infra_connection.v.reload(hostname)
         return 0, hostname
     # Note: it's what we want just not booted, so boot it.
     elif isremote == remote and ispoweron == 1:
@@ -350,6 +351,7 @@ def infra_ensure_up(mynets, float_net, path=None):
             return 1, hostname
         ispoweron, isremote = vm_isrunning(hostname=hostname, path=path)
         if isremote == remote and ispoweron == 0:
+            infa_connection.v.reload(hostname)
             return 0, hostname
         elif isremote == remote and ispoweron == 1:
             try:
@@ -364,6 +366,7 @@ def infra_ensure_up(mynets, float_net, path=None):
 
     # Note: If we're here we need to create an infra node where it was requested
     #       by the user.
+    _, host_dict = yaml_utils.gethost_byname(hostname, path)
     if remote:
         thisvfile._vbox_os_provider_env_vars(float_net, mynets)
         thisvfile.add_openstack_vm(host_dict)
@@ -392,7 +395,7 @@ def vm_isrunning(hostname, path):
     vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                                      path=path)
     try:
-        status = vm_connection.v.status()
+        status = vm_connection.v.status(hostname)
         # Note: local vbox value: running
         if status[0][1] == 'running':
             return 0, False
