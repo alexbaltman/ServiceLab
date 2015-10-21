@@ -29,8 +29,8 @@ from servicelab.utils import Vagrantfile_utils
               by booting the necessary extra VMs.')
 @click.option('-b', '--branch', default="master", help='Choose a branch to run against \
               for service redhouse tenant and svc.')
-@click.option('--data-branch', default="master", help='Choose a branch of ccs-data")
-@click.option('--service-branch', default="master", help='Choose a branch of your service")
+@click.option('--data-branch', default="master", help='Choose a branch of ccs-data')
+@click.option('--service-branch', default="master", help='Choose a branch of your service')
 @click.option('-u', '--username', help='Enter the desired username')
 @click.option('-i', '--interactive', help='Walk through booting VMs')
 @click.group('up', invoke_without_command=True, short_help="Boots VM(s).")
@@ -64,9 +64,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
         hostname = str(name_vm(service, ctx.path))
 
     # Setup data and inventory
-    yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
     yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
                                     "ccs-dev-1")
+    yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
     retc, myinfo = service_utils.build_data(ctx.path)
     if retc > 0:
         ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
@@ -135,7 +135,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
 
         returncode, myinfo = service_utils.run_this(command.format(infra_hostname, service))
         if returncode > 0:
-            ctx.logger.error('There was a failure during the heighliner deploy phase of"
+            ctx.logger.error("There was a failure during the heighliner deploy phase of"
                              "your service. Please see the following information"
                              "for debugging: ")
             ctx.logger.error(myinfo)
@@ -164,7 +164,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
                                            "dev",
                                            "ccs-data")):
             ctx.logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
-                                                                'ccs-data') + "with " +
+                                                                'ccs-data') + "with  " +
                              os.path.join(ctx.path, "services", "ccs-data"))
             # Note: os.symlink(src, dst)
             os.symlink(os.path.join(ctx.path,

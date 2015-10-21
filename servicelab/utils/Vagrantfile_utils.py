@@ -118,9 +118,13 @@ class SlabVagrantfile(object):
                 setitup += "  config.vm.network :private_network, ip: \"" + ip + "\"\n"
                 setitup += "  config.vm.provision \"shell\"\, path: \"provision/infra.sh\"\n"
                 setitup += "  config.vm.provision \"shell\"\, path: \"provision/node.sh\"\n"
-                setitup += "  config.vm.provision \"file\"\, source: \"provision/ssh-config\"\, destination:\"/home/vagrant/.ssh/config\"\n"
-                setitup += "  config.vm.provision \"file\"\, source: \"hosts\"\, destination: \"/etc/hosts\"\n"
-                setitup += "  config.vm.synced_folder \"services\"\, \"/opt/ccs/services/\"\n"
+                setitup += ("  config.vm.provision \"file\"\, source: "
+                            "\"provision/ssh-config\"\,"
+                            "destination:\"/home/vagrant/.ssh/config\"\n")
+                setitup += ("  config.vm.provision \"file\"\, source: \"hosts\"\, "
+                            "destination: \"/etc/hosts\"\n")
+                setitup += ("  config.vm.synced_folder \"services\"\, "
+                            "\"/opt/ccs/services/\"\n")
             self.append_it(setitup)
             return 0
         except KeyError:
@@ -168,8 +172,10 @@ class SlabVagrantfile(object):
                     "  end\n")
         setitup += "  config.vm.provision \"shell\"\, path: \"provision/infra.sh\"\n"
         setitup += "  config.vm.provision \"shell\"\, path: \"provision/node.sh\"\n"
-        setitup += "  config.vm.provision \"file\"\, source: \"provision/ssh-config\"\, destination:\"/home/vagrant/.ssh/config\"\n"
-        setitup += "  config.vm.provision \"file\"\, source: \"hosts\"\, destination: \"/etc/hosts\"\n"
+        setitup += ("  config.vm.provision \"file\"\, source: \"provision/ssh-config\"\, "
+                    "destination:\"/home/vagrant/.ssh/config\"\n")
+        setitup += ("  config.vm.provision \"file\"\, source: \"hosts\"\, destination: "
+                    "\"/etc/hosts\"\n")
         setitup += "  config.vm.synced_folder \"services\"\, \"/opt/ccs/services/\"\n"
 
         self.append_it(setitup)
