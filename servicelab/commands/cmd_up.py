@@ -35,15 +35,15 @@ from servicelab.utils import Vagrantfile_utils
 @click.option('-i', '--interactive', help='Walk through booting VMs')
 @click.group('up', invoke_without_command=True, short_help="Boots VM(s).")
 @pass_context
-def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch, service_branch,
-        username, interactive):
+def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch,
+        service_branch, username, interactive):
 
-    ## Things the user Should not do =================================
+    # Things the user Should not do ==================================
     if mini is True and full is True:
         ctx.logger.error("You can not use the mini flag with the full flag.")
         sys.exit(1)
 
-    ## Gather as many requirements as possible for the user ==========
+    # Gather as many requirements as possible for the user ===========
     if not username:
         username = ctx.get_username()
 
@@ -109,7 +109,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
     elif rhel7 and returncode == 0:
         sys.exit(0)
 
-    ## SERVICE VM remaining workflow  ================================
+    # SERVICE VM remaining workflow  =================================
     if service:
         if remote:
             returncode, infra_hostname = infra_ensure_up(mynets, float_net, path=ctx.path)
@@ -126,12 +126,14 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
         if returncode > 0:
             ctx.logger.error("Could not run vagrant hostmanager because\
                             {0}".format(myinfo))
-            ctx.logger.error("Vagrant manager will fail if you have local vms and remote vms.")
+            ctx.logger.error("Vagrant manager will fail if you have local vms"
+                             "and remote vms.")
             sys.exit(1)
 
-        returncode, myinfo = service_utils.run_this(
-                             'vagrant ssh {0} -c \"cd /opt/ccs/services/{1}/'
-                             ' && sudo heighliner --dev --debug deploy"'.format(infra_hostname, service))
+        command = ('vagrant ssh {0} -c \"cd /opt/ccs/services/{1}/ && sudo heighliner '
+                   '--dev --debug deploy\"')
+
+        returncode, myinfo = service_utils.run_this(command.format(infra_hostname, service))
         if returncode > 0:
             ctx.logger.error('There was a failure during the heighliner deploy phase of"
                              "your service. Please see the following information"
@@ -142,7 +144,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
             sys.exit(0)
     elif target:
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
-        service_utils.sync_service(ctx.path, service_branch, username, "service-redhouse-tenant")
+        service_utils.sync_service(ctx.path, service_branch,
+                                   username, "service-redhouse-tenant")
         a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=redhouse_ten_path)
         if addto_inventory(target, ctx.path) > 0:
             ctx.logger.error('Could not add {0} to vagrant.yaml'.format(target))
@@ -329,7 +332,7 @@ def infra_ensure_up(mynets, float_net, path=None):
             return 1, hostname
         return 0, hostname
 
-    ## Shared code b/w remote and local vbox
+    # Shared code b/w remote and local vbox
     thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
 
     # vm_isrunning currently doesn't manage these alternative states
@@ -546,14 +549,18 @@ def addto_inventory(hostname, path):
     hostexists = yaml_utils.host_exists_vagrantyaml(hostname, path)
     if not hostexists:
         returncode, host_dict = yaml_utils.gethost_byname(hostname,
-                                                      os.path.join(path,
-                                                                   'provision'))
+                                                          os.path.join(path,
+                                                                       'provision'))
         if returncode > 0:
             return 1
+
+        # Pep8 compliant line for length below (93 characters)
+        hd = host_dict[hostname]['memory'] / 512
+
         returncode = yaml_utils.host_add_vagrantyaml(path=path,
                                                      file_name="vagrant.yaml",
                                                      hostname=hostname,
-                                                     memory=(host_dict[hostname]['memory']/512),
+                                                     memory=hd,
                                                      box=host_dict[hostname]['box'],
                                                      role=host_dict[hostname]['role'],
                                                      profile=host_dict[hostname]['profile'],
@@ -564,4 +571,3 @@ def addto_inventory(hostname, path):
         if returncode > 0:
             return 1
     return 0
-
