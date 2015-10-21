@@ -72,9 +72,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
         ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
 
     # Prep class Objects
+    myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
     if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
         myvfile.init_vagrantfile()
-    myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
     myvag_env = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                                  path=ctx.path)
 
@@ -98,7 +98,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
         myvfile.add_virtualbox_vm(host_dict)
 
     # Get vm running
-    a.v.up(vm_name=hostname)
+    myvag_env.v.up(vm_name=hostname)
     returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
     if returncode > 0:
         ctx.logger.error("Could not run vagrant hostmanager because\

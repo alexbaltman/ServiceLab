@@ -99,7 +99,7 @@ def build_data(path):
     """
     data_reponame = "ccs-data"
     SERVICE_UTILS_LOGGER.debug("Building the data.")
-    returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml'
+    returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml '
                                   '--site ccs-dev-1 && cd ..',
                                   cwd=os.path.join(path, "services",
                                                    data_reponame))

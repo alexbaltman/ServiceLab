@@ -116,14 +116,14 @@ class SlabVagrantfile(object):
                 setitup += "\", mac: \"" + host_dict[self.hostname]['mac'] + "\"\n"
             except KeyError:
                 setitup += "  config.vm.network :private_network, ip: \"" + ip + "\"\n"
-                setitup += "  config.vm.provision \"shell\"\, path: \"provision/infra.sh\"\n"
-                setitup += "  config.vm.provision \"shell\"\, path: \"provision/node.sh\"\n"
-                setitup += ("  config.vm.provision \"file\"\, source: "
-                            "\"provision/ssh-config\"\,"
+                setitup += "  config.vm.provision \"shell\", path: \"provision/infra.sh\"\n"
+                setitup += "  config.vm.provision \"shell\", path: \"provision/node.sh\"\n"
+                setitup += ("  config.vm.provision \"file\", source: " +
+                            "\"provision/ssh-config\"," +
                             "destination:\"/home/vagrant/.ssh/config\"\n")
-                setitup += ("  config.vm.provision \"file\"\, source: \"hosts\"\, "
+                setitup += ("  config.vm.provision \"file\", source: \"hosts\", " +
                             "destination: \"/etc/hosts\"\n")
-                setitup += ("  config.vm.synced_folder \"services\"\, "
+                setitup += ("  config.vm.synced_folder \"services\", " +
                             "\"/opt/ccs/services/\"\n")
             self.append_it(setitup)
             return 0
@@ -139,44 +139,44 @@ class SlabVagrantfile(object):
         self.hostname = self.host_dict.keys()[0]
         env_vars = self.env_vars
         self._vbox_os_provider_host_vars(self.path)
-        setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n",
-                   "  cluster.ssh.username = 'cloud-user' \n",
+        setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n"
+                   "  cluster.ssh.username = 'cloud-user' \n"
                    "  config.hostmanager.enabled = true\n"
                    "  config.hostmanager.manage_host = true\n"
                    "  config.hostmanager.include_offline = true\n"
                    "  config.vm.provider :openstack do |os, override|\n")
 
         setitup += ("    os.openstack_auth_url   = \"" + env_vars['openstack_auth_url'] +
-                    "\"\n",
-                    "    os.username             = \"" + env_vars['username'] + "\"\n",
-                    "    os.password              = \"" + env_vars['password'] + "\"\n",
+                    "\"\n"
+                    "    os.username             = \"" + env_vars['username'] + "\"\n"
+                    "    os.password              = \"" + env_vars['password'] + "\"\n"
                     "    os.tenant_name          = \"" + env_vars['tenant_name'] + "\"\n")
 
         try:
-            setitup += ("    os.flavor               = \"" + self.host_vars['flavor'],
-                        "\"\n",
-                        "    os.image                = \"" + self.host_vars['image'],
+            setitup += ("    os.flavor               = \"" + self.host_vars['flavor'] +
+                        "\"\n"
+                        "    os.image                = \"" + self.host_vars['image'] +
                         "\"\n")
 
         except KeyError:
             Vagrantfile_utils_logger.error('Could not set host flavor or img from\
                                             ccs-data')
         setitup += ("    os.floating_ip_pool     = \"" + env_vars['floating_ip_pool'] +
-                    "\"\n",
+                    "\"\n"
                     "    os.openstack_network_url=\"" + env_vars['openstack_network_url'] +
-                    "\"\n",
+                    "\"\n"
                     "    os.openstack_image_url  = \"" + env_vars['openstack_image_url'] +
-                    "\"\n",
-                    "    os.networks             = " + env_vars['networks'] + "\n",
+                    "\"\n"
+                    "    os.networks             = " + env_vars['networks'] + "\n"
                     "    override.vm.box = \"openstack\"\n"
                     "  end\n")
-        setitup += "  config.vm.provision \"shell\"\, path: \"provision/infra.sh\"\n"
-        setitup += "  config.vm.provision \"shell\"\, path: \"provision/node.sh\"\n"
-        setitup += ("  config.vm.provision \"file\"\, source: \"provision/ssh-config\"\, "
-                    "destination:\"/home/vagrant/.ssh/config\"\n")
-        setitup += ("  config.vm.provision \"file\"\, source: \"hosts\"\, destination: "
+        setitup += ("  config.vm.provision \"shell\", path: \"provision/infra-OS.sh\"\n")
+        setitup += ("  config.vm.provision \"shell\", path: \"provision/node-OS.sh\"\n")
+        setitup += ("  config.vm.provision \"file\", source: \"provision/ssh-config\", "
+                    "destination:\"/home/cloud-user/.ssh/config\"\n")
+        setitup += ("  config.vm.provision \"file\", source: \"hosts\", destination: "
                     "\"/etc/hosts\"\n")
-        setitup += "  config.vm.synced_folder \"services\"\, \"/opt/ccs/services/\"\n"
+        setitup += ("  config.vm.synced_folder \"services\", \"/opt/ccs/services/\"\n")
 
         self.append_it(setitup)
 
