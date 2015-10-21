@@ -147,7 +147,7 @@ class SlabVagrantfile(object):
         setitup += ("    os.openstack_auth_url   = \"" + env_vars['openstack_auth_url'] +
                     "\"\n"
                     "    os.username             = \"" + env_vars['username'] + "\"\n"
-                    "    os.password              = \"" + env_vars['password'] + "\"\n"
+                    "    os.password             = \"" + env_vars['password'] + "\"\n"
                     "    os.tenant_name          = \"" + env_vars['tenant_name'] + "\"\n")
 
         try:
@@ -161,7 +161,7 @@ class SlabVagrantfile(object):
                                             ccs-data')
         setitup += ("    os.floating_ip_pool     = \"" + env_vars['floating_ip_pool'] +
                     "\"\n"
-                    "    os.openstack_network_url=\"" + env_vars['openstack_network_url'] +
+                    "    os.openstack_network_url= \"" + env_vars['openstack_network_url'] +
                     "\"\n"
                     "    os.openstack_image_url  = \"" + env_vars['openstack_image_url'] +
                     "\"\n"
