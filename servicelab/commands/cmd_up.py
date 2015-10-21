@@ -102,10 +102,16 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
     myvag_env.v.up(vm_name=hostname)
     returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
     if returncode > 0:
-        ctx.logger.error("Could not run vagrant hostmanager because\
-                        {0}".format(myinfo))
-        ctx.logger.error("Vagrant manager will fail if you have local vms and remote vms.")
-        sys.exit(1)
+        # Second chance.
+        returncode, myinfo = service_utils.run_this('vagrant hostmanager '
+                                                    '--provider openstack',
+                                                    ctx.path)
+        if returncode > 0:
+            ctx.logger.error("Could not run vagrant hostmanager because\
+                             {0}".format(myinfo))
+            ctx.logger.error("Vagrant manager will fail if you "
+                             "have local vms and remote vms.")
+            sys.exit(1)
     # You can exit safely now if you're just booting a rhel7 vm
     elif rhel7 and returncode == 0:
         sys.exit(0)
@@ -125,11 +131,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
 
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
-            ctx.logger.error("Could not run vagrant hostmanager because\
-                            {0}".format(myinfo))
-            ctx.logger.error("Vagrant manager will fail if you have local vms"
-                             "and remote vms.")
-            sys.exit(1)
+            returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
+            if returncode > 0:
+                ctx.logger.error("Could not run vagrant hostmanager because\
+                                 {0}".format(myinfo))
+                ctx.logger.error("Vagrant manager will fail if you have local vms"
+                                 "and remote vms.")
+                sys.exit(1)
 
         command = ('vagrant ssh {0} -c \"cd /opt/ccs/services/{1}/ && sudo heighliner '
                    '--dev --debug deploy\"')
@@ -196,11 +204,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
             a.v.up(vm_name=target)
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
-            ctx.logger.error("Could not run vagrant hostmanager because\
-                             {0}".format(myinfo))
-            sys.exit(1)
-        else:
-            sys.exit(0)
+            returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
+            if returncode > 0:
+                ctx.logger.error("Could not run vagrant hostmanager because\
+                                 {0}".format(myinfo))
+                sys.exit(1)
+            else:
+                sys.exit(0)
 
     service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
 

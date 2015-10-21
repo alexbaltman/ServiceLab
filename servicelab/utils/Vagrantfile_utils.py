@@ -95,7 +95,6 @@ class SlabVagrantfile(object):
         try:
             setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n"
                        "  config.hostmanager.enabled = true\n"
-                       "  config.hostmanager.manage_host = true\n"
                        "  config.hostmanager.include_offline = true\n"
                        "  config.vm.box = \"" + self.host_dict[self.hostname]['box'] + "\"\n"
                        "  config.vm.provider :virtualbox do |vb, override|\n")
@@ -142,7 +141,6 @@ class SlabVagrantfile(object):
         setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n"
                    "  cluster.ssh.username = 'cloud-user' \n"
                    "  config.hostmanager.enabled = true\n"
-                   "  config.hostmanager.manage_host = true\n"
                    "  config.hostmanager.include_offline = true\n"
                    "  config.vm.provider :openstack do |os, override|\n")
 
