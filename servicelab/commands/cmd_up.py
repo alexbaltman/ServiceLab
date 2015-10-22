@@ -15,25 +15,57 @@ from servicelab.utils import yaml_utils
 from servicelab.utils import Vagrantfile_utils
 
 
-@click.option('--full', is_flag=True, default=False, help='Boot complete openstack stack without ha, \
-              unless --ha flag is set. You can not use the min flag with the full flag')
-@click.option('--mini', is_flag=True, default=False, help='Boot min openstack stack without ha, \
-              unless --ha flag is set. You can not use min flag with the full flag')
-@click.option('--rhel7', is_flag=True, default=False, help='Boot a rhel7 vm.')
-@click.option('--target', '-t', help='pick an OSP target vm to boot.')
-@click.option('--service', '-s', default="", help='This is a service you would like to boot\
-              a vm for. e.g. service-sonarqube')
-@click.option('-r', '--remote', is_flag=True, default=False,
+@click.option('--full',
+              is_flag=True,
+              default=False,
+              help="Boot complete openstack stack without ha, unless --ha flag is set. "
+                   "You can not use the min flag with the full flag")
+@click.option('--mini',
+              is_flag=True,
+              default=False,
+              help="Boot min openstack stack without ha,  unless --ha flag is set. "
+                   "You can not use min flag with the full flag")
+@click.option('--rhel7',
+              is_flag=True,
+              default=False,
+              help='Boot a rhel7 vm.')
+@click.option('--target',
+              '-t',
+              help='pick an OSP target vm to boot.')
+@click.option('--service',
+              '-s',
+              default="",
+              help="This is a service you would like to boot a vm "
+                   "for. e.g. service-sonarqube")
+@click.option('-r',
+              '--remote',
+              is_flag=True,
+              default=False,
               help='Boot into an OS environment')
-@click.option('--ha', is_flag=True, default=False, help='Enables HA for core OpenStack components \
-              by booting the necessary extra VMs.')
-@click.option('-b', '--branch', default="master", help='Choose a branch to run against \
-              for service redhouse tenant and svc.')
-@click.option('--data-branch', default="master", help='Choose a branch of ccs-data')
-@click.option('--service-branch', default="master", help='Choose a branch of your service')
-@click.option('-u', '--username', help='Enter the desired username')
-@click.option('-i', '--interactive', help='Walk through booting VMs')
-@click.group('up', invoke_without_command=True, short_help="Boots VM(s).")
+@click.option('--ha',
+              is_flag=True,
+              default=False,
+              help="Enables HA for core OpenStack components by booting "
+                   "the necessary extra VMs.")
+@click.option('-b',
+              '--branch',
+              default="master",
+              help='Choose a branch to run against for service redhouse tenant and svc.')
+@click.option('--data-branch',
+              default="master",
+              help='Choose a branch of ccs-data')
+@click.option('--service-branch',
+              default="master",
+              help='Choose a branch of your service')
+@click.option('-u',
+              '--username',
+              help='Enter the desired username')
+@click.option('-i',
+              '--interactive',
+              help='Walk through booting VMs')
+@click.group('up',
+             invoke_without_command=True,
+             short_help="Boots VM(s).")
 @pass_context
 def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch,
         service_branch, username, interactive):
@@ -338,6 +370,7 @@ def infra_ensure_up(mynets, float_net, path=None):
     # Note: if requested remote or local and our vm's state is same then just
     #       make sure it's booted w/ ispoweron being 0 for that.
     if isremote == remote and ispoweron == 0:
+        infra_connection.v.reload(hostname)
         return 0, hostname
     # Note: it's what we want just not booted, so boot it.
     elif isremote == remote and ispoweron == 1:
@@ -364,6 +397,7 @@ def infra_ensure_up(mynets, float_net, path=None):
             return 1, hostname
         ispoweron, isremote = vm_isrunning(hostname=hostname, path=path)
         if isremote == remote and ispoweron == 0:
+            infa_connection.v.reload(hostname)
             return 0, hostname
         elif isremote == remote and ispoweron == 1:
             try:
@@ -376,8 +410,12 @@ def infra_ensure_up(mynets, float_net, path=None):
         elif isremote != remote and ispoweron != 2:
             return 1, hostname
 
-    # Note: If we're here we need to create an infra node where it was requested
-    #       by the user.
+    # Note: At this point infra node (hostname) should be in the inventroy
+    #       else error out
+    ret_code, host_dict = yaml_utils.gethost_byname(hostname, path)
+    if ret_code > 0:
+        return 1, hostname
+
     if remote:
         thisvfile._vbox_os_provider_env_vars(float_net, mynets)
         thisvfile.add_openstack_vm(host_dict)
@@ -406,7 +444,7 @@ def vm_isrunning(hostname, path):
     vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                                      path=path)
     try:
-        status = vm_connection.v.status()
+        status = vm_connection.v.status(hostname)
         # Note: local vbox value: running
         if status[0][1] == 'running':
             return 0, False
