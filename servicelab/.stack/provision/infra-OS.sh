@@ -46,6 +46,7 @@ fi
 
 if [ -f /vagrant/id_rsa ]; then
   sudo cp /vagrant/id_rsa /root/.ssh/
+  sudo chmod 0600 /root/.ssh/id_rsa
 fi
 
 if [ -f /vagrant/provision/ssh-config ]; then
