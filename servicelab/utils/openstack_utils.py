@@ -587,9 +587,9 @@ class SLab_OS(object):
                     'direction': 'ingress',
                     'remote_group_id': None,
                     'remote_ip_prefix': '0.0.0.0/0',
-                    'port_range_min': 22,
+                    'port_range_min': 0,
                     'ethertype': 'IPv4',
-                    'port_range_max': 22,
+                    'port_range_max': 65535,
                     'protocol': 'tcp',
                     'tenant_id': security_group['tenant_id'],
                     'security_group_id': security_group['id']
