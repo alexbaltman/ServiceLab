@@ -1,5 +1,4 @@
 #!/bin/bash
-sudo yum install -y python-heighliner
 sudo rm -f /etc/yum.repos.d/epel*
 
 sudo mkdir -p /etc/ansible
@@ -28,6 +27,7 @@ cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /e
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /etc/ccs/data/environments/dev-tenant/site.yaml
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/hosts.yaml /etc/ccs/data/environments/dev-tenant/hosts.yaml
 
+sudo yum install -y python-heighliner
 
 chmod +x /etc/ansible/nimbus.py
 chmod +x /usr/share/ansible_plugins/lookup_plugins/hiera.py

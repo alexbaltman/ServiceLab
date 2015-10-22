@@ -1,5 +1,4 @@
 #!/bin/bash
-sudo yum install -y python-heighliner
 sudo rm -f /etc/yum.repos.d/epel*
 
 sudo mkdir -p /etc/ansible
@@ -32,6 +31,7 @@ cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/hosts.yaml /
 chmod +x /etc/ansible/nimbus.py
 chmod +x /usr/share/ansible_plugins/lookup_plugins/hiera.py
 
+sudo yum install -y python-heighliner
 
 echo "localhost ansible_connection=local" > /etc/ansible/hosts
 echo "export CCS_ENVIRONMENT=dev-tenant" >> /home/vagrant/.bashrc
