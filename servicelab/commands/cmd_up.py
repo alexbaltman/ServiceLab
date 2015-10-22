@@ -163,7 +163,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
 
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
-            returncode, myinfo = service_utils.run_this('vagrant hostmanager'
+            returncode, myinfo = service_utils.run_this('vagrant hostmanager '
                                                         '--provider openstack',
                                                         ctx.path)
             if returncode > 0:
@@ -238,7 +238,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
             a.v.up(vm_name=target)
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
-            returncode, myinfo = service_utils.run_this('vagrant hostmanager'
+            returncode, myinfo = service_utils.run_this('vagrant hostmanager '
                                                         '--provider openstack',
                                                         ctx.path)
             if returncode > 0:
