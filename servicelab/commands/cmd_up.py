@@ -599,8 +599,7 @@ def addto_inventory(hostname, path):
         >>> addto_inventory('infra-001', ctx.path)
         0
     """
-    hostexists = yaml_utils.host_exists_vagrantyaml(hostname, path)
-    if not hostexists:
+    if yaml_utils.host_exists_vagrantyaml(hostname, path) > 0:
         returncode, host_dict = yaml_utils.gethost_byname(hostname,
                                                           os.path.join(path,
                                                                        'provision'))
