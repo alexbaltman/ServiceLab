@@ -181,12 +181,29 @@ class SlabVagrantfile(object):
         self.append_it(setitup)
 
     def _vbox_os_provider_env_vars(self, float_net, tenant_nets, tenant_security_groups):
-        '''Function will accept a float_net string and a tenant_nets list of dicts.
-            The dicts are of the format {'name':'network_name', 'ip':True}.
-            The ip key will be true if vagrant.yaml has an ip for the host.
-            It will return a dict with the OpenStack username, password,
-            tenant_name, auth_url, network_url, image_url, floating_ip_pool and networks
-            to be used for developing the Vagrant file'''
+        '''Central point to gather env variables for instance of class and set a couple.
+
+        Args:
+            float_net (str): Sets self.env_var[] among other vars that will be ultimately
+                             used to populate the .stack/Vagrantfile.
+            tenant_nets (list): Typically the SLAB mgmt network and the SLAB lab network.
+                                We'll call parse_multiple_networks w/ it to get a usable
+                                string back and set env_var 'network' w/ that.
+            tenant_security_groups ():
+
+        Returns:
+            Nothing explicitly, although it sets a bunch of class attributes:
+
+            self.env_vars['username'] (str) 'aaltman'
+            self.env_vars['password']  (str): 'my!pass'
+            self.env_vars['openstack_auth_url'] (str):
+            self.env_vars['tenant_name'] (str): 'Servicelab2'
+            self.env_vars['floating_ip_pool'] (str): 'Public-floating-601'
+            self.env_vars['network_url'] (str): https://us-rdu-3.cisco.com:9696/v2.0
+            self.env_vars['image_url'] (str): https://us-rdu-3.cisco.com:9292/v2
+            self.env_vars['networks'] (str): "[{name: '%s'},]"
+            self.env_vars['security_groups'] ():
+        '''
         self.env_vars['username'] = os.environ.get('OS_USERNAME')
         self.env_vars['password'] = os.environ.get('OS_PASSWORD')
         self.env_vars['openstack_auth_url'] = os.environ.get('OS_AUTH_URL')
