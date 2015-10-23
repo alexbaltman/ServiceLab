@@ -47,9 +47,8 @@ from servicelab.utils import Vagrantfile_utils
               default=False,
               help="Enables HA for core OpenStack components by booting "
                    "the necessary extra VMs.")
-@click.option('-b',
-              '--branch',
-              default="master",
+@click.option('--redhouse-branch',
+              default="origin/2.3.3",
               help='Choose a branch to run against for service redhouse tenant and svc.')
 @click.option('--data-branch',
               default="master",
@@ -67,7 +66,7 @@ from servicelab.utils import Vagrantfile_utils
              invoke_without_command=True,
              short_help="Boots VM(s).")
 @pass_context
-def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch,
+def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, data_branch,
         service_branch, username, interactive):
 
     # Things the user Should not do ==================================
@@ -250,7 +249,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
             else:
                 sys.exit(0)
 
-    service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
+    service_utils.sync_service(ctx.path, redhouse_branch, username, "service-redhouse-tenant")
 
     if mini:
         returncode, allmy_vms = yaml_utils.getmin_OS_vms(ctx.path)
