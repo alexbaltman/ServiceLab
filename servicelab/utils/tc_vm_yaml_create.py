@@ -4,7 +4,9 @@ import yaml
 import socket
 import logging
 import ipaddress
+import sys
 
+import click
 
 # Logger creation
 tcvm_logger = logging.getLogger('click_application')
@@ -49,9 +51,12 @@ def write_file(yaml_data, output_file):
         write_file(yaml_data, output_file)
     """
     if os.path.isfile(output_file):
-        tcvm_logger.error('%s already exists.  Aborting host create.' % output_file)
+        tcvm_logger.error(
+            '%s already exists.  Aborting host create.' %
+            output_file)
         return 1
-    # default_flow_style=False breaks lists into individual lines with leading '-'
+    # default_flow_style=False breaks lists into individual lines with leading
+    # '-'
     with open(output_file, 'w') as outfile:
         outfile.write(yaml.dump(yaml_data, default_flow_style=False))
     tcvm_logger.info(output_file)
@@ -107,6 +112,13 @@ def find_ip(env_path, vlan):
     all_ips = list(vlan.hosts())
     # Remove the first 4 IPs.  They *should* be reserved in AM anyway.
     del all_ips[0:4]
+
+    # check if path exists if not exist
+    if os.path.exists(env_path) == False:
+        click.echo("Cannot perform the current operation since this "
+                   "path : %s is not found. Most likely you need to"
+                   " perform : stack workon <service-name>" % (env_path))
+        sys.exit(1)
     # Find all the envs within the site
     for env in os.listdir(env_path):
         hosts_path = os.path.join(env_path, env, 'hosts.d')
@@ -120,7 +132,8 @@ def find_ip(env_path, vlan):
                 for interface in host_data['interfaces']:
                     # Not all interfaces have an ip_address
                     if 'ip_address' in host_data['interfaces'][interface]:
-                        addy = unicode(host_data['interfaces'][interface]['ip_address'])
+                        addy = unicode(
+                            host_data['interfaces'][interface]['ip_address'])
                         # Turn IP into ipaddress module object for list search
                         ipaddy = ipaddress.IPv4Address(addy)
                         if ipaddy in all_ips:
@@ -134,8 +147,17 @@ def find_ip(env_path, vlan):
             return str(ip)
 
 
-def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, groups,
-              sec_groups, ip_address):
+def create_vm(
+        repo_path,
+        hostname,
+        sc_name,
+        tc_name,
+        flavor,
+        vlan_id,
+        role,
+        groups,
+        sec_groups,
+        ip_address):
     """Combine the user inputs from 'stack create host' to create a host.yaml file in the
        appropriate tenant cloud hosts.d directory
 
@@ -180,19 +202,23 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
     if source_data == 1:
         return 1
     if not re.search(source_data['tc_region'], source_data['hostname']):
-        source_data['hostname'] = source_data['tc_region'] + '-' + source_data['hostname']
+        source_data['hostname'] = source_data[
+            'tc_region'] + '-' + source_data['hostname']
     source_data['az'] = source_data['sc_region'] + determine_az(hostname)
-    source_data['vlan_id'] = str(source_data['vlan_prefix']) + source_data['vlan_id']
+    source_data['vlan_id'] = str(
+        source_data['vlan_prefix']) + source_data['vlan_id']
     if vlan_id not in source_data:
-        tcvm_logger.error(('Vlan%s was not found within %s.  Please try a different vlan'
-                          % (vlan_id, source_data['tc_name'])))
+        tcvm_logger.error(
+            ('Vlan%s was not found within %s.  Please try a different vlan' %
+             (vlan_id, source_data['tc_name'])))
         return 1
     if not ip_address:
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
         source_data['ip'] = find_ip(source_data['env_path'], vlan)
         if not source_data['ip']:
             if str(vlan_id + '-sup') in source_data:
-                vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id + '-sup')]))
+                vlan = ipaddress.IPv4Network(
+                    unicode(source_data[str(vlan_id + '-sup')]))
                 source_data['ip'] = find_ip(source_data['env_path'], vlan)
                 source_data['sup'] = True
     else:
@@ -202,7 +228,9 @@ def create_vm(repo_path, hostname, sc_name, tc_name, flavor, vlan_id, role, grou
             return 1
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
     if not source_data['ip']:
-        tcvm_logger.error('Vlan%s does not have any IP addresses available' % vlan_id)
+        tcvm_logger.error(
+            'Vlan%s does not have any IP addresses available' %
+            vlan_id)
         return 1
     yaml_data = build_yaml_data(source_data, vlan)
     if 'sup' in source_data:
@@ -267,9 +295,11 @@ def build_yaml_data(source_data, vlan):
         'hostname': fqdn,
         'interfaces': {
             'eth0': {
-                'gateway': str(vlan.network_address + 1),
+                'gateway': str(
+                    vlan.network_address + 1),
                 'ip_address': source_data['ip'],
-                'netmask': str(vlan.netmask),
+                'netmask': str(
+                    vlan.netmask),
             },
         },
         'role': source_data['role'],
@@ -299,8 +329,11 @@ def extract_env_data(source_data):
         source_data = extract_env_data(source_data)
     """
     # Open the service cloud environment.yaml
-    env_path = os.path.join(source_data['repo_path'], 'sites', source_data['sc_name'],
-                            'environments/')
+    env_path = os.path.join(
+        source_data['repo_path'],
+        'sites',
+        source_data['sc_name'],
+        'environments/')
     source_data['env_path'] = env_path
     sc_path = os.path.join(env_path, source_data['sc_name'])
     source_data['tc_path'] = os.path.join(env_path, source_data['tc_name'])
@@ -323,7 +356,10 @@ def extract_env_data(source_data):
         return 1
 
     # Open the tenant cloud environment.yaml
-    env_file = os.path.join(source_data['tc_path'], 'data.d', 'environment.yaml')
+    env_file = os.path.join(
+        source_data['tc_path'],
+        'data.d',
+        'environment.yaml')
     env_data = open_yaml(env_file)
     if env_data == 1:
         return 1
@@ -336,7 +372,9 @@ def extract_env_data(source_data):
         match = re.search('^vlan(\d{0,2})(6[367])(-sup)?$', vlan_key)
         if match:
             if match.group(3):
-                source_data[match.group(2) + match.group(3)] = env_data[vlan_key]
+                source_data[
+                    match.group(2) +
+                    match.group(3)] = env_data[vlan_key]
             else:
                 source_data[match.group(2)] = env_data[vlan_key]
             source_data['vlan_prefix'] = match.group(1)
