@@ -165,7 +165,9 @@ class SlabVagrantfile(object):
                     "\"\n"
                     "    os.openstack_image_url  = \"" + env_vars['openstack_image_url'] +
                     "\"\n"
-                    "    os.networks             = " + env_vars['networks'] + "\n"
+                    "    os.networks             = " + env_vars['networks'] +
+                    "\n" + "    os.security_groups      = " +
+                    ''.join(env_vars['security_groups']) + "\n"
                     "    override.vm.box = \"openstack\"\n"
                     "  end\n")
         setitup += ("  config.vm.provision \"shell\", path: \"provision/infra-OS.sh\"\n")
@@ -178,7 +180,7 @@ class SlabVagrantfile(object):
 
         self.append_it(setitup)
 
-    def _vbox_os_provider_env_vars(self, float_net, tenant_nets):
+    def _vbox_os_provider_env_vars(self, float_net, tenant_nets, tenant_security_groups):
         '''Function will accept a float_net string and a tenant_nets list of dicts.
             The dicts are of the format {'name':'network_name', 'ip':True}.
             The ip key will be true if vagrant.yaml has an ip for the host.
@@ -191,7 +193,10 @@ class SlabVagrantfile(object):
         self.env_vars['tenant_name'] = os.environ.get('OS_TENANT_NAME')
         self.env_vars['floating_ip_pool'] = str(float_net)
         networks = self._vbox_os_provider_parse_multiple_networks(tenant_nets)
+        security_groups = self._vbox_os_provider_parse_security_groups(
+                          tenant_security_groups)
         self.env_vars['networks'] = networks
+        self.env_vars['security_groups'] = security_groups
         openstack_network_url = None
         openstack_image_url = None
         if (self.env_vars.get('openstack_auth_url')):
@@ -219,6 +224,19 @@ class SlabVagrantfile(object):
                 vagrant_network = vagrant_network + stl_without_ip % net['name']
         vagrant_network = '[' + vagrant_network.strip(",") + ']'
         return vagrant_network
+
+    def _vbox_os_provider_parse_security_groups(self, security_groups):
+        '''Function accepts a list of dicts with each dict containing
+           the tenant security group name. It will return a string of security
+           groups to be used in the construction of the Vagrantfile'''
+        stl_security_group = "{name: '%s'},"
+        vagrant_security_group = ''
+        for security_group in security_groups:
+            vagrant_security_group = vagrant_security_group + \
+                                     stl_security_group\
+                                     % security_group['name']
+        vagrant_security_group = '[' + vagrant_security_group.strip(",") + ']'
+        return vagrant_security_group
 
     def _vbox_os_provider_host_vars(self, path):
         '''Func_vbox_os_provider_env_vars(stion will accept a path to the .stack

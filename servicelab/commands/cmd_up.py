@@ -113,11 +113,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
 
     # Setup Vagrantfile w/ vm
     if remote:
-        returncode, float_net, mynets = os_ensure_network(ctx.path)
+        returncode, float_net, mynets, my_security_groups = os_ensure_network(ctx.path)
         if returncode > 0:
             ctx.logger.debug("No OS_ environment variables found")
             sys.exit(1)
-        myvfile._vbox_os_provider_env_vars(float_net, mynets)
+        myvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
         returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
         if returncode > 0:
             ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
@@ -266,11 +266,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
         a = vagrant_utils.Connect_to_vagrant(vm_name='infra-001',
                                              path=os.path.join(redhouse_ten_path))
         myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
-        returncode, float_net, mynets = os_ensure_network(ctx.path)
+        returncode, float_net, mynets, my_security_groups = os_ensure_network(ctx.path)
         if returncode > 0:
             ctx.logger.error('Failed to get float net and mynets')
             sys.exit(1)
-        myvfile._vbox_os_provider_env_vars(float_net, mynets)
+        myvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
         if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
         for i in allmy_vms:
@@ -397,7 +397,7 @@ def infra_ensure_up(mynets, float_net, path=None):
             return 1, hostname
         ispoweron, isremote = vm_isrunning(hostname=hostname, path=path)
         if isremote == remote and ispoweron == 0:
-            infa_connection.v.reload(hostname)
+            infra_connection.v.reload(hostname)
             return 0, hostname
         elif isremote == remote and ispoweron == 1:
             try:
@@ -417,7 +417,7 @@ def infra_ensure_up(mynets, float_net, path=None):
         return 1, hostname
 
     if remote:
-        thisvfile._vbox_os_provider_env_vars(float_net, mynets)
+        thisvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
         thisvfile.add_openstack_vm(host_dict)
         try:
             infra_connection.v.up(vm_name=hostname)
@@ -471,40 +471,45 @@ def os_ensure_network(path):
     os_tenant_name = os.environ.get('OS_TENANT_NAME')
     float_net = ''
     mynewnets = []
+    security_groups = []
     if not password or not base_url:
         # ctx.logger.error('Can --not-- boot into OS b/c password or base_url is\
         # not set')
         # ctx.logger.error('Exiting now.')
-        return 1, float_net, mynewnets
+        return 1, float_net, mynewnets, security_groups
     a = openstack_utils.SLab_OS(path=path, password=password, username=username,
                                 base_url=base_url, os_tenant_name=os_tenant_name)
     returncode, tenant_id, temp_token = a.login_or_gettoken()
     if returncode > 0:
         # ctx.logger.error("Could not login to Openstack.")
-        return 1, float_net, mynewnets
+        return 1, float_net, mynewnets, security_groups
     returncode, tenant_id, token = a.login_or_gettoken(tenant_id=tenant_id)
     if returncode > 0:
         # ctx.logger.error("Could not get token to project.")
-        return 1, float_net, mynewnets
+        return 1, float_net, mynewnets, security_groups
     a.connect_to_neutron()
 
+    returncode, security_group = a.create_security_group()
+    if returncode > 0:
+        # ctx.logger.error("Could not create security group in project.")
+        return 1, float_net, mynewnets, security_groups
     returncode, float_net = a.find_floatnet_id(return_name="Yes")
     if returncode > 0:
         # ctx.logger.error('Could not get the name for the floating network.')
-        return 1, float_net, mynewnets
+        return 1, float_net, mynewnets, security_groups
     returncode, router = a.create_router()
     if returncode > 0:
         # ctx.logger.error("Could not create router in project.")
-        return 1, float_net, mynewnets
+        return 1, float_net, mynewnets, security_groups
     router_id = router['id']
     returncode, network = a.create_network()
     if returncode > 0:
         # ctx.logger.error("Could not create network in project.")
-        return 1, float_net, mynewnets
+        return 1, float_net, mynewnets, security_groups
     returncode, subnet = a.create_subnet()
     if returncode > 0:
         # ctx.logger.error("Could not create subnet in project.")
-        return 1, float_net, mynewnets
+        return 1, float_net, mynewnets, security_groups
     # ctx.logger.debug('Sleeping 5s b/c of slow neutron create times.')
     time.sleep(5)
     a.add_int_to_router(router_id, subnet['id'])
@@ -513,17 +518,18 @@ def os_ensure_network(path):
     returncode, mgmt_network = a.create_network(name=mgmtname)
     if returncode > 0:
         # ctx.logger.error("Could not create network in project.")
-        return 1, float_net, mynewnets
+        return 1, float_net, mynewnets, security_groups
     mgmtsubname = a.create_name_for("subnet", append="mgmt")
     returncode, mgmt_subnet = a.create_subnet(name=mgmtsubname,
                                               cidr='192.168.1.0/24')
     if returncode > 0:
         # ctx.logger.error("Could not create subnet in project.")
-        return 1, float_net, mynewnets
+        return 1, float_net, mynewnets, security_groups
     # ctx.logger.debug('Sleeping 5s b/c of slow neutron create times.')
     time.sleep(5)
     a.add_int_to_router(router_id, mgmt_subnet['id'], mgmt=True)
     mynets = a.neutron.list_networks()
+    my_security_groups = a.neutron.list_security_groups()
 
     mynewnets = []
     for i in mynets['networks']:
@@ -532,7 +538,11 @@ def os_ensure_network(path):
         elif i.get('name') == mgmtname:
             mynewnets.append(i)
 
-    return 0, float_net, mynewnets
+    for i in my_security_groups['security_groups']:
+        if i.get('name') == security_group['name']:
+            security_groups.append(i)
+
+    return 0, float_net, mynewnets, security_groups
 
 
 def wr_settingsyaml(path, settingsyaml, hostname=''):

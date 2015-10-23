@@ -505,6 +505,106 @@ class SLab_OS(object):
         else:
             return 0, router
 
+    def check_for_security_group(self, name):
+        """Check to see if the named security_group exists.
+
+        Args:
+            name (str): The name of the security_group you would like to see
+                        if it exists in your tenant/project or not. If needed
+                        and you're not sure of the name you can always generate
+                        it from the create_name_for() function.
+
+        Returns:
+            Returncode (int):
+                0 - Success
+                1 - Failure
+            security_group (dict): It returns the first security_group
+                                   that matches the named subnet that
+                                   you're looking for.
+        Example Usage:
+            >>> print a.check_for_security_group("SLAB_aaltman_security_group")
+
+            We should expect in a return 0 scenario that the security_group was
+            created.
+        """
+        security_groups = self.neutron.list_security_groups()
+        security_group = ""
+        parts = name.split('_')
+        # ['SLAB', 'Servicelab2', 'aaltman', 'mgmt', 'subnet']
+        parts = [i for i in parts if i in ['SLAB', 'mgmt', 'network',
+                                           'subnet', 'router',
+                                           'security_group']
+                 ]
+        # ['SLAB', 'mgmt', 'subnet']
+        for security_group in security_groups['security_groups']:
+            if all(i in security_group['name'] for i in parts):
+                return 0, security_group
+        return 1, security_group
+
+    def create_security_group(self, name=""):
+        """Create a security group in your OS tenant/project.
+
+        Args:
+            name (str): The name for the security group you would
+                        like created
+         Returns:
+            Returncode:
+                0 - Success
+                1 - Failure
+            security_group (dict): We return a dict of the security
+                                   group attributes that arises from
+                                   the response to the creation of a
+                                   security_group in the project/tenant
+                                   in OS.
+        Example Usage:
+            >>> print a.create_security_group()
+        """
+        if not name:
+            name = self.create_name_for("security_group")
+
+        returncode, security_group = self.check_for_security_group(name)
+        if returncode == 1:
+            security_group = {'name': name,
+                              'description': 'SLAB default security group'
+                              }
+            self.neutron.create_security_group(
+                {'security_group': security_group})
+            returncode3, security_group = self.check_for_security_group(name)
+            self.neutron.create_security_group_rule({
+                'security_group_rule': {
+                    'direction': 'ingress',
+                    'remote_group_id': None,
+                    'remote_ip_prefix': '0.0.0.0/0',
+                    'port_range_min': None,
+                    'ethertype': 'IPv4',
+                    'port_range_max': None,
+                    'protocol': 'icmp',
+                    'tenant_id': security_group['tenant_id'],
+                    'security_group_id': security_group['id']
+                }})
+            self.neutron.create_security_group_rule({
+                'security_group_rule': {
+                    'direction': 'ingress',
+                    'remote_group_id': None,
+                    'remote_ip_prefix': '0.0.0.0/0',
+                    'port_range_min': 0,
+                    'ethertype': 'IPv4',
+                    'port_range_max': 65535,
+                    'protocol': 'tcp',
+                    'tenant_id': security_group['tenant_id'],
+                    'security_group_id': security_group['id']
+                }})
+            returncode3, security_group = self.check_for_security_group(name)
+
+            if returncode3 == 0:
+                return 0, security_group
+            else:
+                openstack_utils_logger.error(
+                    "Tried to make the security group, but failed.")
+                return 1, security_group
+        else:
+            return 0, security_group
+
     def create_subnet(self, name="", cidr="192.168.100.0/24"):
         """Create a subnet in your teannt/project in OS.
 
