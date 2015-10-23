@@ -361,7 +361,7 @@ def infra_ensure_up(mynets, float_net, path=None):
             return 1, hostname
         ispoweron, isremote = vm_isrunning(hostname=hostname, path=path)
         if isremote == remote and ispoweron == 0:
-            infa_connection.v.reload(hostname)
+            infra_connection.v.reload(hostname)
             return 0, hostname
         elif isremote == remote and ispoweron == 1:
             try:
