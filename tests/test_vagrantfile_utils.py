@@ -219,7 +219,8 @@ class TestVagrantFileUtils(unittest.TestCase):
         Test the _vbox_os_provider_parse_security_groups method
         """
         compare_data = "[{name: 'default'},{name: 'something'},{name: 'myfancysecgroup'}]"
-        sec_groups = [{'name': 'default'},
+        sec_groups = [{'name': 'default',
+                       'something': 'stuff'},
                       {'name': 'something'},
                       {'name': 'myfancysecgroup'}
                       ]

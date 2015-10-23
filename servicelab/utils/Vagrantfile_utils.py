@@ -10,6 +10,20 @@ logging.basicConfig()
 
 
 class SlabVagrantfile(object):
+    """
+    Create and append data to Vagrantfile
+
+    Args:
+        path {str}: Path to write or append Vagrantfile
+
+    Returns:
+        Varies per method.  See method docstrings for details
+
+    Example Usage:
+        from servicelab.utils import Vagrantfile_utils
+        my_class_var = Vagrantfile_utils.SlabVagrantfile('/path/to/use/for/vagrant/')
+        my_class_var.<method_name>(args)
+    """
 
     def __init__(self, path):
         self.path = path
@@ -24,8 +38,34 @@ class SlabVagrantfile(object):
         self.default_image = 'slab-RHEL7.1v7'
 
     def init_vagrantfile(self):
+        """
+        Creates a new Vagrantfile with the needed header information
+
+        Args:
+            None
+
+        Returns:
+            Nothing, instead a Vagrantfile is written to the class.path directory
+
+        Example Usage:
+            my_class_var.init_vagrantfile()
+        """
 
         def _set_header():
+            """
+            Creates the standard headers for Vagrantfile
+
+            Args:
+                None
+
+            Returns:
+                h1 {str}:  Always the same data
+                h2 {str}:  Always the same data
+                req_plugin {str}:  Always the same data
+
+            Example Usage:
+                h1, h2, req_plugin = _set_header()
+            """
             h1 = ("# -*- mode: ruby -*-\n"
                   "# vi: set ft=ruby :\n")
             h2 = "VAGRANTFILE_API_VERSION = \"2\"\n"
@@ -39,6 +79,18 @@ class SlabVagrantfile(object):
             return h1, h2, req_plugin
 
         def _beg_vm_config():
+            """
+            Creates vm start data for Vagrantfile
+
+            Args:
+                None
+
+            Returns:
+                startvms {str}:  Always the same data
+
+            Example Usage:
+                startvms = _beg_vm_config()
+            """
             startvms = "Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|\n"
             return startvms
 
@@ -49,6 +101,18 @@ class SlabVagrantfile(object):
         self.set_header = True
 
     def write_it(self, *text):
+        """
+        Writes a new Vagrantfile to the class.path directory
+
+        Args:
+            Any number of inputs
+
+        Returns:
+            Nothing, instead a Vagrantfile is created in the class.path directory
+
+        Example Usage:
+            my_class_var.write_it(text_var_1, text_var_2, ... text_var_n)
+        """
         # Note: Doesn't close the vagrant loop w/ an 'end'. Use append_it for that.
         mystr = ''
         with open(os.path.join(self.path, "Vagrantfile"), 'w') as f:
@@ -63,6 +127,18 @@ class SlabVagrantfile(object):
             f.write("\n")
 
     def append_it(self, *text):
+        """
+        Appends data to the class.path Vagrantfile
+
+        Args:
+            Any number of inputs
+
+        Returns:
+            Nothing, instead the class.path Vagrantfile is appended with the provided data
+
+        Example Usage:
+            my_class_var.append_it(text_var_1, text_var_2, ... text_var_n)
+        """
         lines = ''
         with open(os.path.join(self.path, "Vagrantfile"), 'r') as f:
             lines = f.readlines()
@@ -83,11 +159,27 @@ class SlabVagrantfile(object):
             f.write('\n')
 
     def add_virtualbox_vm(self, host_dict):
-        '''
-        Vbox expecting in host_dict:
-            hostname
+        """
+        Adds a virtual box to Vagrantfile
 
-        '''
+        Args:
+            host_dict {dict}: Nested dict built from yaml_utils.gethost_byname
+                {'hostname': {'box': 'http://cis-kickstart.cisco.com/ccs-rhel-7.box',
+                              'profile': 'null',
+                              'domain': '1',
+                              'ip': '192.168.100.6',
+                              'mac': '020027000006',
+                              'role': 'none',
+                              'memory': '1024'
+                              }
+                 }
+
+        Returns:
+            0 or 1 for success or failure.  Also calls append_it to add data to Vagrantfile
+
+        Example Usage:
+            return_code = my_class_var.add_openstack_vm(host_dict)
+        """
         setitup = ''
         self.host_dict = host_dict
         self.hostname = self.host_dict.keys()[0]
@@ -131,9 +223,39 @@ class SlabVagrantfile(object):
             return 1
 
     def add_openstack_vm(self, host_dict):
-        '''
-        host_dict 'flavor', host_dict[hostname].get('image')
-        '''
+        """
+        Adds an Openstack VM to the Vagrantfile
+
+        Args:
+            self.env_vars {dict}: Built by _vbox_os_provider_env_vars
+                {'username': 'test_user',
+                 'openstack_auth_url': 'http://slab.cisco.com:5000/v2.0/',
+                 'tenant_name': 'dev-tenant',
+                 'floating_ip_pool': 'public-floating-602',
+                 'openstack_image_url': 'http://slab.cisco.com:9292/v2/',
+                 'openstack_network_url': 'http://slab.cisco.com:9696/v2.0',
+                 'password': 'test_pw',
+                 'networks': "[{name: 'test_management'}," + \
+                             "{name: 'test_dual_home', address: ho['ip']}]",
+                 'security_groups': "[{name: 'default'}]"
+                 }
+            host_dict {dict}: Nested dict built from yaml_utils.gethost_byname
+                {'hostname': {'box': 'http://cis-kickstart.cisco.com/ccs-rhel-7.box',
+                              'profile': 'null',
+                              'domain': '1',
+                              'ip': '192.168.100.6',
+                              'mac': '020027000006',
+                              'role': 'none',
+                              'memory': '1024'
+                              }
+                 }
+
+        Returns:
+            Nothing, appends the VM data to the class.path Vagrantfile
+
+        Example Usage:
+            my_class_var.add_openstack_vm(host_dict)
+        """
         self.host_dict = host_dict
         self.hostname = self.host_dict.keys()[0]
         env_vars = self.env_vars
@@ -181,12 +303,33 @@ class SlabVagrantfile(object):
         self.append_it(setitup)
 
     def _vbox_os_provider_env_vars(self, float_net, tenant_nets, tenant_security_groups):
-        '''Function will accept a float_net string and a tenant_nets list of dicts.
-            The dicts are of the format {'name':'network_name', 'ip':True}.
-            The ip key will be true if vagrant.yaml has an ip for the host.
-            It will return a dict with the OpenStack username, password,
-            tenant_name, auth_url, network_url, image_url, floating_ip_pool and networks
-            to be used for developing the Vagrant file'''
+        """
+        Creates self.env_vars from shell variables and called methods
+
+        Args:
+            # All three imputs are built from cmd_up.os_ensure_network
+            float_net {str}: 'public-floating-602'
+                [{'name': 'test_management', 'ip': False},
+                 {'name': 'test_dual_home', 'ip': True}]
+            tenant_security_groups {list of dicts}:
+                [{'name': "default"}, {'name': 'my_sec_group'}]
+
+        Returns:
+            Nothing, but builds the self.env_vars dict with the following keys:
+                'username': 'test_user'
+                'openstack_auth_url': 'http://example.cisco.com:5000/v2.0/'
+                'tenant_name': 'dev-tenant'
+                'floating_ip_pool': 'public-floating-602'
+                'openstack_image_url': 'http://example.cisco.com:9292/v2/'
+                'openstack_network_url': 'http://example.cisco.com:9696/v2.0'
+                'password': 'test_pw'
+                'networks': "[{name: 'test_management'}," + \
+                            "{name: 'test_dual_home', address: ho['ip']}]"
+                'security_groups': "[{name: 'default'}]"
+
+        Example Usage:
+            my_class_var._vbox_os_provider_env_vars(float_net, tenant_nets, sec_groups)
+        """
         self.env_vars['username'] = os.environ.get('OS_USERNAME')
         self.env_vars['password'] = os.environ.get('OS_PASSWORD')
         self.env_vars['openstack_auth_url'] = os.environ.get('OS_AUTH_URL')
@@ -207,10 +350,22 @@ class SlabVagrantfile(object):
             self.env_vars['openstack_image_url'] = openstack_image_url
 
     def _vbox_os_provider_parse_multiple_networks(self, tenant_nets):
-        '''Function accepts a list of dicts with each dict containing
-           the tenant network name and a boolean to indicate if there is an ip in
-           the vagrant.yaml. It will return a string of networks to be used in
-           the construction of the Vagrantfile'''
+        """
+        Parses tenant networks data
+
+        Args:
+            tenant_nets {list of dicts}:
+                [{'name': 'test_management', 'ip': False},
+                 {'name': 'test_dual_home', 'ip': True}]
+
+        Returns:
+            vagrant_network {list of dicts}:
+                [{name: 'test_management'},"
+                {name: 'test_dual_home', address: ho['ip']}]
+
+        Example Usage:
+            vagrant_net = my_class_var._vbox_os_provider_parse_multiple_networks(networks)
+        """
         stl_without_ip = "{name: '%s'},"
         stl_with_ip = "{name: '%s', address: ho['ip']},"
         vagrant_network = ''
@@ -226,9 +381,22 @@ class SlabVagrantfile(object):
         return vagrant_network
 
     def _vbox_os_provider_parse_security_groups(self, security_groups):
-        '''Function accepts a list of dicts with each dict containing
-           the tenant security group name. It will return a string of security
-           groups to be used in the construction of the Vagrantfile'''
+        """
+        Parses security groups data, removing any keys other than 'name'
+
+        Args:
+            security_groups {list of dicts}:
+                [{'name': 'default', 'note': 'this is the default sec group'},
+                 {'name': 'my_sec_group', 'note': 'not for general use'}]
+
+        Returns:
+            vagrant_security_group {list of dicts}:
+                [{'name': 'default'},
+                 {'name': 'my_sec_group'}]
+
+        Example Usage:
+            sec_group_names = my_class_var._vbox_os_provider_parse_security_groups(sec_grps)
+        """
         stl_security_group = "{name: '%s'},"
         vagrant_security_group = ''
         for security_group in security_groups:
@@ -239,10 +407,21 @@ class SlabVagrantfile(object):
         return vagrant_security_group
 
     def _vbox_os_provider_host_vars(self, path):
-        '''Func_vbox_os_provider_env_vars(stion will accept a path to the .stack
-           directory and the host being booted. It will navigate to the ccs-devel directory,
-           find the corresponding host.yaml file, parse it and return a dict with flavor,
-           and image used for the host'''
+        """
+        Sets the host_vars image and flavor keys from VM host.yamls, or the defaults
+
+        Args:
+            path {str}: Path to servicelab .stack directory
+                '/home/me/repo/servicelab/servicelab/.stack/'
+
+        Returns:
+            Nothing, instead sets the self.host_vars 'image' and 'flavor' key values
+            self.host_vars['flavor'] = '2cpu.4ram.20sas'
+            self.host_vars['image']  = 'slab-RHEL7.1v7'
+
+        Example Usage:
+            my_class_var._vbox_os_provider_host_vars(self.ctx.path)
+        """
         relpath_toyaml = 'services/ccs-data/sites/ccs-dev-1/environments/dev-tenant/hosts.d/'
         if (os.path.exists(path)):
             path = os.path.join(path, relpath_toyaml)
