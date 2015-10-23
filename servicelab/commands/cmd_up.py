@@ -475,25 +475,32 @@ def os_ensure_network(path):
     password = os.environ.get('OS_PASSWORD')
     username = os.environ.get('OS_USERNAME')
     base_url = os.environ.get('OS_REGION_NAME')
-    os_tenant_name = os.environ.get('OS_TENANT_NAME')
     float_net = ''
     mynewnets = []
     security_groups = []
+
     if not password or not base_url:
         # ctx.logger.error('Can --not-- boot into OS b/c password or base_url is\
         # not set')
         # ctx.logger.error('Exiting now.')
         return 1, float_net, mynewnets, security_groups
+
     a = openstack_utils.SLab_OS(path=path, password=password, username=username,
-                                base_url=base_url, os_tenant_name=os_tenant_name)
-    returncode, tenant_id, temp_token = a.login_or_gettoken()
-    if returncode > 0:
-        # ctx.logger.error("Could not login to Openstack.")
-        return 1, float_net, mynewnets, security_groups
-    returncode, tenant_id, token = a.login_or_gettoken(tenant_id=tenant_id)
+                                base_url=base_url)
+    try:
+        a.tenant_id = os.environ.get('OS_TENANT_ID')
+    except OSError:
+        a.os_tenant_name = os.environ.get('OS_TENANT_NAME')
+        returncode, a.tenant_id, temp_token = a.login_or_gettoken()
+        if returncode > 0:
+            # ctx.logger.error("Could not login to Openstack.")
+            return 1, float_net, mynewnets, security_groups
+    # Note: _ is same as above --> a.tenant_id
+    returncode, _, token = a.login_or_gettoken(tenant_id=a.tenant_id)
     if returncode > 0:
         # ctx.logger.error("Could not get token to project.")
         return 1, float_net, mynewnets, security_groups
+
     a.connect_to_neutron()
 
     returncode, security_group = a.create_security_group()
