@@ -88,6 +88,8 @@ class SlabVagrantfile(object):
             hostname
 
         '''
+        import pdb
+        pdb.set_trace()
         setitup = ''
         self.host_dict = host_dict
         self.hostname = self.host_dict.keys()[0]
@@ -115,15 +117,15 @@ class SlabVagrantfile(object):
                 setitup += "\", mac: \"" + host_dict[self.hostname]['mac'] + "\"\n"
             except KeyError:
                 setitup += "  config.vm.network :private_network, ip: \"" + ip + "\"\n"
-                setitup += "  config.vm.provision \"shell\", path: \"provision/infra.sh\"\n"
-                setitup += "  config.vm.provision \"shell\", path: \"provision/node.sh\"\n"
-                setitup += ("  config.vm.provision \"file\", source: " +
-                            "\"provision/ssh-config\"," +
-                            "destination:\"/home/vagrant/.ssh/config\"\n")
-                setitup += ("  config.vm.provision \"file\", source: \"hosts\", " +
-                            "destination: \"/etc/hosts\"\n")
-                setitup += ("  config.vm.synced_folder \"services\", " +
-                            "\"/opt/ccs/services/\"\n")
+            setitup += "  config.vm.provision \"shell\", path: \"provision/infra.sh\"\n"
+            setitup += "  config.vm.provision \"shell\", path: \"provision/node.sh\"\n"
+            setitup += ("  config.vm.provision \"file\", source: " +
+                        "\"provision/ssh-config\"," +
+                        "destination:\"/home/vagrant/.ssh/config\"\n")
+            setitup += ("  config.vm.provision \"file\", source: \"hosts\", " +
+                        "destination: \"/etc/hosts\"\n")
+            setitup += ("  config.vm.synced_folder \"services\", " +
+                        "\"/opt/ccs/services/\"\n")
             self.append_it(setitup)
             return 0
         except KeyError:

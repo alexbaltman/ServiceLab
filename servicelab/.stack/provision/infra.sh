@@ -23,6 +23,7 @@ cp /etc/hosts /var/lib/cobbler/cobbler_hosts_additional
 cp /vagrant/provision/ansible.cfg /etc/ansible/ansible.cfg
 cp /vagrant/provision/build_mirror.repo /etc/yum.repos.d/build_mirror.repo
 cp /vagrant/provision/hiera.py /usr/share/ansible_plugins/lookup_plugins/hiera.py
+cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/hosts /etc/hosts
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /etc/puppet/data/hiera_data/site.yaml
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /etc/ccs/data/environments/dev-tenant/site.yaml
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/hosts.yaml /etc/ccs/data/environments/dev-tenant/hosts.yaml

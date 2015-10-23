@@ -182,7 +182,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
 
         returncode, myinfo = service_utils.run_this(command.format(infra_hostname, service))
         if returncode > 0:
-            ctx.logger.error("There was a failure during the heighliner deploy phase of"
+            ctx.logger.error("There was a failure during the heighliner deploy phase of "
                              "your service. Please see the following information"
                              "for debugging: ")
             ctx.logger.error(myinfo)
