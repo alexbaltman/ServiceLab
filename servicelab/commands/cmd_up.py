@@ -93,61 +93,64 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         hostname = str(name_vm("rhel7", ctx.path))
     elif service:
         hostname = str(name_vm(service, ctx.path))
+    elif target:
+        hostname = target
 
     # Setup data and inventory
-    yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
-                                    "ccs-dev-1")
-    yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
-    if service:
-        retc, myinfo = service_utils.build_data(ctx.path)
-        if retc > 0:
-            ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
+    if not target:
+        yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
+                                        "ccs-dev-1")
+        yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
+        if service:
+            retc, myinfo = service_utils.build_data(ctx.path)
+            if retc > 0:
+                ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
 
-    # Prep class Objects
-    myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
-    if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
-        myvfile.init_vagrantfile()
-    myvag_env = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
-                                                 path=ctx.path)
+        # Prep class Objects
+        myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
+        if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
+            myvfile.init_vagrantfile()
+        myvag_env = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
+                                                     path=ctx.path)
 
-    # Setup Vagrantfile w/ vm
-    if remote:
-        returncode, float_net, mynets, my_security_groups = os_ensure_network(ctx.path)
-        if returncode > 0:
-            ctx.logger.debug("No OS_ environment variables found")
-            sys.exit(1)
-        myvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
-        returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
-        if returncode > 0:
-            ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
-            sys.exit(1)
-        myvfile.add_openstack_vm(host_dict)
-    else:
-        returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
-        if returncode > 0:
-            ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
-            sys.exit(1)
-        myvfile.add_virtualbox_vm(host_dict)
-
-    # Get vm running
-    myvag_env.v.up(vm_name=hostname)
-    returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
-    if returncode > 0:
-        # Second chance.
-        returncode, myinfo = service_utils.run_this('vagrant hostmanager '
-                                                    '--provider openstack',
-                                                    ctx.path)
-        if returncode > 0:
-            ctx.logger.error("Could not run vagrant hostmanager because\
-                             {0}".format(myinfo))
-            ctx.logger.error("Vagrant manager will fail if you "
-                             "have local vms and remote vms.")
-            sys.exit(1)
+        # Setup Vagrantfile w/ vm
+        if remote:
+            returncode, float_net, mynets, my_security_groups = os_ensure_network(ctx.path)
+            if returncode > 0:
+                ctx.logger.debug("No OS_ environment variables found")
+                sys.exit(1)
+            myvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
+            returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
+            if returncode > 0:
+                ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
+                sys.exit(1)
+            myvfile.add_openstack_vm(host_dict)
         else:
+            returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
+            if returncode > 0:
+                ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
+                sys.exit(1)
+            myvfile.add_virtualbox_vm(host_dict)
+
+        # Get vm running
+        myvag_env.v.up(vm_name=hostname)
+        returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
+        if returncode > 0:
+            # Second chance.
+            returncode, myinfo = service_utils.run_this('vagrant hostmanager '
+                                                        '--provider openstack',
+                                                        ctx.path)
+            if returncode > 0:
+                ctx.logger.error("Could not run vagrant hostmanager because\
+                                 {0}".format(myinfo))
+                ctx.logger.error("Vagrant manager will fail if you "
+                                 "have local vms and remote vms.")
+                sys.exit(1)
+            else:
+                sys.exit(0)
+        # You can exit safely now if you're just booting a rhel7 vm
+        elif rhel7 and returncode == 0:
             sys.exit(0)
-    # You can exit safely now if you're just booting a rhel7 vm
-    elif rhel7 and returncode == 0:
-        sys.exit(0)
 
     # SERVICE VM remaining workflow  =================================
     if service:
@@ -249,7 +252,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             else:
                 sys.exit(0)
 
-    service_utils.sync_service(ctx.path, redhouse_branch, username, "service-redhouse-tenant")
+    service_utils.sync_service(ctx.path,
+                               redhouse_branch,
+                               username,
+                               "service-redhouse-tenant")
 
     if mini:
         returncode, allmy_vms = yaml_utils.getmin_OS_vms(ctx.path)
