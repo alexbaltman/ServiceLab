@@ -144,6 +144,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
             ctx.logger.error("Vagrant manager will fail if you "
                              "have local vms and remote vms.")
             sys.exit(1)
+        else:
+            sys.exit(0)
     # You can exit safely now if you're just booting a rhel7 vm
     elif rhel7 and returncode == 0:
         sys.exit(0)
