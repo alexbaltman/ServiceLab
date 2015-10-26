@@ -563,7 +563,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
     doc = {}
     settings = os.path.join(path, 'services', 'service-redhouse-tenant', 'settings.yaml')
 
-    returncode, float_net, mynewnets = os_ensure_network(path)
+    returncode, float_net, mynewnets, my_security_groups = os_ensure_network(path)
     mgmt_net = ''
     for x in mynewnets:
         if 'mgmt' in x.get('name'):
