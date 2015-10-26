@@ -243,7 +243,7 @@ class SLab_OS(object):
               u'subnets': [],
               u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac'}]}
         """
-        networks = self.neutron.list_networks(name=name)
+        networks = self.neutron.list_networks()
         network = ""
         parts = name.split('_')
         # ['SLAB', 'Servicelab2', 'aaltman', 'mgmt', 'network']
@@ -332,7 +332,7 @@ class SLab_OS(object):
                 u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'
                 }
         """
-        routers = self.neutron.list_routers(name=name)
+        routers = self.neutron.list_routers()
         router = ""
         parts = name.split('_')
         # ['SLAB', 'Servicelab2', 'aaltman', 'mgmt', 'router']
