@@ -193,6 +193,15 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
         service_utils.sync_service(ctx.path, service_branch,
                                    username, "service-redhouse-tenant")
+        puppet_path = os.path.join(redhouse_ten_path, "puppet", "manifest")
+        if not os.path.exists(os.path.join(puppet_path, "glance")):
+            ctx.logger.info('Updating sub repo.s under service-redhouse-tenant')
+            ctx.logger.info('This may take a few minutes.')
+            returncode, myinfo = service_utils.run_this("librarian-puppet install",
+                                                        puppet_path)
+            if returncode > 0:
+                ctx.logger('Failed to retrieve the necessary puppet configurations.')
+                sys.exit(1)
         a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=redhouse_ten_path)
         if addto_inventory(target, ctx.path) > 0:
             ctx.logger.error('Could not add {0} to vagrant.yaml'.format(target))
