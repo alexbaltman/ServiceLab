@@ -155,12 +155,14 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     # SERVICE VM remaining workflow  =================================
     if service:
         if remote:
-            returncode, infra_hostname = infra_ensure_up(mynets, float_net, path=ctx.path)
+            returncode, infra_hostname = infra_ensure_up(mynets, float_net,
+                                                         my_security_groups,
+                                                         path=ctx.path)
             if returncode == 1:
                 ctx.logger.error("Could not boot a remote infra node")
                 sys.exit(1)
         else:
-            returncode, infra_hostname = infra_ensure_up(None, None, path=ctx.path)
+            returncode, infra_hostname = infra_ensure_up(None, None, None, path=ctx.path)
             if returncode == 1:
                 ctx.logger.error("Could not boot a local infra node")
                 sys.exit(1)
@@ -345,7 +347,7 @@ def name_vm(name, path):
             return hostname
 
 
-def infra_ensure_up(mynets, float_net, path=None):
+def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
     '''Best effort to ensure infra-001 or -002 will be booted in correct env.
 
     Args:
@@ -585,8 +587,13 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
     if not base_url:
         # try to get base_url from settingsyaml
         # TODO: log error saying: source your OS environment's cred.s
-        print('no env var base_url')
+        print 'no env var base_url'
         return 1
+
+    # get an ascii string of all the security group
+    sgrparry = []
+    for security_group in my_security_groups:
+        sgrparry.append(str(security_group['name']))
 
     a = Vagrantfile_utils.SlabVagrantfile(path)
     # Note: setup host_vars under instance of class
@@ -605,6 +612,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
                    'floating_ip_pool':   str(float_net),
                    'os_network_url':     'https://' + base_url + '.cisco.com:9696/v2.0',
                    'os_image_url':       'https://' + base_url + '.cisco.com:9292/v2',
+                   'security_groups':    sgrparry,
                    }
             for k, v in settingsyaml.iteritems():
                 doc[k] = v
