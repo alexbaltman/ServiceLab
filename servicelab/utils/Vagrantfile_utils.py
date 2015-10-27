@@ -258,6 +258,7 @@ class SlabVagrantfile(object):
         """
         self.host_dict = host_dict
         self.hostname = self.host_dict.keys()[0]
+        ip = self.host_dict[self.hostname]['ip']
         env_vars = self.env_vars
         self._vbox_os_provider_host_vars(self.path)
         setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n"
@@ -287,7 +288,7 @@ class SlabVagrantfile(object):
                     "\"\n"
                     "    os.openstack_image_url  = \"" + env_vars['openstack_image_url'] +
                     "\"\n"
-                    "    os.networks             = " + env_vars['networks'] +
+                    "    os.networks             = " + env_vars['networks'] + ip + '}]' +
                     "\n" + "    os.security_groups      = " +
                     ''.join(env_vars['security_groups']) + "\n"
                     "    override.vm.box = \"openstack\"\n"
@@ -366,18 +367,22 @@ class SlabVagrantfile(object):
         Example Usage:
             vagrant_net = my_class_var._vbox_os_provider_parse_multiple_networks(networks)
         """
-        stl_without_ip = "{name: '%s'},"
-        stl_with_ip = "{name: '%s', address: ho['ip']},"
-        vagrant_network = ''
+        lab_net = "{name: '%s', address: "
+        mgmt_net = "{name: '%s'},"
+        mgmt_network = ''
+        lab_networks = ''
         for net in tenant_nets:
             try:
-                if net['ip']:
-                    vagrant_network = vagrant_network + stl_with_ip % net['name']
-                else:
-                    vagrant_network = vagrant_network + stl_without_ip % net['name']
+                if 'mgmt' in net['name']:
+                    mgmt_network = mgmt_net % net['name']
+                elif 'SLAB' in net['name'] and 'mgmt' not in net['name']:
+                    lab_networks += lab_net % net['name']
             except KeyError:
-                vagrant_network = vagrant_network + stl_without_ip % net['name']
-        vagrant_network = '[' + vagrant_network.strip(",") + ']'
+                lab_networks += lab_net % net['name']
+        # Note: Notice the lack of a ']' after mgmt network. This had to be done
+        #       in order to retrofit the existing code to handle deterministic pvt ips.
+        #       in the function this is being passed back to.
+        vagrant_network = '[' + mgmt_network + lab_networks
         return vagrant_network
 
     def _vbox_os_provider_parse_security_groups(self, security_groups):

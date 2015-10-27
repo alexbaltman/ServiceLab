@@ -23,10 +23,12 @@ class TestVagrantFileUtils(unittest.TestCase):
         """
         self.box = 'http://cis-kickstart.cisco.com/ccs-rhel-7.box'
         self.float_net = 'public-floating-602'
-        self.networks = [{'name': 'test_management', 'ip': False},
-                         {'name': 'test_dual_home', 'ip': True}]
-        self.parsed_nets = "[{name: 'test_management'}," + \
-                           "{name: 'test_dual_home', address: ho['ip']}]"
+        self.networks = [{'name': 'SLAB_test_mgmt'},
+                         {'name': 'SLAB_test_lab'}]
+        self.parsed_nets = "[{name: 'SLAB_test_mgmt'}," + \
+                           "{name: 'SLAB_test_lab', address: 192.168.100.6}]"
+        self.noaddr_nets = "[{name: 'SLAB_test_mgmt'}," + \
+                           "{name: 'SLAB_test_lab', address: "
         self.yaml_nested_path = 'services/ccs-data/sites/ccs-dev-1/environments/' + \
                                 'dev-tenant/hosts.d/'
         self.test_yaml_dir = os.path.join(self.host_var_tempdir, self.yaml_nested_path)
@@ -207,7 +209,7 @@ class TestVagrantFileUtils(unittest.TestCase):
                         'openstack_image_url': 'http://slab.cisco.com:9292/v2/',
                         'openstack_network_url': 'http://slab.cisco.com:9696/v2.0',
                         'password': 'test_pw',
-                        'networks': self.parsed_nets,
+                        'networks': self.noaddr_nets,
                         'security_groups': "[{name: 'default'}]"}
         sec_groups = [{'name': "default"}]
         self.vf_utils._vbox_os_provider_env_vars(self.float_net, self.networks, sec_groups)
@@ -219,7 +221,7 @@ class TestVagrantFileUtils(unittest.TestCase):
         Test the _vbox_os_provider_parse_multiple_networks method
         """
         net = self.vf_utils._vbox_os_provider_parse_multiple_networks(self.networks)
-        self.assertEqual(net, self.parsed_nets)
+        self.assertEqual(net, self.noaddr_nets)
         self.ctx.logger.info('Tenant networks data parsed as expected')
 
     def test_vbox_os_provider_parse_security_groups(self):
