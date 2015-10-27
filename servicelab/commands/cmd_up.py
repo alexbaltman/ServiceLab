@@ -558,7 +558,7 @@ def os_ensure_network(path):
     for i in mynets['networks']:
         if i.get('name') == network['name']:
             mynewnets.append(i)
-        elif i.get('name') == mgmtname:
+        elif i.get('name') == mgmt_network['name']:
             mynewnets.append(i)
 
     for i in my_security_groups['security_groups']:
