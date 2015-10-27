@@ -26,7 +26,7 @@ class TestVagrantFileUtils(unittest.TestCase):
         self.networks = [{'name': 'SLAB_test_mgmt'},
                          {'name': 'SLAB_test_lab'}]
         self.parsed_nets = "[{name: 'SLAB_test_mgmt'}," + \
-                           "{name: 'SLAB_test_lab', address: 192.168.100.6}]"
+                           "{name: 'SLAB_test_lab', address: '192.168.100.6'}]"
         self.noaddr_nets = "[{name: 'SLAB_test_mgmt'}," + \
                            "{name: 'SLAB_test_lab', address: "
         self.yaml_nested_path = 'services/ccs-data/sites/ccs-dev-1/environments/' + \
