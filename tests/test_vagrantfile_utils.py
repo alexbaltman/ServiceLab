@@ -135,7 +135,15 @@ class TestVagrantFileUtils(unittest.TestCase):
                            '    vb.customize ["modifyvm", :id, "--memory", "1024"]\n'
                            '  end\n  config.vm.hostname = "test_host"\n'
                            '  config.vm.network :private_network, ip: "192.168.100.6", '
-                           'mac: "020027000006"\nend\nend\n'
+                           'mac: "020027000006"\n'
+                           '  config.vm.provision "shell", path: "provision/infra.sh"\n'
+                           '  config.vm.provision "shell", path: "provision/node.sh"\n'
+                           '  config.vm.provision "file", source: "provision/ssh-config",'
+                           'destination:"/home/vagrant/.ssh/config"\n'
+                           '  config.vm.provision "file", source: "hosts", destination: '
+                           '"/etc/hosts"\n'
+                           '  config.vm.synced_folder "services", "/opt/ccs/services/"\n'
+                           'end\nend\n'
                            )
         with open(self.vagrant_file, 'w') as f:
             f.write(self.vagrant_data)
