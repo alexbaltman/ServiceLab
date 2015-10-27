@@ -207,15 +207,15 @@ class SlabVagrantfile(object):
                 setitup += "\", mac: \"" + host_dict[self.hostname]['mac'] + "\"\n"
             except KeyError:
                 setitup += "  config.vm.network :private_network, ip: \"" + ip + "\"\n"
-                setitup += "  config.vm.provision \"shell\", path: \"provision/infra.sh\"\n"
-                setitup += "  config.vm.provision \"shell\", path: \"provision/node.sh\"\n"
-                setitup += ("  config.vm.provision \"file\", source: " +
-                            "\"provision/ssh-config\"," +
-                            "destination:\"/home/vagrant/.ssh/config\"\n")
-                setitup += ("  config.vm.provision \"file\", source: \"hosts\", " +
-                            "destination: \"/etc/hosts\"\n")
-                setitup += ("  config.vm.synced_folder \"services\", " +
-                            "\"/opt/ccs/services/\"\n")
+            setitup += "  config.vm.provision \"shell\", path: \"provision/infra.sh\"\n"
+            setitup += "  config.vm.provision \"shell\", path: \"provision/node.sh\"\n"
+            setitup += ("  config.vm.provision \"file\", source: " +
+                        "\"provision/ssh-config\"," +
+                        "destination:\"/home/vagrant/.ssh/config\"\n")
+            setitup += ("  config.vm.provision \"file\", source: \"hosts\", " +
+                        "destination: \"/etc/hosts\"\n")
+            setitup += ("  config.vm.synced_folder \"services\", " +
+                        "\"/opt/ccs/services/\"\n")
             self.append_it(setitup)
             return 0
         except KeyError:
@@ -330,7 +330,7 @@ class SlabVagrantfile(object):
         Example Usage:
             my_class_var._vbox_os_provider_env_vars(float_net, tenant_nets, sec_groups)
         """
-        self.env_vars['username'] = os.environ.get('OS_USERNAME')
+       self.env_vars['username'] = os.environ.get('OS_USERNAME')
         self.env_vars['password'] = os.environ.get('OS_PASSWORD')
         self.env_vars['openstack_auth_url'] = os.environ.get('OS_AUTH_URL')
         self.env_vars['tenant_name'] = os.environ.get('OS_TENANT_NAME')

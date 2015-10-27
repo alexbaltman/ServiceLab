@@ -15,27 +15,58 @@ from servicelab.utils import yaml_utils
 from servicelab.utils import Vagrantfile_utils
 
 
-@click.option('--full', is_flag=True, default=False, help='Boot complete openstack stack without ha, \
-              unless --ha flag is set. You can not use the min flag with the full flag')
-@click.option('--mini', is_flag=True, default=False, help='Boot min openstack stack without ha, \
-              unless --ha flag is set. You can not use min flag with the full flag')
-@click.option('--rhel7', is_flag=True, default=False, help='Boot a rhel7 vm.')
-@click.option('--target', '-t', help='pick an OSP target vm to boot.')
-@click.option('--service', '-s', default="", help='This is a service you would like to boot\
-              a vm for. e.g. service-sonarqube')
-@click.option('-r', '--remote', is_flag=True, default=False,
+@click.option('--full',
+              is_flag=True,
+              default=False,
+              help="Boot complete openstack stack without ha, unless --ha flag is set. "
+                   "You can not use the min flag with the full flag")
+@click.option('--mini',
+              is_flag=True,
+              default=False,
+              help="Boot min openstack stack without ha,  unless --ha flag is set. "
+                   "You can not use min flag with the full flag")
+@click.option('--rhel7',
+              is_flag=True,
+              default=False,
+              help='Boot a rhel7 vm.')
+@click.option('--target',
+              '-t',
+              help='pick an OSP target vm to boot.')
+@click.option('--service',
+              '-s',
+              default="",
+              help="This is a service you would like to boot a vm "
+                   "for. e.g. service-sonarqube")
+@click.option('-r',
+              '--remote',
+              is_flag=True,
+              default=False,
               help='Boot into an OS environment')
-@click.option('--ha', is_flag=True, default=False, help='Enables HA for core OpenStack components \
-              by booting the necessary extra VMs.')
-@click.option('-b', '--branch', default="master", help='Choose a branch to run against \
-              for service redhouse tenant and svc.')
-@click.option('--data-branch', default="master", help='Choose a branch of ccs-data')
-@click.option('--service-branch', default="master", help='Choose a branch of your service')
-@click.option('-u', '--username', help='Enter the desired username')
-@click.option('-i', '--interactive', help='Walk through booting VMs')
-@click.group('up', invoke_without_command=True, short_help="Boots VM(s).")
+@click.option('--ha',
+              is_flag=True,
+              default=False,
+              help="Enables HA for core OpenStack components by booting "
+                   "the necessary extra VMs.")
+@click.option('--redhouse-branch',
+              default="origin/2.3.3",
+              help='Choose a branch to run against for service redhouse tenant and svc.')
+@click.option('--data-branch',
+              default="master",
+              help='Choose a branch of ccs-data')
+@click.option('--service-branch',
+              default="master",
+              help='Choose a branch of your service')
+@click.option('-u',
+              '--username',
+              help='Enter the desired username')
+@click.option('-i',
+              '--interactive',
+              help='Walk through booting VMs')
+@click.group('up',
+             invoke_without_command=True,
+             short_help="Boots VM(s).")
 @pass_context
-def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch,
+def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, data_branch,
         service_branch, username, interactive):
 
     # Things the user Should not do ==================================
@@ -62,59 +93,64 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
         hostname = str(name_vm("rhel7", ctx.path))
     elif service:
         hostname = str(name_vm(service, ctx.path))
+    elif target:
+        hostname = target
 
     # Setup data and inventory
-    yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
-                                    "ccs-dev-1")
-    yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
-    if service:
-        retc, myinfo = service_utils.build_data(ctx.path)
-        if retc > 0:
-            ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
+    if not target:
+        yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
+                                        "ccs-dev-1")
+        yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
+        if service:
+            retc, myinfo = service_utils.build_data(ctx.path)
+            if retc > 0:
+                ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
 
-    # Prep class Objects
-    myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
-    if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
-        myvfile.init_vagrantfile()
-    myvag_env = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
-                                                 path=ctx.path)
+        # Prep class Objects
+        myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
+        if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
+            myvfile.init_vagrantfile()
+        myvag_env = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
+                                                     path=ctx.path)
 
-    # Setup Vagrantfile w/ vm
-    if remote:
-        returncode, float_net, mynets, my_security_groups = os_ensure_network(ctx.path)
-        if returncode > 0:
-            ctx.logger.debug("No OS_ environment variables found")
-            sys.exit(1)
-        myvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
-        returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
-        if returncode > 0:
-            ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
-            sys.exit(1)
-        myvfile.add_openstack_vm(host_dict)
-    else:
-        returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
-        if returncode > 0:
-            ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
-            sys.exit(1)
-        myvfile.add_virtualbox_vm(host_dict)
+        # Setup Vagrantfile w/ vm
+        if remote:
+            returncode, float_net, mynets, my_security_groups = os_ensure_network(ctx.path)
+            if returncode > 0:
+                ctx.logger.debug("No OS_ environment variables found")
+                sys.exit(1)
+            myvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
+            returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
+            if returncode > 0:
+                ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
+                sys.exit(1)
+            myvfile.add_openstack_vm(host_dict)
+        else:
+            returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
+            if returncode > 0:
+                ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
+                sys.exit(1)
+            myvfile.add_virtualbox_vm(host_dict)
 
-    # Get vm running
-    myvag_env.v.up(vm_name=hostname)
-    returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
-    if returncode > 0:
-        # Second chance.
-        returncode, myinfo = service_utils.run_this('vagrant hostmanager '
-                                                    '--provider openstack',
-                                                    ctx.path)
+        # Get vm running
+        myvag_env.v.up(vm_name=hostname)
+        returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
-            ctx.logger.error("Could not run vagrant hostmanager because\
-                             {0}".format(myinfo))
-            ctx.logger.error("Vagrant manager will fail if you "
-                             "have local vms and remote vms.")
-            sys.exit(1)
-    # You can exit safely now if you're just booting a rhel7 vm
-    elif rhel7 and returncode == 0:
-        sys.exit(0)
+            # Second chance.
+            returncode, myinfo = service_utils.run_this('vagrant hostmanager '
+                                                        '--provider openstack',
+                                                        ctx.path)
+            if returncode > 0:
+                ctx.logger.error("Could not run vagrant hostmanager because\
+                                 {0}".format(myinfo))
+                ctx.logger.error("Vagrant manager will fail if you "
+                                 "have local vms and remote vms.")
+                sys.exit(1)
+            else:
+                sys.exit(0)
+        # You can exit safely now if you're just booting a rhel7 vm
+        elif rhel7 and returncode == 0:
+            sys.exit(0)
 
     # SERVICE VM remaining workflow  =================================
     if service:
@@ -131,7 +167,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
 
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
-            returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
+            returncode, myinfo = service_utils.run_this('vagrant hostmanager '
+                                                        '--provider openstack',
+                                                        ctx.path)
             if returncode > 0:
                 ctx.logger.error("Could not run vagrant hostmanager because\
                                  {0}".format(myinfo))
@@ -144,7 +182,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
 
         returncode, myinfo = service_utils.run_this(command.format(infra_hostname, service))
         if returncode > 0:
-            ctx.logger.error("There was a failure during the heighliner deploy phase of"
+            ctx.logger.error("There was a failure during the heighliner deploy phase of "
                              "your service. Please see the following information"
                              "for debugging: ")
             ctx.logger.error(myinfo)
@@ -155,6 +193,15 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
         service_utils.sync_service(ctx.path, service_branch,
                                    username, "service-redhouse-tenant")
+        puppet_path = os.path.join(redhouse_ten_path, "puppet", "manifest")
+        if not os.path.exists(os.path.join(puppet_path, "glance")):
+            ctx.logger.info('Updating sub repo.s under service-redhouse-tenant')
+            ctx.logger.info('This may take a few minutes.')
+            returncode, myinfo = service_utils.run_this("librarian-puppet install",
+                                                        puppet_path)
+            if returncode > 0:
+                ctx.logger('Failed to retrieve the necessary puppet configurations.')
+                sys.exit(1)
         a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=redhouse_ten_path)
         if addto_inventory(target, ctx.path) > 0:
             ctx.logger.error('Could not add {0} to vagrant.yaml'.format(target))
@@ -204,7 +251,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
             a.v.up(vm_name=target)
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
         if returncode > 0:
-            returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
+            returncode, myinfo = service_utils.run_this('vagrant hostmanager '
+                                                        '--provider openstack',
+                                                        ctx.path)
             if returncode > 0:
                 ctx.logger.error("Could not run vagrant hostmanager because\
                                  {0}".format(myinfo))
@@ -212,7 +261,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, branch, data_branch
             else:
                 sys.exit(0)
 
-    service_utils.sync_service(ctx.path, branch, username, "service-redhouse-tenant")
+    service_utils.sync_service(ctx.path,
+                               redhouse_branch,
+                               username,
+                               "service-redhouse-tenant")
 
     if mini:
         returncode, allmy_vms = yaml_utils.getmin_OS_vms(ctx.path)
@@ -374,9 +426,12 @@ def infra_ensure_up(mynets, float_net, path=None):
         elif isremote != remote and ispoweron != 2:
             return 1, hostname
 
-    # Note: If we're here we need to create an infra node where it was requested
-    #       by the user.
-    _, host_dict = yaml_utils.gethost_byname(hostname, path)
+    # Note: At this point infra node (hostname) should be in the inventroy
+    #       else error out
+    ret_code, host_dict = yaml_utils.gethost_byname(hostname, path)
+    if ret_code > 0:
+        return 1, hostname
+
     if remote:
         thisvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
         thisvfile.add_openstack_vm(host_dict)
@@ -429,25 +484,32 @@ def os_ensure_network(path):
     password = os.environ.get('OS_PASSWORD')
     username = os.environ.get('OS_USERNAME')
     base_url = os.environ.get('OS_REGION_NAME')
-    os_tenant_name = os.environ.get('OS_TENANT_NAME')
     float_net = ''
     mynewnets = []
     security_groups = []
+
     if not password or not base_url:
         # ctx.logger.error('Can --not-- boot into OS b/c password or base_url is\
         # not set')
         # ctx.logger.error('Exiting now.')
         return 1, float_net, mynewnets, security_groups
+
     a = openstack_utils.SLab_OS(path=path, password=password, username=username,
-                                base_url=base_url, os_tenant_name=os_tenant_name)
-    returncode, tenant_id, temp_token = a.login_or_gettoken()
-    if returncode > 0:
-        # ctx.logger.error("Could not login to Openstack.")
-        return 1, float_net, mynewnets, security_groups
-    returncode, tenant_id, token = a.login_or_gettoken(tenant_id=tenant_id)
+                                base_url=base_url)
+    try:
+        a.tenant_id = os.environ.get('OS_TENANT_ID')
+    except OSError:
+        a.os_tenant_name = os.environ.get('OS_TENANT_NAME')
+        returncode, a.tenant_id, temp_token = a.login_or_gettoken()
+        if returncode > 0:
+            # ctx.logger.error("Could not login to Openstack.")
+            return 1, float_net, mynewnets, security_groups
+    # Note: _ is same as above --> a.tenant_id
+    returncode, _, token = a.login_or_gettoken(tenant_id=a.tenant_id)
     if returncode > 0:
         # ctx.logger.error("Could not get token to project.")
         return 1, float_net, mynewnets, security_groups
+
     a.connect_to_neutron()
 
     returncode, security_group = a.create_security_group()
@@ -510,7 +572,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
     doc = {}
     settings = os.path.join(path, 'services', 'service-redhouse-tenant', 'settings.yaml')
 
-    returncode, float_net, mynewnets = os_ensure_network(path)
+    returncode, float_net, mynewnets, my_security_groups = os_ensure_network(path)
     mgmt_net = ''
     for x in mynewnets:
         if 'mgmt' in x.get('name'):
@@ -570,8 +632,7 @@ def addto_inventory(hostname, path):
         >>> addto_inventory('infra-001', ctx.path)
         0
     """
-    hostexists = yaml_utils.host_exists_vagrantyaml(hostname, path)
-    if not hostexists:
+    if yaml_utils.host_exists_vagrantyaml(hostname, path) > 0:
         returncode, host_dict = yaml_utils.gethost_byname(hostname,
                                                           os.path.join(path,
                                                                        'provision'))

@@ -1,5 +1,4 @@
 #!/bin/bash
-sudo yum install -y python-heighliner
 sudo rm -f /etc/yum.repos.d/epel*
 
 sudo mkdir -p /etc/ansible
@@ -24,10 +23,12 @@ cp /etc/hosts /var/lib/cobbler/cobbler_hosts_additional
 cp /vagrant/provision/ansible.cfg /etc/ansible/ansible.cfg
 cp /vagrant/provision/build_mirror.repo /etc/yum.repos.d/build_mirror.repo
 cp /vagrant/provision/hiera.py /usr/share/ansible_plugins/lookup_plugins/hiera.py
+cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/hosts /etc/hosts
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /etc/puppet/data/hiera_data/site.yaml
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /etc/ccs/data/environments/dev-tenant/site.yaml
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/hosts.yaml /etc/ccs/data/environments/dev-tenant/hosts.yaml
 
+sudo yum install -y python-heighliner
 
 chmod +x /etc/ansible/nimbus.py
 chmod +x /usr/share/ansible_plugins/lookup_plugins/hiera.py
@@ -46,6 +47,7 @@ fi
 
 if [ -f /vagrant/id_rsa ]; then
   sudo cp /vagrant/id_rsa /root/.ssh/
+  sudo chmod 0600 /root/.ssh/id_rsa
 fi
 
 if [ -f /vagrant/provision/ssh-config ]; then

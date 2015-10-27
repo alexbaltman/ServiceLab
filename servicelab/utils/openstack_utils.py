@@ -115,14 +115,16 @@ class SLab_OS(object):
                 self.token = keystone.auth_token
                 all_tenants = keystone.tenants.list()
                 # TODO: Look for one in cache rather than just failing.
-                if len(all_tenants) > 1:
-                    openstack_utils_logger.error("Can't determine, which tenant to get tenant_id\
-                                                  from b/c there's more than 1.")
-                    return 1, self.tenant_id, self.token
-                else:
-                    self.tenant_id = all_tenants[0].id
-                    return 0, self.tenant_id, self.token
 
+                for tenant in all_tenants:
+                    if self.os_tenant_name == tenant.name:
+                        self.tenant_id = tenant.id
+                        break
+
+                if not self.tenant_id:
+                    openstack_utils_logger.error("Unable to determine tenant_id"
+                                                 "for {}".format(self.os_tenant_name))
+                    return 1, self.tenant_id, self.token
                 return 0, self.tenant_id, self.token
             else:
                 keystone = client.Client(username=self.username, password=self.password,
