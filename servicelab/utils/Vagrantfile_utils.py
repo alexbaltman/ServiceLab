@@ -330,7 +330,7 @@ class SlabVagrantfile(object):
         Example Usage:
             my_class_var._vbox_os_provider_env_vars(float_net, tenant_nets, sec_groups)
         """
-       self.env_vars['username'] = os.environ.get('OS_USERNAME')
+        self.env_vars['username'] = os.environ.get('OS_USERNAME')
         self.env_vars['password'] = os.environ.get('OS_PASSWORD')
         self.env_vars['openstack_auth_url'] = os.environ.get('OS_AUTH_URL')
         self.env_vars['tenant_name'] = os.environ.get('OS_TENANT_NAME')
