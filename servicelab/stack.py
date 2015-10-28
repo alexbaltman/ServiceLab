@@ -87,6 +87,9 @@ class Context(object):
             {"url": "https://ccs-jenkins.cisco.com"}
         self.username = helper_utils.get_username(self.path)
         self.password = None
+        if os.getenv("OS_USERNAME"):
+            self.username = os.getenv("OS_USERNAME")
+            self.password = os.getenv("OS_PASSWORD")
 
     def get_gerrit_server(self):
         """
@@ -113,10 +116,10 @@ class Context(object):
         return self.__gerrit_test_info
 
     def get_artifactory_info(self):
-        if self.debug:
-            return self.__artifactory_info
-        else:
-            return self.__artifactory_info
+        """
+        returns the artifactory info
+        """
+        return self.__artifactory_info
 
     def reporoot_path(self):
         """
@@ -161,13 +164,12 @@ class ComplexCLI(click.MultiCommand):
         """
         cmd_folder = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                   'commands'))
-        rv = []
+        cmd = []
         for filename in os.listdir(cmd_folder):
-            if filename.endswith('.py') and \
-               filename.startswith('cmd_'):
-                rv.append(filename[4:-3])
-        rv.sort()
-        return rv
+            if filename.endswith('.py') and filename.startswith('cmd_'):
+                cmd.append(filename[4:-3])
+        cmd.sort()
+        return cmd
 
     def get_command(self, ctx, name):
         try:
