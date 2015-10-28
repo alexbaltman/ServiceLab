@@ -282,15 +282,16 @@ class SlabVagrantfile(object):
         except KeyError:
             Vagrantfile_utils_logger.error('Could not set host flavor or img from\
                                             ccs-data')
+        sec_groups = ''.join(env_vars['security_groups'])
         setitup += ("    os.floating_ip_pool     = \"" + env_vars['floating_ip_pool'] +
                     "\"\n"
                     "    os.openstack_network_url= \"" + env_vars['openstack_network_url'] +
                     "\"\n"
                     "    os.openstack_image_url  = \"" + env_vars['openstack_image_url'] +
                     "\"\n"
-                    "    os.networks             = " + env_vars['networks'] + ip + '}]' +
-                    "\n" + "    os.security_groups      = " +
-                    ''.join(env_vars['security_groups']) + "\n"
+                    "    os.networks             = " + env_vars['networks'] + '\'' +
+                    ip + '\'}]\n'
+                    "    os.security_groups      = " + sec_groups + "\n"
                     "    override.vm.box = \"openstack\"\n"
                     "  end\n")
         setitup += ("  config.vm.provision \"shell\", path: \"provision/infra-OS.sh\"\n")
