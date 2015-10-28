@@ -92,6 +92,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     if rhel7:
         hostname = str(name_vm("rhel7", ctx.path))
     elif service:
+        if not service_utils.installed(service, ctx.path):
+            ctx.logger.error("{0} is not installed on the stack.\n"
+                             "Try: stack workon {0}".format(service))
+            sys.exit(1)
         hostname = str(name_vm(service, ctx.path))
     elif target:
         hostname = target

@@ -470,3 +470,32 @@ def run_this(command_to_run, cwd=os.getcwd()):
     except OSError, ex:
         SERVICE_UTILS_LOGGER.error(ex)
         return (1, str(ex))
+
+
+def installed(service, path):
+    """ Checks if the service is installed in the stack
+
+    Args:
+        service (str): Service name
+        path (str): The stack path
+
+    Returns:
+        Return true if the service is installed and false if current is
+        not set to the correct service or if the service is not instaleld
+        in the service dircetory
+
+    """
+    # check if the current is set to correct service
+    with open(os.path.join(path, "current"), 'r') as currentf:
+        service_name = currentf.readline()
+    if service_name != service:
+        return False
+
+    input_path = os.path.realpath(os.path.join(path, "services", service))
+    current_path = os.path.join(path, "current_service")
+    if not (os.path.isdir(input_path) or
+            os.path.isdir(current_path)):
+        return False
+    if not os.path.samefile(input_path, current_path):
+        return False
+    return True

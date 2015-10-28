@@ -54,7 +54,7 @@ class Context(object):
         self.verbose = False
         self.vverbose = False
         self.debug = False
-        self.logger = logging.getLogger('click_application')
+        self.logger = logging.getLogger('stack')
         self.logger.setLevel(logging.DEBUG)
 
         # Create filehandler that logs everything.
