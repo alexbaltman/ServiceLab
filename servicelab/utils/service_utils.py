@@ -486,16 +486,20 @@ def installed(service, path):
 
     """
     # check if the current is set to correct service
-    with open(os.path.join(path, "current"), 'r') as currentf:
-        service_name = currentf.readline()
-    if service_name != service:
-        return False
+    try:
+        with open(os.path.join(path, "current"), 'r') as currentf:
+            service_name = currentf.readline()
+        if service_name != service:
+            return False
 
-    input_path = os.path.realpath(os.path.join(path, "services", service))
-    current_path = os.path.join(path, "current_service")
-    if not (os.path.isdir(input_path) or
-            os.path.isdir(current_path)):
-        return False
-    if not os.path.samefile(input_path, current_path):
+        input_path = os.path.realpath(os.path.join(path, "services", service))
+        current_path = os.path.join(path, "current_service")
+        if not (os.path.isdir(input_path) or
+                os.path.isdir(current_path)):
+            return False
+        if not os.path.samefile(input_path, current_path):
+            return False
+    except Exception as ex:
+        SERVICE_UTILS_LOGGER.error(ex)
         return False
     return True
