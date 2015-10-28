@@ -499,8 +499,8 @@ def os_ensure_network(path):
     a = openstack_utils.SLab_OS(path=path, password=password, username=username,
                                 base_url=base_url)
     a.tenant_id = os.environ.get('OS_TENANT_ID')
+    a.os_tenant_name = os.environ.get('OS_TENANT_NAME')
     if not a.tenant_id:
-        a.os_tenant_name = os.environ.get('OS_TENANT_NAME')
         returncode, a.tenant_id, temp_token = a.login_or_gettoken()
         if returncode > 0:
             # ctx.logger.error("Could not login to Openstack.")

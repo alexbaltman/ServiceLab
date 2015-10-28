@@ -193,8 +193,8 @@ class SLab_OS(object):
         if append:
             append = "_" + append
 
-        username = self.username
-        name = "SLAB_%s%s_%s_%s" % (self.username, append, self.os_tenant_name,
+        sub_name = self.os_tenant_name or self.tenant_id
+        name = "SLAB_%s%s_%s_%s" % (self.username, append, sub_name,
                                     neutron_type)
         return name
 
