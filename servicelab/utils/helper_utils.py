@@ -1,9 +1,10 @@
 import os
 import re
-import sys
 import logging
 import fnmatch
 import getpass
+
+from servicelab.utils import yaml_utils
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -150,3 +151,31 @@ def get_username(path):
         if not username:
             raise Exception("Still couldn't set username. Exiting.")
     return username
+
+
+def name_vm(name, path):
+    """This is how we're currently generating a name for arbitrary vms.
+
+    Args:
+        name (str): The suffix to attach to the name.
+        path (str): The path to the yaml file that's holding your inventory. Typically,
+                    the vagrant.yaml in ctx.path --> .stack/vagrant.yaml
+
+    Returns:
+        hsotname (str): The name of the next vm inline that's not in the
+        vagrant.yaml for the given path.
+
+    Example Usage:
+        >>> helper_utils.name_vm('rhel7', ctx.path)
+        rhel7-001
+    """
+    for i in xrange(1, 100):
+        i = str(i)
+        if len(i) == 1:
+            i = "00" + i
+        elif len(i) == 2:
+            i = "0" + i
+        hostname = name + "-" + i
+        returncode = yaml_utils.host_exists_vagrantyaml(hostname, path)
+        if returncode == 1:
+            return hostname

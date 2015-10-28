@@ -1,11 +1,13 @@
+import os
+import yaml
+import time
+import logging
+
 from keystoneclient.exceptions import AuthorizationFailure, Unauthorized
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client
-import helper_utils
-import logging
-import yaml
-import os
 
+import helper_utils
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -502,7 +504,8 @@ class SLab_OS(object):
                         self.write_to_cache(router)
                         return 0, router
                     else:
-                        openstack_utils_logger.error("Tried to make the router, but failed.")
+                        openstack_utils_logger.error("Tried to make the router, "
+                                                     "but failed.")
                         return 1, router
         else:
             return 0, router
@@ -747,7 +750,8 @@ class SLab_OS(object):
                 if return_name:
                     return 0, float_name
                 return 0, _id
-        openstack_utils_logger.error('Failed to find public-floating-\* in networks names')
+        openstack_utils_logger.error('Failed to find public-floating-\* '
+                                     'in networks names')
         return 1, _id
 
     def del_in_project(self, neutron_type, id):
@@ -905,3 +909,115 @@ class SLab_OS(object):
                 return 0, d[get_this]
         else:
             return 1, d[get_this]
+
+
+def os_ensure_network(path):
+    """
+    Args:
+        path (str): Your working .stack directory, typically ctx.path
+
+    Returns:
+        Returncode (int):
+            0 -
+            1 -
+        Float_net ():
+        mynewnets ():
+        security_groups ():
+
+    Example Usage:
+        >>> os_ensure_network(ctx.path)
+        0, 'public-floating-602', [{u'status': u'ACTIVE', u'subnets':
+                                   [u'5b4cb651-11f5-4a34-a18f-ea02c9d2a640'],
+                                   u'name': u'SLAB_aaltman_mgmt_network', u'admin_state_up':
+                                   True, u'tenant_id': u'4ab4b8260df84a869782e2a3a5bf6101',
+                                   u'router:external': False, u'shared': False, u'id':
+                                   u'788d801a-e98c-42cb-9938-f67a49f30258'}],
+
+                                   Security group example --> to be filled in
+
+    """
+    password = os.environ.get('OS_PASSWORD')
+    username = os.environ.get('OS_USERNAME')
+    base_url = os.environ.get('OS_REGION_NAME')
+    float_net = ''
+    mynewnets = []
+    security_groups = []
+
+    if not password or not base_url:
+        openstack_utils_logger.error('Can --not-- boot into OS b/c password or base_url is\
+        not set')
+        openstack_utils_logger.error('Exiting now.')
+        return 1, float_net, mynewnets, security_groups
+
+    a = SLab_OS(path=path, password=password, username=username,
+                base_url=base_url)
+    a.tenant_id = os.environ.get('OS_TENANT_ID')
+    a.os_tenant_name = os.environ.get('OS_TENANT_NAME')
+    if not a.tenant_id:
+        returncode, a.tenant_id, temp_token = a.login_or_gettoken()
+        if returncode > 0:
+            openstack_utils_logger.error("Could not login to Openstack.")
+            return 1, float_net, mynewnets, security_groups
+    # Note: _ is same as above --> a.tenant_id
+    returncode, _, token = a.login_or_gettoken(tenant_id=a.tenant_id)
+    if returncode > 0:
+        openstack_utils_logger.error("Could not get token to project.")
+        return 1, float_net, mynewnets, security_groups
+
+    a.connect_to_neutron()
+
+    returncode, security_group = a.create_security_group()
+    if returncode > 0:
+        openstack_utils_logger.error("Could not create security group in project.")
+        return 1, float_net, mynewnets, security_groups
+    returncode, float_net = a.find_floatnet_id(return_name="Yes")
+    if returncode > 0:
+        openstack_utils_logger.error('Could not get the name for the '
+                                     'floating network.')
+        return 1, float_net, mynewnets, security_groups
+    returncode, router = a.create_router()
+    if returncode > 0:
+        openstack_utils_logger.error("Could not create router in project.")
+        return 1, float_net, mynewnets, security_groups
+    router_id = router['id']
+    returncode, network = a.create_network()
+    if returncode > 0:
+        openstack_utils_logger.error("Could not create network in project.")
+        return 1, float_net, mynewnets, security_groups
+    returncode, subnet = a.create_subnet()
+    if returncode > 0:
+        openstack_utils_logger.error("Could not create subnet in project.")
+        return 1, float_net, mynewnets, security_groups
+    openstack_utils_logger.debug('Sleeping 5s b/c of slow neutron create times.')
+    time.sleep(5)
+    a.add_int_to_router(router_id, subnet['id'])
+
+    mgmtname = a.create_name_for("network", append="mgmt")
+    returncode, mgmt_network = a.create_network(name=mgmtname)
+    if returncode > 0:
+        openstack_utils_logger.error("Could not create network in project.")
+        return 1, float_net, mynewnets, security_groups
+    mgmtsubname = a.create_name_for("subnet", append="mgmt")
+    returncode, mgmt_subnet = a.create_subnet(name=mgmtsubname,
+                                              cidr='192.168.1.0/24')
+    if returncode > 0:
+        openstack_utils_logger.error("Could not create subnet in project.")
+        return 1, float_net, mynewnets, security_groups
+    openstack_utils_logger.debug('Sleeping 5s b/c of slow neutron create times.')
+    time.sleep(5)
+    a.add_int_to_router(router_id, mgmt_subnet['id'], mgmt=True)
+    mynets = a.neutron.list_networks()
+    my_security_groups = a.neutron.list_security_groups()
+
+    mynewnets = []
+    for i in mynets['networks']:
+        if i.get('name') == network['name']:
+            mynewnets.append(i)
+        elif i.get('name') == mgmt_network['name']:
+            mynewnets.append(i)
+
+    for i in my_security_groups['security_groups']:
+        if i.get('name') == security_group['name']:
+            security_groups.append(i)
+
+    return 0, float_net, mynewnets, security_groups

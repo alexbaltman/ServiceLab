@@ -1,13 +1,16 @@
-import tc_vm_yaml_create
-import service_utils
-import helper_utils
-import subprocess32 as subprocess
-import ipaddress
-import logging
-import yaml
-import sys
 import os
 import re
+import sys
+import yaml
+import logging
+
+import ipaddress
+
+import helper_utils
+import service_utils
+import openstack_utils as os_utils
+import tc_vm_yaml_create
+import Vagrantfile_utils
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -920,6 +923,114 @@ def get_dev_hostyaml(path, hostname, site='ccs-dev-1', env='dev-tenant'):
     with open(path, 'r') as f:
         myhost = yaml.load(f)
         return 0, myhost
+
+
+def addto_inventory(hostname, path):
+    """Add a pre-defined host to inventory vagrant.yaml file, meaning
+    it was created in the provision/vagrant.yaml and committed.
+
+    Args:
+        hostname (str): A string representing the hostname
+        path (str):     The path to working .stack directory
+
+    Returns:
+        0 - success
+        1 - failure
+
+    Example:
+        >>> addto_inventory('infra-001', ctx.path)
+        0
+    """
+    if host_exists_vagrantyaml(hostname, path) > 0:
+        returncode, host_dict = gethost_byname(hostname,
+                                               os.path.join(path,
+                                                            'provision'))
+        if returncode > 0:
+            return 1
+
+        # Note: Pep8 compliant line for length below (93 characters)
+        hd = host_dict[hostname]['memory'] / 512
+
+        returncode = host_add_vagrantyaml(path=path,
+                                          file_name="vagrant.yaml",
+                                          hostname=hostname,
+                                          memory=hd,
+                                          box=host_dict[hostname]['box'],
+                                          role=host_dict[hostname]['role'],
+                                          profile=host_dict[hostname]['profile'],
+                                          domain=host_dict[hostname]['domain'],
+                                          mac_nocolon=host_dict[hostname]['mac'],
+                                          ip=host_dict[hostname]['ip'],
+                                          site='ccs-dev-1')
+        if returncode > 0:
+            return 1
+    return 0
+
+
+def wr_settingsyaml(path, settingsyaml, hostname=''):
+    """This function is used to write the settings.yaml file that is used in the
+    service-redhouse-tenant/Vagrantfile through the sourcing of that yaml and then
+    accessing those variables we're setting here by using $settings
+
+    Args:
+        path (str): The servicelab working directory, typically .stack/ aka ctx.path
+        settingsyaml (dict): Looks like this:
+                             {'openstack_provider': True}
+        hostname(str): The hostname of the vm to boot
+
+    Returns:
+        0 - Successfully wrote file
+        1 - Did not write file
+
+    Example Usage:
+        >>> wr_settingsyaml(ctx.path, {'openstack_provider': True}, 'keystonectl-001')
+        0
+    """
+    doc = {}
+    settings = os.path.join(path, 'services', 'service-redhouse-tenant', 'settings.yaml')
+
+    returncode, float_net, mynewnets, my_security_groups = os_utils.os_ensure_network(path)
+    mgmt_net = ''
+    for x in mynewnets:
+        if 'mgmt' in x.get('name'):
+            mgmt_net = x.get('name')
+    lab_net = ''
+    for x in mynewnets:
+        if 'SLAB' in x.get('name') and 'mgmt' not in x.get('name'):
+            lab_net = x.get('name')
+
+    base_url = os.environ.get('OS_REGION_NAME')
+    if not base_url:
+        # try to get base_url from settingsyaml
+        # TODO: log error saying: source your OS environment's cred.s
+        print('no env var base_url')
+        return 1
+
+    a = Vagrantfile_utils.SlabVagrantfile(path)
+    # Note: setup host_vars under instance of class
+    a.hostname = hostname
+    a._vbox_os_provider_host_vars(path)
+
+    try:
+        with open(settings, 'w') as f:
+            # Note: setup defaults - see service-redhouse-tenant Vagrantfile for
+            #       $settings
+            doc = {'openstack_provider': 'true',
+                   'mgmt_network':       str(mgmt_net),
+                   'lab_network':        str(lab_net),
+                   'image':              a.host_vars['image'],
+                   'flavor':             a.host_vars['flavor'],
+                   'floating_ip_pool':   str(float_net),
+                   'os_network_url':     'https://' + base_url + '.cisco.com:9696/v2.0',
+                   'os_image_url':       'https://' + base_url + '.cisco.com:9292/v2',
+                   }
+            for k, v in settingsyaml.iteritems():
+                doc[k] = v
+            yaml.dump(doc, f, default_flow_style=False)
+    except (OSError):
+        # TODO: Log - don't have access to settings under
+        # service-redhouse-tenant
+        return 1
 
 
 # small driver stub

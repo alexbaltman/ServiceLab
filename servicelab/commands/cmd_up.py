@@ -1,18 +1,16 @@
 import os
 import sys
-import time
 from subprocess import CalledProcessError
 
 import click
-import yaml
 
-from servicelab.utils import openstack_utils
+from servicelab.utils import openstack_utils as os_utils
 from servicelab.utils import service_utils
-from servicelab.utils import vagrant_utils
+from servicelab.utils import vagrant_utils as v_utils
 from servicelab.utils import helper_utils
 from servicelab.stack import pass_context
 from servicelab.utils import yaml_utils
-from servicelab.utils import Vagrantfile_utils
+from servicelab.utils import Vagrantfile_utils as Vf_utils
 
 
 @click.option('--full',
@@ -90,13 +88,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             sys.exit(1)
 
     if rhel7:
-        hostname = str(name_vm("rhel7", ctx.path))
+        hostname = str(helper_utils.name_vm("rhel7", ctx.path))
     elif service:
         if not service_utils.installed(service, ctx.path):
             ctx.logger.error("{0} is not installed on the stack.\n"
                              "Try: stack workon {0}".format(service))
             sys.exit(1)
-        hostname = str(name_vm(service, ctx.path))
+        hostname = str(helper_utils.name_vm(service, ctx.path))
     elif target:
         hostname = target
 
@@ -111,19 +109,19 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                 ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
 
         # Prep class Objects
-        myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
+        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path)
         if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
-        myvag_env = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
-                                                     path=ctx.path)
+        myvag_env = v_utils.Connect_to_vagrant(vm_name=hostname,
+                                               path=ctx.path)
 
         # Setup Vagrantfile w/ vm
         if remote:
-            returncode, float_net, mynets, my_security_groups = os_ensure_network(ctx.path)
+            returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
             if returncode > 0:
                 ctx.logger.debug("No OS_ environment variables found")
                 sys.exit(1)
-            myvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
+            myvfile._vbox_os_provider_env_vars(float_net, mynets, my_sec_grps)
             returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
             if returncode > 0:
                 ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
@@ -159,14 +157,15 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     # SERVICE VM remaining workflow  =================================
     if service:
         if remote:
-            returncode, infra_hostname = infra_ensure_up(mynets, float_net,
-                                                         my_security_groups,
-                                                         path=ctx.path)
+            returncode, infra_name = v_utils.infra_ensure_up(mynets,
+                                                             float_net,
+                                                             my_sec_grps,
+                                                             path=ctx.path)
             if returncode == 1:
                 ctx.logger.error("Could not boot a remote infra node")
                 sys.exit(1)
         else:
-            returncode, infra_hostname = infra_ensure_up(None, None, None, path=ctx.path)
+            returncode, infra_name = v_utils.infra_ensure_up(None, None, None, path=ctx.path)
             if returncode == 1:
                 ctx.logger.error("Could not boot a local infra node")
                 sys.exit(1)
@@ -186,7 +185,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         command = ('vagrant ssh {0} -c \"cd /opt/ccs/services/{1}/ && sudo heighliner '
                    '--dev --debug deploy\"')
 
-        returncode, myinfo = service_utils.run_this(command.format(infra_hostname, service))
+        returncode, myinfo = service_utils.run_this(command.format(infra_name, service))
         if returncode > 0:
             ctx.logger.error("There was a failure during the heighliner deploy phase of "
                              "your service. Please see the following information"
@@ -209,8 +208,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                 ctx.logger.error('Failed to retrieve the necessary puppet configurations.')
                 ctx.logger.error(myinfo)
                 sys.exit(1)
-        a = vagrant_utils.Connect_to_vagrant(vm_name=target, path=redhouse_ten_path)
-        if addto_inventory(target, ctx.path) > 0:
+        a = v_utils.Connect_to_vagrant(vm_name=target, path=redhouse_ten_path)
+        if yaml_utils.addto_inventory(target, ctx.path) > 0:
             ctx.logger.error('Could not add {0} to vagrant.yaml'.format(target))
             sys.exit(1)
 
@@ -240,7 +239,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
 
         if remote:
             settingsyaml = {'openstack_provider': True}
-            returncode = wr_settingsyaml(ctx.path, settingsyaml, hostname=target)
+            returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml, hostname=target)
             if returncode > 0:
                 ctx.logger.error('Failed to write settings yaml - make sure you have your OS'
                                  'cred.s sourced and have access to'
@@ -249,7 +248,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             a.v.up(vm_name=target, provider='openstack')
         else:
             settingsyaml = {'openstack_provider': 'false'}
-            returncode = wr_settingsyaml(ctx.path, settingsyaml=settingsyaml)
+            returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml=settingsyaml)
             if returncode > 0:
                 ctx.logger.error('Failed to write settings yaml - make sure you have your OS'
                                  'cred.s sourced and have access to'
@@ -286,14 +285,14 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         # Note: not sure if this will work w/ vm_name set to infra-001 arbitrarily
         # Note: move path to ctx.path if able to boot OSP pieces via infra/heighliner
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
-        a = vagrant_utils.Connect_to_vagrant(vm_name='infra-001',
-                                             path=os.path.join(redhouse_ten_path))
-        myvfile = Vagrantfile_utils.SlabVagrantfile(path=ctx.path)
-        returncode, float_net, mynets, my_security_groups = os_ensure_network(ctx.path)
+        a = v_utils.Connect_to_vagrant(vm_name='infra-001',
+                                       path=os.path.join(redhouse_ten_path))
+        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path)
+        returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
         if returncode > 0:
             ctx.logger.error('Failed to get float net and mynets')
             sys.exit(1)
-        myvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
+        myvfile._vbox_os_provider_env_vars(float_net, mynets, my_sec_grps)
         if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
         for i in allmy_vms:
@@ -325,7 +324,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                     ctx.logger.error("Failed to add host" + host)
                     ctx.logger.error("Continuing despite failure...")
             settingsyaml = {'openstack_provider': True}
-            returncode = wr_settingsyaml(ctx.path, settingsyaml, hostname=host)
+            returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml, hostname=host)
             if returncode > 0:
                 ctx.logger.error('writing to settings yaml failed on: ' + host)
             if remote:
@@ -337,334 +336,3 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     except IOError as e:
         ctx.logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
         sys.exit(1)
-
-
-def name_vm(name, path):
-    for i in xrange(1, 100):
-        i = str(i)
-        if len(i) == 1:
-            i = "00" + i
-        elif len(i) == 2:
-            i = "0" + i
-        hostname = name + "-" + i
-        returncode = yaml_utils.host_exists_vagrantyaml(hostname, path)
-        if returncode == 1:
-            return hostname
-
-
-def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
-    '''Best effort to ensure infra-001 or -002 will be booted in correct env.
-
-    Args:
-        mynets (list): Comes from ensure_os_network.
-                       See 'check_for_network' in openstack_utils data strctures.
-        float_net(str): comes from ensure_os_network. looks like: 'Public-floating-602'
-        path (str): The path to your working .stack directory
-
-    Returns:
-        0 - success, infra node has been sucessfully booted
-        1 - failure
-
-    Example:
-        >>> infra_ensure_up()
-            0
-
-    Data Structure:
-        From python-vagrant's status call.
-        Out[3]: [Status(name='rhel7-001', state='running', provider='virtualbox')]
-
-    Misc.:
-        CalledProcessError --> subprocess exit 1 triggers this exception
-    '''
-    hostname = 'infra-001'
-    if mynets and float_net:
-        remote = True
-    else:
-        remote = False
-
-    ispoweron, isremote = vm_isrunning(hostname=hostname, path=path)
-    infra_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
-                                                        path=path)
-
-    # Note: Ensure 001 is in inventory even if we're using 002.
-    if addto_inventory(hostname, path) > 0:
-        return 1, hostname
-
-    # Note: if requested remote or local and our vm's state is same then just
-    #       make sure it's booted w/ ispoweron being 0 for that.
-    if isremote == remote and ispoweron == 0:
-        infra_connection.v.reload(hostname)
-        return 0, hostname
-    # Note: it's what we want just not booted, so boot it.
-    elif isremote == remote and ispoweron == 1:
-        try:
-            infra_connection.v.up(vm_name=hostname)
-        except CalledProcessError:
-            return 1, hostname
-        return 0, hostname
-
-    # Shared code b/w remote and local vbox
-    thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
-
-    # vm_isrunning currently doesn't manage these alternative states
-    # so we fail
-    if ispoweron == 3:
-        # TODO: ERROR msg here
-        return 1, hostname
-
-    # Note: b/c the infra exists but isn't in desired location we alter hostname
-    if isremote != remote:
-        hostname = 'infra-002'
-        infra_connection.vm_name = hostname
-        if addto_inventory(hostname, path) > 0:
-            return 1, hostname
-        ispoweron, isremote = vm_isrunning(hostname=hostname, path=path)
-        if isremote == remote and ispoweron == 0:
-            infra_connection.v.reload(hostname)
-            return 0, hostname
-        elif isremote == remote and ispoweron == 1:
-            try:
-                infra_connection.v.up(vm_name=hostname)
-            except CalledProcessError:
-                return 1, hostname
-            return 0, hostname
-        elif ispoweron == 3:
-            return 1, hostname
-        elif isremote != remote and ispoweron != 2:
-            return 1, hostname
-
-    # Note: At this point infra node (hostname) should be in the inventroy
-    #       else error out
-    ret_code, host_dict = yaml_utils.gethost_byname(hostname, path)
-    if ret_code > 0:
-        return 1, hostname
-
-    if remote:
-        thisvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
-        thisvfile.add_openstack_vm(host_dict)
-        try:
-            infra_connection.v.up(vm_name=hostname)
-            return 0, hostname
-        except CalledProcessError:
-            return 1, hostname
-    else:
-        thisvfile.add_virtualbox_vm(host_dict)
-        try:
-            infra_connection.v.up(vm_name=hostname)
-            return 0, hostname
-        except CalledProcessError:
-            return 1, hostname
-
-
-def vm_isrunning(hostname, path):
-    '''
-    on/off then second return value is if it's remote.
-
-    From python-vagrant up function (self, no_provision=False,
-                                     provider=None, vm_name=None,
-                                     provision=None, provision_with=None)
-    '''
-    vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
-                                                     path=path)
-    try:
-        status = vm_connection.v.status(hostname)
-        # Note: local vbox value: running
-        if status[0][1] == 'running':
-            return 0, False
-        # Note: local vbox value: poweroff
-        elif status[0][1] == 'poweroff':
-            return 1, False
-        # Note: remote OS value: active
-        elif status[0][1] == 'active':
-            return 0, True
-        # Note: remote OS value: shutoff
-        elif status[0][1] == 'shutoff':
-            return 1, True
-    except CalledProcessError:
-        # RFI: is there a better way to return here? raise exception?
-        return 2, False
-    # Note: 3 represent some other state --> suspended, aborted, etc.
-    return 3, False
-
-
-def os_ensure_network(path):
-    password = os.environ.get('OS_PASSWORD')
-    username = os.environ.get('OS_USERNAME')
-    base_url = os.environ.get('OS_REGION_NAME')
-    float_net = ''
-    mynewnets = []
-    security_groups = []
-
-    if not password or not base_url:
-        # ctx.logger.error('Can --not-- boot into OS b/c password or base_url is\
-        # not set')
-        # ctx.logger.error('Exiting now.')
-        return 1, float_net, mynewnets, security_groups
-
-    a = openstack_utils.SLab_OS(path=path, password=password, username=username,
-                                base_url=base_url)
-    a.tenant_id = os.environ.get('OS_TENANT_ID')
-    a.os_tenant_name = os.environ.get('OS_TENANT_NAME')
-    if not a.tenant_id:
-        returncode, a.tenant_id, temp_token = a.login_or_gettoken()
-        if returncode > 0:
-            # ctx.logger.error("Could not login to Openstack.")
-            return 1, float_net, mynewnets, security_groups
-    # Note: _ is same as above --> a.tenant_id
-    returncode, _, token = a.login_or_gettoken(tenant_id=a.tenant_id)
-    if returncode > 0:
-        # ctx.logger.error("Could not get token to project.")
-        return 1, float_net, mynewnets, security_groups
-
-    a.connect_to_neutron()
-
-    returncode, security_group = a.create_security_group()
-    if returncode > 0:
-        # ctx.logger.error("Could not create security group in project.")
-        return 1, float_net, mynewnets, security_groups
-    returncode, float_net = a.find_floatnet_id(return_name="Yes")
-    if returncode > 0:
-        # ctx.logger.error('Could not get the name for the floating network.')
-        return 1, float_net, mynewnets, security_groups
-    returncode, router = a.create_router()
-    if returncode > 0:
-        # ctx.logger.error("Could not create router in project.")
-        return 1, float_net, mynewnets, security_groups
-    router_id = router['id']
-    returncode, network = a.create_network()
-    if returncode > 0:
-        # ctx.logger.error("Could not create network in project.")
-        return 1, float_net, mynewnets, security_groups
-    returncode, subnet = a.create_subnet()
-    if returncode > 0:
-        # ctx.logger.error("Could not create subnet in project.")
-        return 1, float_net, mynewnets, security_groups
-    # ctx.logger.debug('Sleeping 5s b/c of slow neutron create times.')
-    time.sleep(5)
-    a.add_int_to_router(router_id, subnet['id'])
-
-    mgmtname = a.create_name_for("network", append="mgmt")
-    returncode, mgmt_network = a.create_network(name=mgmtname)
-    if returncode > 0:
-        # ctx.logger.error("Could not create network in project.")
-        return 1, float_net, mynewnets, security_groups
-    mgmtsubname = a.create_name_for("subnet", append="mgmt")
-    returncode, mgmt_subnet = a.create_subnet(name=mgmtsubname,
-                                              cidr='192.168.1.0/24')
-    if returncode > 0:
-        # ctx.logger.error("Could not create subnet in project.")
-        return 1, float_net, mynewnets, security_groups
-    # ctx.logger.debug('Sleeping 5s b/c of slow neutron create times.')
-    time.sleep(5)
-    a.add_int_to_router(router_id, mgmt_subnet['id'], mgmt=True)
-    mynets = a.neutron.list_networks()
-    my_security_groups = a.neutron.list_security_groups()
-
-    mynewnets = []
-    for i in mynets['networks']:
-        if i.get('name') == network['name']:
-            mynewnets.append(i)
-        elif i.get('name') == mgmt_network['name']:
-            mynewnets.append(i)
-
-    for i in my_security_groups['security_groups']:
-        if i.get('name') == security_group['name']:
-            security_groups.append(i)
-
-    return 0, float_net, mynewnets, security_groups
-
-
-def wr_settingsyaml(path, settingsyaml, hostname=''):
-    doc = {}
-    settings = os.path.join(path, 'services', 'service-redhouse-tenant', 'settings.yaml')
-
-    returncode, float_net, mynewnets, my_security_groups = os_ensure_network(path)
-    mgmt_net = ''
-    for x in mynewnets:
-        if 'mgmt' in x.get('name'):
-            mgmt_net = x.get('name')
-    lab_net = ''
-    for x in mynewnets:
-        if 'SLAB' in x.get('name') and 'mgmt' not in x.get('name'):
-            lab_net = x.get('name')
-
-    base_url = os.environ.get('OS_REGION_NAME')
-    if not base_url:
-        # try to get base_url from settingsyaml
-        # TODO: log error saying: source your OS environment's cred.s
-        print 'no env var base_url'
-        return 1
-
-    # get an ascii string of all the security group
-    sgrparry = []
-    for security_group in my_security_groups:
-        sgrparry.append(str(security_group['name']))
-
-    a = Vagrantfile_utils.SlabVagrantfile(path)
-    # Note: setup host_vars under instance of class
-    a.hostname = hostname
-    a._vbox_os_provider_host_vars(path)
-
-    try:
-        with open(settings, 'w') as f:
-            # Note: setup defaults - see service-redhouse-tenant Vagrantfile for
-            #       $settings
-            doc = {'openstack_provider': 'true',
-                   'mgmt_network':       str(mgmt_net),
-                   'lab_network':        str(lab_net),
-                   'image':              a.host_vars['image'],
-                   'flavor':             a.host_vars['flavor'],
-                   'floating_ip_pool':   str(float_net),
-                   'os_network_url':     'https://' + base_url + '.cisco.com:9696/v2.0',
-                   'os_image_url':       'https://' + base_url + '.cisco.com:9292/v2',
-                   'security_groups':    sgrparry,
-                   }
-            for k, v in settingsyaml.iteritems():
-                doc[k] = v
-            yaml.dump(doc, f, default_flow_style=False)
-    except (OSError):
-        # TODO: Log - don't have access to settings under
-        # service-redhouse-tenant
-        return 1
-
-
-def addto_inventory(hostname, path):
-    """Add a pre-defined host to inventory vagrant.yaml file, meaning
-    it was created in the provision/vagrant.yaml and committed.
-
-    Args:
-        hostname (str): A string representing the hostname
-        path (str):     The path to working .stack directory
-
-    Returns:
-        0 - success
-        1 - failure
-
-    Example:
-        >>> addto_inventory('infra-001', ctx.path)
-        0
-    """
-    if yaml_utils.host_exists_vagrantyaml(hostname, path) > 0:
-        returncode, host_dict = yaml_utils.gethost_byname(hostname,
-                                                          os.path.join(path,
-                                                                       'provision'))
-        if returncode > 0:
-            return 1
-
-        # Pep8 compliant line for length below (93 characters)
-        hd = host_dict[hostname]['memory'] / 512
-
-        returncode = yaml_utils.host_add_vagrantyaml(path=path,
-                                                     file_name="vagrant.yaml",
-                                                     hostname=hostname,
-                                                     memory=hd,
-                                                     box=host_dict[hostname]['box'],
-                                                     role=host_dict[hostname]['role'],
-                                                     profile=host_dict[hostname]['profile'],
-                                                     domain=host_dict[hostname]['domain'],
-                                                     mac_nocolon=host_dict[hostname]['mac'],
-                                                     ip=host_dict[hostname]['ip'],
-                                                     site='ccs-dev-1')
-        if returncode > 0:
-            return 1
-    return 0

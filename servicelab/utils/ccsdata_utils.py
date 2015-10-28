@@ -118,15 +118,18 @@ def list_envs_or_sites(path):
         #       associated so I do the dict comprehension before the
         #       for loop.
         our_sites[key] = {dirnames: None for dirnames in os.walk(os.path.join(
-                                                         ccsdata_sitedir, key,
-                                                         "environments")).next()[1]}
+                          ccsdata_sitedir, key,
+                          "environments")).next()[1]}
         for dirs in os.walk(os.path.join(ccsdata_sitedir, key,
                                          "environments")).next()[1]:
 
             # Note: Get the hosts for each env in each site and add it to data structure
             #       under the right grouping.
-            for _, _, files in os.walk(os.path.join(ccsdata_sitedir, key, "environments",
-                                                    dirs, "hosts.d")):
+            for _, _, files in os.walk(os.path.join(ccsdata_sitedir,
+                                                    key,
+                                                    "environments",
+                                                    dirs,
+                                                    "hosts.d")):
                 our_sites[key][dirs] = files
 
             # TODO: get this working - list operator already used
