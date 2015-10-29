@@ -165,7 +165,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                 ctx.logger.error("Could not boot a remote infra node")
                 sys.exit(1)
         else:
-            returncode, infra_name = v_utils.infra_ensure_up(None, None, None, path=ctx.path)
+            returncode, infra_name = v_utils.infra_ensure_up(None, None, path=ctx.path)
             if returncode == 1:
                 ctx.logger.error("Could not boot a local infra node")
                 sys.exit(1)
