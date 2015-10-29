@@ -1006,6 +1006,10 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
         print('no env var base_url')
         return 1
 
+    sgrparry = []
+    for security_group in my_security_groups:
+        sgrparry.append(str(security_group['name']))
+
     a = Vagrantfile_utils.SlabVagrantfile(path)
     # Note: setup host_vars under instance of class
     a.hostname = hostname
@@ -1023,6 +1027,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
                    'floating_ip_pool':   str(float_net),
                    'os_network_url':     'https://' + base_url + '.cisco.com:9696/v2.0',
                    'os_image_url':       'https://' + base_url + '.cisco.com:9292/v2',
+                   'security_groups':    sgrparry,
                    }
             for k, v in settingsyaml.iteritems():
                 doc[k] = v
