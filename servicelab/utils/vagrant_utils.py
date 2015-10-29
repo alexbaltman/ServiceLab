@@ -269,6 +269,13 @@ def vm_isrunning(hostname, path):
         # Note: remote OS value: shutoff
         elif status[0][1] == 'shutoff':
             return 1, True
+        # Note: remote OS value: saved
+        elif status[0][1] == 'saved':
+            return 1, True
+        # Note: remote OS value: un created
+        elif status[0][1] == 'not_created':
+            vm_connection.v.up(hostname)
+            return 0, False
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
         return 2, False
