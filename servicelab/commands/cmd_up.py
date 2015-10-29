@@ -46,7 +46,7 @@ from servicelab.utils import Vagrantfile_utils as Vf_utils
               help="Enables HA for core OpenStack components by booting "
                    "the necessary extra VMs.")
 @click.option('--redhouse-branch',
-              default="origin/2.3.3",
+              default="origin/release/2.3.3",
               help='Choose a branch to run against for service redhouse tenant and svc.')
 @click.option('--data-branch',
               default="master",
