@@ -67,16 +67,7 @@ class Repo(object):
             Raises Exception if type is not Ansible, Puppet, Project or
             EmptyProject.
         """
-        repo_type = type(self).__name__
-        if repo_type is "Ansible":
-            return "service-" + self.name + "-ansible"
-        if repo_type is "Puppet":
-            return "service-" + self.name + "-puppet"
-        if repo_type is "Project":
-            return "project-" + self.name
-        if repo_type is "EmptyProject":
-            return self.name
-        assert type(self).__name__ != "Repo", "no repo name available for i" + repo_type
+        assert type(self).__name__ != "Repo", "no repo name available "
 
     def create_project(self):
         """
@@ -164,6 +155,17 @@ class Ansible(Repo):
         super(Ansible, self).__init__(gsrvr, path, name, interactive)
         self.play_roles = []
 
+    def get_reponame(self):
+        """
+        get ansible projcet of type service-<project name>-ansible
+        """
+        name = self.name
+        if not name.startswith("service-"):
+            name = "service-" + name
+        if not name.endswith("-ansible"):
+            name = name + "-ansible"
+        return name
+
     def create_nimbus(self):
         """
         create the nimbus file for teh Ansible project. By default .nimbus.yaml
@@ -174,8 +176,8 @@ class Ansible(Repo):
             self.chk_script = click.prompt("enter the script to check",
                                            default="./check.sh", type=str)
 
-        nimbusdict = dict(service=self.name + "-ansible", version="0.0.1",
-                          deploy=dict(type="ansible", playbook=self.name + ".yaml"),
+        nimbusdict = dict(service=str(self.name + "-ansible"), version="0.0.1",
+                          deploy=dict(type="ansible", playbook=str(self.name + ".yaml")),
                           verify=dict(type="serverspec"))
         if self.chk_script:
             nimbusdict['check'] = dict(script=self.chk_script)
@@ -316,6 +318,17 @@ class Puppet(Repo):
     def __init__(self, gsrvr, path, name, interactive):
         super(Puppet, self).__init__(gsrvr, path, name, interactive)
 
+    def get_reponame(self):
+        """
+        get a puppet service project name of type service-<project_name>-puppet
+        """
+        name = self.name
+        if not name.startswith("service-"):
+            name = "service-" + name
+        if not name.endswith("-puppet"):
+            name = name + "-puppet"
+        return name
+
     def create_nimbus(self):
         """
         Create the nimbus file for the Puppet project. By default .nimbus.yaml
@@ -325,7 +338,7 @@ class Puppet(Repo):
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
                                            default="./check.sh", type=str)
-        nimbusdict = dict(service=self.name + "-puppet",
+        nimbusdict = dict(service=str(self.name + "-puppet"),
                           version="0.0.1",
                           deploy=dict(type="puppet", manifest="manifests/site.pp"),
                           verify=dict(type="serverspec"))
@@ -457,6 +470,15 @@ class Project(Repo):
     def __init__(self, gsrvr, path, name, interactive):
         super(Project, self).__init__(gsrvr, path, name, interactive)
 
+    def get_reponame(self):
+        """
+        get project repo name of type project-<project name>.
+        """
+        name = self.name
+        if not name.startswith("project-"):
+            name = "project-" + name
+        return name
+
     def download_template(self, username):
         """
         Download the created project from the gerrit server
@@ -469,13 +491,14 @@ class Project(Repo):
                                           port,
                                           self.get_reponame())
         ret_code, ret_str = service_utils.run_this(cmd)
-        assert ret_code == 0, "unable to get puppet template project:" + ret_str
+        assert ret_code == 0, "unable to get project template project:" + ret_str
 
     def instantiate_template(self):
         """
         Instantiating the project involves creating the project spec file.
         """
-        with open(self.name + ".spec", "w") as specf:
+        with open(os.path.join(".", self.get_reponame(), self.name + ".spec"),
+                  "w") as specf:
             specf.write("Name:" + self.name + "\n"
                         "Version:        1.0\n"
                         "Release:        1%{?build_number}%{?branch_name}%{?dist}\n"
@@ -501,17 +524,21 @@ class Project(Repo):
             self.chk_script = click.prompt("enter the script to check",
                                            default="/bin/true",
                                            type=str)
-        nimbusdict = dict(project=self.name,
+        nimbusdict = dict(project=str(self.name),
                           version="0.0.1",
-                          package=dict(name=self.name,
-                                       specfile=os.path.join(".", self.name+".spec"),
-                                       src=os.path.join(".", "src")))
+                          package=dict(name=str(self.name),
+                                       specfile=str(os.path.join(".", self.name+".spec")),
+                                       src=str(os.path.join(".", "src"))))
         if self.chk_script:
             nimbusdict['check'] = dict(script=self.chk_script)
 
         nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
         with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
+
+        ymlfile = os.path.join(".", self.get_reponame(), ".nimbus.yml")
+        if os.path.exists(ymlfile):
+            os.unlink(ymlfile)
         os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def construct(self):
@@ -538,6 +565,12 @@ class EmptyProject(Repo):
     """
     def __init__(self, gsrvr, path, name, interactive):
         super(EmptyProject, self).__init__(gsrvr, path, name, interactive)
+
+    def get_reponame(self):
+        """
+        get an project name of type <project name>
+        """
+        return self.name
 
     def download_template(self, username):
         """

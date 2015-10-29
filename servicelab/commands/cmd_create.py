@@ -30,11 +30,20 @@ def cli(_):
     pass
 
 
-@cli.command('repo', short_help='Create repo')
-@click.argument('repo_name', required=True)
-@click.option('--repo_type', prompt=True, default='ansible',
-              type=click.Choice(['project', 'ansible', 'puppet', "empty"]))
-@click.option('-i', '--interactive', flag_value=True,
+@cli.command('repo',
+             short_help='Create repo')
+@click.argument('repo_name',
+                required=True)
+@click.option('--repo_type',
+              default='empty',
+              type=click.Choice(['project', 'ansible', 'puppet', "empty"]),
+              help="The type of repo (empty, project, ansible, puppet)\n"
+                   "A project repo type will create a project of normal type.\n"
+                   "Ansible will create a service repo of ansible type.\n"
+                   "Puppet will create a service repo of ansible type.\n")
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
               help="interactive editor")
 @pass_context
 def repo_new(ctx, repo_name, repo_type, interactive):
@@ -48,12 +57,6 @@ def repo_new(ctx, repo_name, repo_type, interactive):
     Add .nimbus.yml file to repo
 
     Add an interactive mode so they can choose options.
-
-    :param repo_name:    The name of the repository
-    :param repo_type:    The type of repo (EmptyProject, Project, Ansible, Puppet)
-                         Project will create a project of normal type.
-                         Ansible will create a service repo of ansible type.
-                         Puppet will create a service repo of ansible type.
     """
     kinds = dict(project="Project", ansible="Ansible",
                  puppet="Puppet", empty="EmptyProject")
