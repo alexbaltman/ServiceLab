@@ -263,9 +263,9 @@ class Gitcheckutils(object):
         """
         executes git command
         """
-        command_to_execute = "git -C \"%s\" %s" % (path, cmd)
+        command_to_execute = "git %s" % (cmd)
         cmdargs = shlex.split(command_to_execute)
-        prog = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
+        prog = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE, cwd=path)
         output, errors = prog.communicate()
         if prog.returncode:
             click.echo('Failed running %s' % command_to_execute)

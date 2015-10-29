@@ -117,9 +117,9 @@ def get_current_service(path):
             f = open(current_file, 'r')
             # TODO: verify that current is set to something sane.
             current = f.readline()
-            if current == "":
-                return 1, current
-    return 0, current
+            if current != "":
+                return 0, current
+    return 1, ""
 
 
 def get_path_to_utils(path):

@@ -49,11 +49,11 @@ def repo_new(ctx, repo_name, repo_type, interactive):
 
     Add an interactive mode so they can choose options.
 
-    :param repo_name:    The name of the repository
-    :param repo_type:    The type of repo (EmptyProject, Project, Ansible, Puppet)
-                         Project will create a project of normal type.
-                         Ansible will create a service repo of ansible type.
-                         Puppet will create a service repo of ansible type.
+    :param repo_name:    The name of the repository\n
+    :param repo_type:    The type of repo (EmptyProject, Project, Ansible, Puppet)\n
+                         Project will create a project of normal type.\n
+                         Ansible will create a service repo of ansible type.\n
+                         Puppet will create a service repo of ansible type.\n
     """
     kinds = dict(project="Project", ansible="Ansible",
                  puppet="Puppet", empty="EmptyProject")
