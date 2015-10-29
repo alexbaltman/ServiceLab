@@ -5,12 +5,13 @@ the operator as well as the quantity, but deleting one thing would be complete
 overlap w/ openstack cli tools.
 """
 import os
+import sys
 
 import click
-import shutil
 
 from servicelab.stack import pass_context
 from servicelab.utils import vagrant_utils
+from servicelab.utils import helper_utils
 
 
 @click.group('destroy', short_help='Destroys VMs.')
@@ -56,30 +57,64 @@ def destroy_min(ctx, force):
     1. .stack/vagrant.yaml
     2. .stack/Vagrantfile
     3. .stack/.vagrant/machines/
-    4. .stack/services/service-redhouse-tenant/.vagrant
+    4. .stack/services/service-redhouse-tenant/.vagrant/machines
     5. .stack/services/service-redhouse-tenant/settings.yaml
     """
-    ctx.logger.debug("Destroying {0}".format(os.path.join(ctx.path,
-                                                          "vagrant.yaml")))
-    os.remove(os.path.join(ctx.path, "vagrant.yaml"))
-    ctx.logger.debug("Destroying {0}".format(os.path.join(ctx.path,
-                                                          "Vagrantfile")))
-    os.remove(os.path.join(ctx.path, "Vagrantfile"))
-    ctx.logger.debug("Destroying {0}".format(os.path.join(ctx.path,
-                                                          ".vagrant",
-                                                          "machines")))
-    shutil.rmtree(os.path.join(ctx.path,
-                               ".vagrant",
-                               "machines"))
-    red_path = os.path.join(ctx.path,
-                            "services",
-                            "service-redhouse-tenant")
-    if os.path.exists(os.path.join(red_path, ".vagrant")):
-        ctx.logger.debug("Destroying {0}".format(os.path.join(red_path, ".vagrant")))
-        shutil.rmtree(os.path.join(red_path,
-                                   ".vagrant"))
-        ctx.logger.debug("Destroying {0}".format(os.path.join(red_path, "settings.yaml")))
-        os.remove(os.path.join(red_path, "settings.yaml"))
+    directories = ['services/service-redhouse-tenant/.vagrant/machines',
+                   'services/service-redhouse-tenant/settings.yaml',
+                   '.vagrant/machines']
+    files = ['Vagrantfile', 'vagrant.yaml']
+
+    directories = [os.path.join(ctx.path, di) for di in directories]
+    files = [os.path.join(ctx.path, fi) for fi in files]
+
+    returncode = helper_utils.destroy_files(files)
+    if returncode > 0:
+        ctx.logger.error('Failed to delete all the required files: ')
+        ctx.logger.error(files)
+        sys.exit(1)
+
+    returncode = helper_utils.destroy_dirs(directories)
+    if returncode > 0:
+        ctx.logger.error('Failed to delete all the required files: ')
+        ctx.logger.error(files)
+        sys.exit(1)
+
+
+@click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
+              'more of local environment')
+@cli.command('more', short_help='Destroy my ccs-data and service-redhouse-tenant'
+             'as well as the minimum necessary to refresh env.')
+@pass_context
+def destroy_more(ctx, force):
+    """ Destroy my copy of ccs-data and service-redhouse-tenant in addition to the
+    minimum need to get us into a usable, but still mostly brownfield environment.
+
+    Delete:
+    1. .stack/vagrant.yaml
+    2. .stack/Vagrantfile
+    3. .stack/.vagrant/machines/
+    4. .stack/services/service-redhouse-tenant/
+    5. .stack/services/ccs-data/
+    """
+    directories = ['services/service-redhouse-tenant',
+                   'services/ccs-data',
+                   '.vagrant/machines']
+    files = ['Vagrantfile', 'vagrant.yaml']
+
+    directories = [os.path.join(ctx.path, di) for di in directories]
+    files = [os.path.join(ctx.path, fi) for fi in files]
+
+    returncode = helper_utils.destroy_files(files)
+    if returncode > 0:
+        ctx.logger.error('Failed to delete all the required files: ')
+        ctx.logger.error(files)
+        sys.exit(1)
+    returncode = helper_utils.destroy_dirs(directories)
+    if returncode > 0:
+        ctx.logger.error('Failed to delete all the required directories: ')
+        ctx.logger.error(directories)
+        sys.exit(1)
 
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
@@ -128,14 +163,3 @@ def destroy_os_vms(ctx, force):
     """
     # Can abstract to servicelab/utils/openstack_utils and leverage that code.
     pass
-
-
-@click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
-              'a pipeline in GO-CD')
-@cli.command('pipe', short_help='Destroy a pipeline in GO-CD')
-@pass_context
-def destroy_os_vms(ctx, force):
-    """Destroy a pipeline in GO-CD. You must be an admin to do so successfully
-    """
-    # Can abstract to servicelab/utils/gocd_utils and leverage that code.
-    ctx.logger.warning("You must be an SDLC admin to successfully delete a pipeline")
