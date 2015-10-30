@@ -96,7 +96,7 @@ class Repo(object):
         fpath = os.path.join(self.get_reponame(), "serverspec", "properties.yml")
         with open(self.get_reponame() + "/serverspec/properties.yml") as ydata:
             pdict = yaml.load(ydata)
-            pdict[self.name] = pdict[name]
+            pdict[str(self.name)] = pdict[name]
             del pdict[name]
         os.remove(fpath)
 
@@ -154,6 +154,7 @@ class Ansible(Repo):
     def __init__(self, gsrvr, path, name, interactive):
         super(Ansible, self).__init__(gsrvr, path, name, interactive)
         self.play_roles = []
+        self.chk_script = "python test.py"
 
     def get_reponame(self):
         """
@@ -199,25 +200,21 @@ class Ansible(Repo):
             enter the various roles.
             """
             if not self.interactive:
-                self.play_roles.append(self.name)
+                self.play_roles.append(str(self.name))
                 return
 
             if not self.play_roles:
                 while True:
-                    role = click.prompt("role", default=self.name, type=str)
+                    role = click.prompt("role", default=str(self.name), type=str)
                     if not role:
                         break
                     if role in self.play_roles:
-                        lst = [astr.encode('ascii') for astr in self.play_roles]
+                        lst = [str(play_role) for play_role in self.play_roles]
                         click.echo(" entered roles:" + str(lst))
                         if click.confirm(' do you want to continue?'):
                             continue
                         break
                     self.play_roles.append(role)
-
-        ansibledir = "./{}/ansible".format(self.get_reponame())
-        if not os.path.isdir(ansibledir):
-            os.mkdir(ansibledir)
 
         def _write_playfile(playdict):
             """
@@ -230,6 +227,11 @@ class Ansible(Repo):
 
             os.link(playfile, "./{}/ansible/{}".format(
                 self.get_reponame(), self.name + ".yml"))
+
+        # make the necessary directory
+        ansibledir = "./{}/ansible".format(self.get_reponame())
+        if not os.path.isdir(ansibledir):
+            os.mkdir(ansibledir)
 
         _add_roles()
         playdict = dict(hosts="{}-ansible".format(self.name),
@@ -287,6 +289,51 @@ class Ansible(Repo):
 
         shutil.rmtree(os.path.join(self.get_reponame(), "ansible",
                                    "roles", "helloworld-test"))
+
+        # correcting the test.py
+        testdata = "#!/usr/bin/env python\n"\
+                   "# A syntax check for an ansible yaml file\n"\
+                   "import yaml\n"\
+                   "import sys\n"\
+                   "\n"\
+                   "try:\n"\
+                   "    playbook = yaml.load(open('ansible/{0}.yaml','r'))\n"\
+                   "except:\n"\
+                   "    print 'Error loading the playbook, must be a yaml syntax problem'\n"\
+                   "    sys.exit(1)\n"\
+                   "else:\n"\
+                   "    print 'YAML syntax looks good.'".format(self.name)
+        with open("{}/test.py".format(self.get_reponame()), "w") as tfile:
+            tfile.write(testdata)\
+
+        # removing not required ansible/helloworld.yml file
+        red_file = "./{}/ansible/helloworld.yml".format(self.get_reponame())
+        if os.path.exists(red_file):
+            os.remove(red_file)
+
+        # changing contents of the Vagrant file
+        content = ""
+        with open('{}/Vagrantfile'.format("service-biostar-ansible"), 'r') as content_file:
+            content = ''.join(content_file.readlines())
+            content = content.replace("service_name = 'helloworld-ansible'",
+                                      "service_name = '{0}-ansible'".format(self.name))
+        content_file = open('{}/Vagrantfile'.format(self.get_reponame()), 'w')
+        content_file.write(content)
+        content_file.close()
+
+        # correcting the release note
+        release_note = """#
+# Release Notes for component service-{0}-ansible
+#
+
+Current version: 0.1.1
+
+## 0.1.1
+ * Baseline Component Version to support SDLC Pipeline Tooling
+ * SDLC Docs: https://confluence.sco.cisco.com/display/CCS/SDLC+Group+Onboarding
+        """.format(self.name)
+        with open("{}/release-notes.md".format(self.get_reponame()), "w") as relfile:
+            relfile.write(release_note)
 
     def construct(self):
         """
@@ -538,7 +585,7 @@ class Project(Repo):
 
         ymlfile = os.path.join(".", self.get_reponame(), ".nimbus.yml")
         if os.path.exists(ymlfile):
-            os.unlink(ymlfile)
+            os.remove(ymlfile)
         os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def construct(self):
