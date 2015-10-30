@@ -255,7 +255,10 @@ class SLab_OS(object):
         # ['SLAB', 'mgmt', 'network']
         for network in networks['networks']:
             if all(i in network['name'] for i in parts):
-                return 0, network
+                if 'mgmt' not in parts and 'mgmt' in network['name']:
+                    continue
+                else:
+                    return 0, network
         return 1, network
 
     def check_for_subnet(self, name):
@@ -305,7 +308,10 @@ class SLab_OS(object):
         # ['SLAB', 'mgmt', 'subnet']
         for subnet in subnets['subnets']:
             if all(i in subnet['name'] for i in parts):
-                return 0, subnet
+                if 'mgmt' not in parts and 'mgmt' in network['name']:
+                    continue
+                else:
+                    return 0, subnet
         return 1, subnet
 
     def check_for_router(self, name):
@@ -344,7 +350,10 @@ class SLab_OS(object):
         # ['SLAB', 'mgmt', 'router']
         for router in routers['routers']:
             if all(i in router['name'] for i in parts):
-                return 0, router
+                if 'mgmt' not in parts and 'mgmt' in network['name']:
+                    continue
+                else:
+                    return 0, router
         return 1, router
 
     def check_for_ports(self, mgmt=False):
@@ -543,7 +552,10 @@ class SLab_OS(object):
         # ['SLAB', 'mgmt', 'subnet']
         for security_group in security_groups['security_groups']:
             if all(i in security_group['name'] for i in parts):
-                return 0, security_group
+                if 'mgmt' not in parts and 'mgmt' in network['name']:
+                    continue
+                else:
+                    return 0, security_group
         return 1, security_group
 
     def create_security_group(self, name=""):
@@ -965,6 +977,8 @@ def os_ensure_network(path):
         return 1, float_net, mynewnets, security_groups
 
     a.connect_to_neutron()
+    #import pdb
+    #pdb.set_trace()
 
     returncode, security_group = a.create_security_group()
     if returncode > 0:
