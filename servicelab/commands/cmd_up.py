@@ -87,6 +87,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             ctx.logger.debug("Failed to get the current service")
             sys.exit(1)
 
+    hostname = ''
     if rhel7:
         hostname = str(helper_utils.name_vm("rhel7", ctx.path))
     elif service:
