@@ -308,7 +308,7 @@ class SLab_OS(object):
         # ['SLAB', 'mgmt', 'subnet']
         for subnet in subnets['subnets']:
             if all(i in subnet['name'] for i in parts):
-                if 'mgmt' not in parts and 'mgmt' in network['name']:
+                if 'mgmt' not in parts and 'mgmt' in subnet['name']:
                     continue
                 else:
                     return 0, subnet
@@ -350,7 +350,7 @@ class SLab_OS(object):
         # ['SLAB', 'mgmt', 'router']
         for router in routers['routers']:
             if all(i in router['name'] for i in parts):
-                if 'mgmt' not in parts and 'mgmt' in network['name']:
+                if 'mgmt' not in parts and 'mgmt' in router['name']:
                     continue
                 else:
                     return 0, router
@@ -552,7 +552,7 @@ class SLab_OS(object):
         # ['SLAB', 'mgmt', 'subnet']
         for security_group in security_groups['security_groups']:
             if all(i in security_group['name'] for i in parts):
-                if 'mgmt' not in parts and 'mgmt' in network['name']:
+                if 'mgmt' not in parts and 'mgmt' in security_group['name']:
                     continue
                 else:
                     return 0, security_group
@@ -977,8 +977,6 @@ def os_ensure_network(path):
         return 1, float_net, mynewnets, security_groups
 
     a.connect_to_neutron()
-    #import pdb
-    #pdb.set_trace()
 
     returncode, security_group = a.create_security_group()
     if returncode > 0:
