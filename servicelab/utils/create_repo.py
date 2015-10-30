@@ -69,6 +69,15 @@ class Repo(object):
         """
         assert type(self).__name__ != "Repo", "no repo name available "
 
+    def check(self):
+        """
+        if the repo exist, print message and return true.
+        """
+        if os.path.exists("./{}".format(self.get_reponame())):
+            click.echo("repo for {0} exist as {1}".format(self.name, self.get_reponame()))
+            return True
+        return False
+
     def create_project(self):
         """
         Create the project on the gerrit server.
@@ -131,6 +140,24 @@ class Repo(object):
 
         # now get the template repo
         return ret_code
+
+    def releasenote(self, rtype):
+        """
+        creates the correct rlease nootes file.
+        """
+        # correcting the release note
+        release_note = """#
+# Release Notes for component service-{0}-{1}
+#
+
+Current version: 0.1.1
+
+## 0.1.1
+ * Baseline Component Version to support SDLC Pipeline Tooling
+ * SDLC Docs: https://confluence.sco.cisco.com/display/CCS/SDLC+Group+Onboarding
+        """.format(self.name, rtype)
+        with open("{}/release-notes.md".format(self.get_reponame()), "w") as relfile:
+            relfile.write(release_note)
 
     @abstractmethod
     def download_template(self, name):
@@ -280,12 +307,16 @@ class Ansible(Repo):
         os.remove(os.path.join(self.get_reponame(), "data", "service.yaml"))
 
         with open(os.path.join(self.get_reponame(), "data", "dev.yaml"), "w") as devfile:
-            devfile.write("# this is generated file")
+            devfile.write("# This generated file is the local replacement of ccs-data for\n"
+                          "# local development, otherwise your playbook will error out.\n"
+                          "# If using servicelab to deploy for real site please update \n"
+                          "#  ccs-dev/environments/dev-tenant "
+                          "in ccs-data appropriately.")
 
         with open(os.path.join(self.get_reponame(),
                                "data",
                                "service.yaml"), "w") as sfile:
-            sfile.write("# this is a generated file")
+            sfile.write("# This generated file contains service specific parameters.")
 
         shutil.rmtree(os.path.join(self.get_reponame(), "ansible",
                                    "roles", "helloworld-test"))
@@ -321,19 +352,7 @@ class Ansible(Repo):
         content_file.write(content)
         content_file.close()
 
-        # correcting the release note
-        release_note = """#
-# Release Notes for component service-{0}-ansible
-#
-
-Current version: 0.1.1
-
-## 0.1.1
- * Baseline Component Version to support SDLC Pipeline Tooling
- * SDLC Docs: https://confluence.sco.cisco.com/display/CCS/SDLC+Group+Onboarding
-        """.format(self.name)
-        with open("{}/release-notes.md".format(self.get_reponame()), "w") as relfile:
-            relfile.write(release_note)
+        self.releasenote("ansible")
 
     def construct(self):
         """
@@ -346,6 +365,8 @@ Current version: 0.1.1
             6. Creating the roles directory.
         """
         try:
+            if self.check():
+                return
             user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
@@ -484,11 +505,13 @@ class Puppet(Repo):
 
         self.cleanup_properties("helloworld-puppet")
 
-        with open(os.path.join(self.get_reponame(), "Vagrantfile"), 'r+') as vagf:
-            lns = [ln.replace("helloworld", self.name) for ln in vagf.readlines()]
-            vagf.seek(0)
-            vagf.write("".join(lns))
-            vagf.truncate()
+        with open(os.path.join(self.get_reponame(), "Vagrantfile"), 'r+') as vfile:
+            lns = [ln.replace("helloworld", self.name) for ln in vfile.readlines()]
+            vfile.seek(0)
+            vfile.write("".join(lns))
+            vfile.truncate()
+
+        self.releasenote("puppet")
 
     def construct(self):
         """
@@ -500,6 +523,8 @@ class Puppet(Repo):
             5. Creating the nimbus
         """
         try:
+            if self.check():
+                return
             user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
@@ -597,6 +622,8 @@ class Project(Repo):
             4. Creating the nimbus
         """
         try:
+            if self.check():
+                return
             user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
@@ -653,6 +680,8 @@ class EmptyProject(Repo):
             4. Creating the nimbus
         """
         try:
+            if self.check():
+                return
             user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
