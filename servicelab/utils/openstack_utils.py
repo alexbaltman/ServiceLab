@@ -62,6 +62,7 @@ class SLab_OS(object):
         self.os_tenant_name = os_tenant_name
         self.auth_url = ""
         self.tenant_id = ""
+        self.token = ""
 
     def login_or_gettoken(self, tenant_id=''):
         """Login to an Openstack endpoint (probably a tenant cloud) or get a keystone token.
@@ -138,7 +139,7 @@ class SLab_OS(object):
             openstack_utils_logger.error(auth_failure.message)
             return 1, self.tenant_id, self.token
         except Unauthorized as unauthorized:
-            openstack_utils_logger.error(auth_failure.message)
+            openstack_utils_logger.error(unauthorized.message)
             return 1, self.tenant_id, self.token
 
     def connect_to_neutron(self):
