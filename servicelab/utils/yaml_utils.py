@@ -840,16 +840,21 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
         doc['hostname'] = hostname
         doc['interfaces']['eth0']['ip_address'] = ip
         doc['role'] = role
-        match = re.search('^(?:cs[lmsx]-\w\d?-)?(?:service-)?([\w-]+)-\d+$', hostname)
+        match = re.search('^(?:cs[lmsx]-\w\d?-)?(service-)?([\w-]+)-\d+$', hostname)
         if match:
-            osp_list = ('ceilometerctl', 'ceph-mon', 'ceph-osd', 'ceph-rgw', 'cinderctl',
-                        'db', 'glancectl', 'heatctl', 'horizon', 'infra', 'keystonectl',
-                        'net', 'neutronapi', 'nova', 'novactl', 'proxyexternal',
-                        'proxyinternal')
-            if match.group(1) in osp_list:
-                doc['groups'].append('redhouse-tenant')
+            # All hostnames starting with 'service-' use the remaining text for sec group
+            # Otherwise compare the hostname to the list of Openstack providers
+            if not match.group(1):
+                osp_list = ('ceilometerctl', 'ceph-mon', 'ceph-osd', 'ceph-rgw', 'cinderctl',
+                            'db', 'glancectl', 'heatctl', 'horizon', 'infra', 'keystonectl',
+                            'net', 'neutronapi', 'nova', 'novactl', 'proxyexternal',
+                            'proxyinternal')
+                if match.group(2) in osp_list:
+                    doc['groups'].append('redhouse-tenant')
+                else:
+                    doc['groups'].append(match.group(2))
             else:
-                doc['groups'].append(match.group(1))
+                doc['groups'].append(match.group(2))
 
         if os.path.exists(os.path.join(deploy_hostyaml_to, hostname + ".yaml")):
             yaml_utils_logger.error("Host yaml already exists.")

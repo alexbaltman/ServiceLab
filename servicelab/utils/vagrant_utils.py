@@ -7,6 +7,7 @@ import vagrant
 import virtualbox
 from fabric.api import env, task
 from fabric.contrib.files import sed
+from subprocess import CalledProcessError
 
 import yaml_utils
 import service_utils
