@@ -1,7 +1,7 @@
 deploy_args:
   availability_zone: csm-a
   flavor: 2cpu.4ram.20sas
-  image: slab-RHEL7.1v7
+  image: slab-RHEL7.1v8
   network_name: SLAB_aaltman_network
   security_groups: default
   subnet_name: SLAB_aaltman_network_subnet
