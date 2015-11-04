@@ -732,7 +732,7 @@ def gen_mac_from_ip(ip):
 
 def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
                            env="dev-tenant", flavor='2cpu.4ram.20sas',
-                           image='slab-RHEL7.1v7'):
+                           image='slab-RHEL7.1v8'):
     """Given an ip address generate a mac address.
 
     Mac will be in form: 02:00:27:00:0x:xx where the Xs will depend

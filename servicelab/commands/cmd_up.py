@@ -256,17 +256,24 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                  'ccs-gerrit.cisco.com and have keys setup.')
                 sys.exit(1)
             a.v.up(vm_name=target)
-        returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
-        if returncode > 0:
-            returncode, myinfo = service_utils.run_this('vagrant hostmanager '
-                                                        '--provider openstack',
-                                                        ctx.path)
+
+        """
+        The code for host manager is not implemented in service-redhouse-tenant Vagrant File.
+        So this is currently stubbed out, as it causes Vagrant errors.
+        """
+        __EXECUTE__ = None
+        if __EXECUTE__:
+            returncode, myinfo = service_utils.run_this('vagrant hostmanager',
+                                                        redhouse_ten_path)
             if returncode > 0:
-                ctx.logger.error("Could not run vagrant hostmanager because\
-                                 {0}".format(myinfo))
-                sys.exit(1)
-            else:
-                sys.exit(0)
+                returncode, myinfo = service_utils.run_this('vagrant hostmanager '
+                                                            '--provider openstack',
+                                                            redhouse_ten_path)
+                if returncode > 0:
+                    ctx.logger.error("Could not run vagrant hostmanager because\
+                                     {0}".format(myinfo))
+                    sys.exit(1)
+        sys.exit(0)
 
     service_utils.sync_service(ctx.path,
                                redhouse_branch,
