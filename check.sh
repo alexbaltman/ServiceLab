@@ -9,7 +9,7 @@ if [ "$OS" == "Red" ]
 then
 sudo yum -y install wget
 sudo yum -y install gettext
-sudo yum -y install vagrant_1.7.2
+sudo yum -y install vagrant
 sudo yum -y install java-1.7.0-openjdk
 sudo yum -y install httpd-tools
 sudo yum -y install procps
