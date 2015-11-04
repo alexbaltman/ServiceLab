@@ -9,16 +9,13 @@ if [ "$OS" == "Red" ]
 then
 sudo yum -y install wget
 sudo yum -y install gettext
-wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.rpm -O vagrant_1.7.2_x86_64.rpm
-sudo yum -y localinstall vagrant_1.7.2_x86_64.rpm
+sudo yum -y install vagrant_1.7.2
 sudo yum -y install java-1.7.0-openjdk
 sudo yum -y install httpd-tools
-wget http://download.go.cd/gocd-rpm/go-server-15.2.0-2248.noarch.rpm
-wget http://dl.bintray.com/gocd/gocd-rpm/go-agent-15.2.0-2248.noarch.rpm
 sudo yum -y install procps
 sudo htpasswd -cbs  /tmp/passwd slab badger
-sudo yum -y localinstall go-server-15.2.0-2248.noarch.rpm
-sudo yum -y localinstall go-agent-15.2.0-2248.noarch.rpm
+sudo yum -y install go-server-15.2.0
+sudo yum -y install go-agent-15.2.0
 sudo cp cruise-config.xml /etc/go
 sudo /etc/init.d/go-server restart
 sudo /etc/init.d/go-agent restart
