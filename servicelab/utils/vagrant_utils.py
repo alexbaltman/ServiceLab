@@ -283,7 +283,7 @@ def vm_isrunning(hostname, path):
     return 3, False
 
 
-def infra_ensure_up(mynets, float_net, path=None):
+def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
     '''Best effort to ensure infra-001 or -002 will be booted in correct env.
 
     Args:
@@ -348,7 +348,9 @@ def infra_ensure_up(mynets, float_net, path=None):
 
     # Note: b/c the infra exists but isn't in desired location we alter hostname
     if isremote != remote:
-        hostname = 'infra-002'
+        # Added in case remote hypervisor did not find infra-001
+        if not ispoweron == 2:
+            hostname = 'infra-002'
         infra_connection.vm_name = hostname
         if yaml_utils.addto_inventory(hostname, path) > 0:
             return 1, hostname
