@@ -33,8 +33,7 @@ def cli(_):
               help='Provide go server username')
 @click.option('-p',
               '--password',
-              help='Provide go server password',
-              required=True)
+              help='Provide go server password')
 @click.option('-ip',
               '--ip_address',
               default=None,
@@ -99,8 +98,7 @@ def display_pipeline_log(ctx,
               help='Provide go server username')
 @click.option('-p',
               '--password',
-              help='Provide go server password',
-              required=True)
+              help='Provide go server password')
 @click.option('-ip',
               '--ip_address',
               default=None,
@@ -139,8 +137,7 @@ def display_pipeline_status(ctx,
               help='Provide go server username')
 @click.option('-p',
               '--password',
-              help='Provide go server password',
-              required=True)
+              help='Provide go server password')
 @click.option('-ip',
               '--ip_address',
               default=None,
@@ -177,12 +174,10 @@ def trigger_pipeline(ctx,
 @click.argument('new_pipeline_name', required=True)
 @click.option('-u',
               '--username',
-              help='Provide go server username',
-              required=True)
+              help='Provide go server username')
 @click.option('-p',
               '--password',
-              help='Provide go server password',
-              required=True)
+              help='Provide go server password')
 @click.option('-ip',
               '--ip_address',
               default=None,

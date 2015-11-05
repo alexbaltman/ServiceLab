@@ -111,13 +111,11 @@ def list_repos(ctx):
 @click.option(
     '-u',
     '--username',
-    help='Provide jenkins username',
-    required=True)
+    help='Provide jenkins username')
 @click.option(
     '-p',
     '--password',
-    help='Provide jenkins server password',
-    required=True)
+    help='Provide jenkins server password')
 @click.option(
     '-ip',
     '--ip_address',
@@ -154,8 +152,7 @@ def list_build(ctx, ip_address, username, password, interactive):
 @click.option(
     '-p',
     '--password',
-    help='Provide artifactory password',
-    required=True)
+    help='Provide artifactory password')
 @click.option(
     '-ip',
     '--ip_address',
@@ -197,8 +194,7 @@ def list_artifact(ctx, ip_address, username, password, interactive):
               help='Provide go server username')
 @click.option('-p',
               '--password',
-              help='Provide go server password',
-              required=True)
+              help='Provide go server password')
 @click.option('-ip',
               '--ip_address',
               help='Provide the go server url ip address and port'

@@ -85,11 +85,17 @@ class Context(object):
             {"ip": "10.202.44.100"}
         self.__jenkins_info = \
             {"url": "https://ccs-jenkins.cisco.com"}
+
         self.username = helper_utils.get_username(self.path)
         self.password = None
+
         if os.getenv("OS_USERNAME"):
             self.username = os.getenv("OS_USERNAME")
             self.password = os.getenv("OS_PASSWORD")
+
+        if os.getenv("STK_USERNAME"):
+            self.username = os.getenv("STK_USERNAME")
+            self.password = os.getenv("STK_PASSWORD")
 
     def get_gerrit_server(self):
         """
