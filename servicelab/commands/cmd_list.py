@@ -44,10 +44,15 @@ def list_sites(ctx):
     '''
     Here we list all the sites using the git submodule ccs-data.
     '''
-    ctx.logger.debug("Gathered sites from ccs-data submodule.")
-
-    for keys in ccsdata_utils.list_envs_or_sites(ctx.path):
-        click.echo(keys)
+    try:
+        val_lst = []
+        for keys in ccsdata_utils.list_envs_or_sites(ctx.path):
+            val_lst.append(keys)
+        val_lst.sort()
+        click.echo(val_lst)
+    except Exception as ex:
+        ctx.logger.info("unable to get site list. unable to read ccs-data")
+        ctx.logger.info(ex)
 
 
 @cli.command('envs', short_help="List environments")
@@ -56,11 +61,17 @@ def list_envs(ctx):
     '''
     Here we list all the environments using the git submodule ccs-data.
     '''
-    ctx.logger.debug("Gathered environments from ccs-data submodule.")
-    data = ccsdata_utils.list_envs_or_sites(ctx.path)
-    for _, values in data.iteritems():
-        for val in values:
-            click.echo(val)
+    try:
+        val_lst = []
+        data = ccsdata_utils.list_envs_or_sites(ctx.path)
+        for _, values in data.iteritems():
+            for val in values:
+                val_lst.append(val)
+        val_lst.sort()
+        click.echo(val_lst)
+    except Exception as ex:
+        ctx.logger.info("unable to get environment list. unable to read ccs-data")
+        ctx.logger.info(ex)
 
 
 @cli.command('hosts', short_help="List hosts")
@@ -69,11 +80,14 @@ def list_hosts(ctx):
     '''
     Here we list all the hosts using the git submodule ccs-data.
     '''
-    ctx.logger.debug("Gathered hosts from ccs-data submodule.")
-    data = ccsdata_utils.list_envs_or_sites(ctx.path)
-    for _, values in data.iteritems():
-        for _, l2_values in values.iteritems():
-            click.echo(l2_values)
+    try:
+        data = ccsdata_utils.list_envs_or_sites(ctx.path)
+        for _, values in data.iteritems():
+            for _, l2_values in values.iteritems():
+                click.echo(l2_values)
+    except Exception as ex:
+        ctx.logger.info("unable to get environment list. unable to read ccs-data")
+        ctx.logger.info(ex)
 
 
 @cli.command('reviews', short_help='List reviews in Gerrit.')
@@ -200,8 +214,7 @@ def list_artifact(ctx, ip_address, username, password, interactive):
               help='Provide the go server url ip address and port'
                    'no in format <ip:portno>.',
               default=None,
-              callback=gocd_utils.validate_pipe_ip_cb,
-              required=True)
+              callback=gocd_utils.validate_pipe_ip_cb)
 @click.option('-i',
               '--interactive',
               flag_value=True,

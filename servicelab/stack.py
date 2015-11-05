@@ -82,7 +82,7 @@ class Context(object):
         self.__artifactory_info = \
             {"url": "https://ccs-artifactory.cisco.com/artifactory"}
         self.__gocd_info = \
-            {"ip": "10.202.44.100"}
+            {"ip": "sdlc-go.cisco.com"}
         self.__jenkins_info = \
             {"url": "https://ccs-jenkins.cisco.com"}
 
