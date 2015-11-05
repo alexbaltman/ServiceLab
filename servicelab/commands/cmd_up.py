@@ -117,6 +117,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                                path=ctx.path)
 
         # Setup Vagrantfile w/ vm
+        my_sec_grps = ""
         if remote:
             returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
             if returncode > 0:
@@ -149,10 +150,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                 ctx.logger.error("Vagrant manager will fail if you "
                                  "have local vms and remote vms.")
                 sys.exit(1)
-            else:
-                sys.exit(0)
         # You can exit safely now if you're just booting a rhel7 vm
-        elif rhel7 and returncode == 0:
+        if rhel7:
             sys.exit(0)
 
     # SERVICE VM remaining workflow  =================================
@@ -166,7 +165,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                 ctx.logger.error("Could not boot a remote infra node")
                 sys.exit(1)
         else:
-            returncode, infra_name = v_utils.infra_ensure_up(None, None, path=ctx.path)
+            returncode, infra_name = v_utils.infra_ensure_up(None, None, None, path=ctx.path)
             if returncode == 1:
                 ctx.logger.error("Could not boot a local infra node")
                 sys.exit(1)
