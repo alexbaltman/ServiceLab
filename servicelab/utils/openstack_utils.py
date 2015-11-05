@@ -3,11 +3,17 @@ import yaml
 import time
 import logging
 
+from subprocess import CalledProcessError
+
+import requests
+import click
+
 from keystoneclient.exceptions import AuthorizationFailure, Unauthorized
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client
 
 import helper_utils
+import vagrant_utils
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -1034,3 +1040,210 @@ def os_ensure_network(path):
             security_groups.append(i)
 
     return 0, float_net, mynewnets, security_groups
+
+
+def os_check_vms(path):
+    """
+    Args:
+        path (str): Your working .stack directory, typically ctx.path
+        force : Force delete or prompt before deletion
+    Returns:
+
+    Example Usage:
+
+    """
+    vm_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra-001",
+                                                     path=path)
+    running_vm = False
+    try:
+        statuses = vm_connection.v.status()
+        for status in statuses:
+                if status[1] == 'running' or status[1] == 'active':
+                    running_vm = True
+                    click.echo("VM %s is running" % (status[0]))
+        return 0, running_vm
+    except CalledProcessError:
+        # RFI: is there a better way to return here? raise exception?
+        openstack_utils_logger.error("Error occurred connecting to Vagrant.")
+        return 1, running_vm
+
+
+def os_delete_vms(path, force):
+    """
+    Args:
+        path (str): Your working .stack directory, typically ctx.path
+        force : Force delete or prompt before deletion
+    Returns:
+
+    Example Usage:
+
+    """
+    vm_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra-001",
+                                                     path=path)
+    if force:
+        click.echo("Deleting all VMs.")
+    try:
+        statuses = vm_connection.v.status()
+        for status in statuses:
+            if force:
+                vm_connection.v.destroy(status[0])
+                click.echo("Deleted VM : %s " % (status[0]))
+            else:
+                if yes_or_no("Do you want to destroy VM : %s ? "
+                             % (status[0])):
+                    vm_connection.v.destroy(status[0])
+                    click.echo("Deleted VM : %s " % (status[0]))
+                else:
+                    click.echo("Skipping deletion of VM : %s " % (status[0]))
+    except CalledProcessError:
+        # RFI: is there a better way to return here? raise exception?
+        click.echo("Error occurred connecting to Vagrant.")
+
+
+def os_delete_networks(path, force):
+    """Delete a network in OS tenant/project.
+    Args:
+        name (str):
+    Returns:
+        Returncode
+
+    Example Usage:
+
+    """
+    requests.packages.urllib3.disable_warnings()
+
+    password = os.environ.get('OS_PASSWORD')
+    username = os.environ.get('OS_USERNAME')
+    base_url = os.environ.get('OS_REGION_NAME')
+
+    if not password or not base_url:
+        openstack_utils_logger.error('Can delete network b/c password or base_url is\
+        not set')
+        openstack_utils_logger.error('Exiting now.')
+        return
+
+    slab = SLab_OS(path=path, password=password, username=username,
+                   base_url=base_url)
+    slab.tenant_id = os.environ.get('OS_TENANT_ID')
+    slab.os_tenant_name = os.environ.get('OS_TENANT_NAME')
+    if not slab.tenant_id:
+        returncode, slab.tenant_id, _ = slab.login_or_gettoken()
+        if returncode > 0:
+            openstack_utils_logger.error("Could not login to Openstack.")
+            return
+    # Note: _ is same as above --> a.tenant_id
+    returncode, _, _ = slab.login_or_gettoken(tenant_id=slab.tenant_id)
+    if returncode > 0:
+        openstack_utils_logger.error("Could not get token to project.")
+        return
+
+    slab.connect_to_neutron()
+    netw = slab.neutron.list_networks()
+    if force:
+        click.echo("Deleting all SLAB networks.")
+    try:
+        networks = netw['networks']
+        for network in networks:
+            if 'SLAB' in network['name']:
+                if force:
+                    os_delete_networking_components(slab.neutron, network)
+                else:
+                    if yes_or_no("Do you want to delete network : %s ? "
+                                 % (network['name'])):
+                        os_delete_networking_components(slab.neutron, network)
+                    else:
+                        click.echo("Skipping deletion of network : %s "
+                                   % (network['name']))
+        os_delete_routers(slab.neutron, force)
+    except CalledProcessError:
+        click.echo("Error occurred deleting network.")
+
+
+def os_delete_networking_components(neutron, network):
+    """Deletes all networking comppnents.
+    Args:
+        neutron : Neutron client
+        network : Network to be deleted
+        force  : Force option
+    Returns:
+        Returncode
+    """
+    os_delete_ports(neutron, network)
+    os_delete_subnets(neutron, network)
+    neutron.delete_network(network['id'])
+    click.echo("Deleted network : %s " % (network['name']))
+
+
+def os_delete_subnets(neutron, network):
+    """Delete subnets for a given network.
+    Args:
+        neutron (str):
+        network (str)
+    Returns:
+        Returncode
+    """
+    for subnet in network['subnets']:
+        click.echo("Deleting subnet : %s " % (subnet))
+        neutron.delete_subnet(subnet)
+
+
+def os_delete_routers(neutron, force):
+    """Delete routers retrieved by neutron with force option.
+
+    Args:
+        name (str):
+    Returns:
+
+    """
+    routers = neutron.list_routers(retrieve_all=True)
+    if routers['routers']:
+        for router in routers['routers']:
+            if force:
+                neutron.delete_router(router['id'])
+                click.echo("Deleted router : %s " % (router['name']))
+            else:
+                if yes_or_no("Do you want to delete router : %s ? "
+                             % (router['name'])):
+                    neutron.delete_router(router['id'])
+                    click.echo("Deleted router : %s " % (router['id']))
+                else:
+                    click.echo("Skipping deletion of router : %s "
+                               % (router['name']))
+
+
+def os_delete_ports(neutron, network):
+    """Delete ports retrieved by neutron in the given network.
+    Args:
+        neutron : client
+        network : network in which ports need to be deleted.
+
+    Returns:
+
+    """
+    ports = neutron.list_ports()
+    if ports['ports']:
+        for port in ports['ports']:
+            if network['id'] == port['network_id']:
+                click.echo("Deleting ports : %s in network %s "
+                           % (port['id'], network['name']))
+                port['device_owner'] = None
+                neutron.update_port(port['id'], {'port': {'device_owner': ''}})
+                neutron.delete_port(port['id'])
+
+
+def yes_or_no(question):
+    """Yes or no question utility.
+    Args:
+        question : Question text
+        network : network in which ports need to be deleted.
+
+    Returns:
+
+    """
+    reply = str(raw_input(question+' (y/n): ')).lower().strip()
+    if reply[0] == 'y':
+        return True
+    if reply[0] == 'n':
+        return False
+    else:
+        return yes_or_no("Please enter a response (y/n). ")

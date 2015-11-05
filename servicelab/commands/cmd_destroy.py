@@ -12,6 +12,7 @@ import click
 from servicelab.stack import pass_context
 from servicelab.utils import vagrant_utils
 from servicelab.utils import helper_utils
+from servicelab.utils import openstack_utils
 
 
 @click.group('destroy', short_help='Destroys VMs.')
@@ -25,8 +26,10 @@ def cli(ctx):
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
               'my vm')
-@cli.command('vm', short_help='Destroy a vm that your servicelab vagrant environment'
-             'knows about')
+@cli.command(
+    'vm',
+    short_help='Destroy a vm that your servicelab vagrant environment'
+    'knows about')
 @click.argument('vm_name')
 @pass_context
 def destroy_vm(ctx, force, vm_name):
@@ -47,7 +50,9 @@ def destroy_vm(ctx, force, vm_name):
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
               'local environment')
-@cli.command('min', short_help='Destroy the least necessary in the local environment.')
+@cli.command(
+    'min',
+    short_help='Destroy the minimum required in the local environment.')
 @pass_context
 def destroy_min(ctx, force):
     """ Destroy the minimum required to put us into a usable, but still mostly
@@ -83,8 +88,10 @@ def destroy_min(ctx, force):
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
               'more of local environment')
-@cli.command('more', short_help='Destroy my ccs-data and service-redhouse-tenant'
-             'as well as the minimum necessary to refresh env.')
+@cli.command(
+    'more',
+    short_help='Destroy my ccs-data and service-redhouse-tenant'
+    'as well as the minimum necessary to refresh env.')
 @pass_context
 def destroy_more(ctx, force):
     """ Destroy my copy of ccs-data and service-redhouse-tenant in addition to the
@@ -142,7 +149,9 @@ def destory_gerritrepo(ctx, repo_name):
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
               'the networking in an openstack project')
-@cli.command('os-networks', short_help='Destroy all networking components in a project')
+@cli.command(
+    'os-networks',
+    short_help='Destroy all networking components in a project')
 @pass_context
 def destroy_os_networks(ctx, force):
     """Destroy all the networking components in an openstack project including, routers,
@@ -150,7 +159,16 @@ def destroy_os_networks(ctx, force):
     as well as no VMs to be existing presently.
     """
     # Can abstract to servicelab/utils/openstack_utils and leverage that code.
-    pass
+    returncode, running_vm = openstack_utils.os_check_vms(ctx.path)
+    if returncode == 0:
+        if not running_vm:
+            openstack_utils.os_delete_networks(ctx.path, force)
+        else:
+            click.echo(
+                "The above VMs need to be deleted before you can run this command.")
+    else:
+        click.echo("Error occurred connecting to Vagrant. To debug try running : vagrant up"
+                   " in %s " % (ctx.path))
 
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
@@ -161,5 +179,4 @@ def destroy_os_vms(ctx, force):
     """Destroy all the vms in an openstack project. You must have your openstack env
     vars sourced to your local shell environment.
     """
-    # Can abstract to servicelab/utils/openstack_utils and leverage that code.
-    pass
+    openstack_utils.os_delete_vms(ctx.path, force)
