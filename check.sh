@@ -15,7 +15,7 @@ sudo yum -y install httpd-tools
 sudo yum -y install procps
 sudo htpasswd -cbs  /tmp/passwd slab badger
 sudo yum -y install go-server-15.2.0
-sudo yum -y install go-agent-15.2.0
+sudo yum -y install https://ccs-artifactory.cisco.com/artifactory/simple/servicelab/go-agent/go-agent/15.2.0/go-agent-15.2.0-2248.noarch.rpm
 sudo cp cruise-config.xml /etc/go
 sudo /etc/init.d/go-server restart
 sudo /etc/init.d/go-agent restart
