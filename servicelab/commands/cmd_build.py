@@ -33,8 +33,7 @@ def cli(_):
               '--ip_address',
               default=context_utils.get_jenkins_url(),
               help="Provide the jenkinsserv url ip address and port "
-                   "no in format <ip:portno>.",
-              required=True)
+                   "no in format <ip:portno>.")
 @click.option('-i',
               '--interactive',
               flag_value=True,
@@ -72,8 +71,7 @@ def display_build_status(ctx,
               '--ip_address',
               default=context_utils.get_jenkins_url(),
               help="Provide the jenkinsserv url ip address and port "
-                   "no in format <ip:portno>.",
-              required=True)
+                   "no in format <ip:portno>.")
 @click.option('-i',
               '--interactive',
               flag_value=True,
