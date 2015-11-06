@@ -104,7 +104,7 @@ def display_pipeline_log(ctx,
               default=None,
               callback=gocd_utils.validate_pipe_ip_cb,
               help='Provide the go server ip address and port no <ip:port>.',
-              required=True)
+              required=False)
 @click.option('-i',
               '--interactive',
               flag_value=True,
@@ -143,7 +143,7 @@ def display_pipeline_status(ctx,
               default=None,
               callback=gocd_utils.validate_pipe_ip_cb,
               help='Provide the go server ip address and port <ip:port>.',
-              required=True)
+              required=False)
 @click.option('-i',
               '--interactive',
               flag_value=True,
@@ -183,7 +183,7 @@ def trigger_pipeline(ctx,
               default=None,
               callback=gocd_utils.validate_pipe_ip_cb,
               help='Provide the go server ip address and port <ip:port>.',
-              required=True)
+              required=False)
 @click.option('-i',
               '--interactive',
               flag_value=True,
