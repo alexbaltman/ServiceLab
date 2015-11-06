@@ -28,7 +28,7 @@ def cli(_):
 
 
 @cli.command('repo', short_help='Show the details of a repo in Gerrit.')
-@click.argument('item')
+@click.argument('repo')
 @pass_context
 def show_repo(ctx, repo):
     """
