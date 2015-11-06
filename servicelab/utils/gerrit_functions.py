@@ -214,6 +214,9 @@ class GerritFns(object):
         query = reviews.Query(self.hostname)
 
         for review in query.filter(project, other):
+            if review['type'] == 'error':
+                raise GerritFnException(review['message'])
+
             ref = review["currentPatchSet"]["ref"]
             tdir = "/tmp/{}".format(self.prjname)
             user = self.user
