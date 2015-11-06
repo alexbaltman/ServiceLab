@@ -18,7 +18,7 @@ from servicelab.utils import service_utils
 from servicelab.utils import ccsbuildtools_utils
 
 
-def compile_man_page(path):
+def compile_man_page(path, user, password):
     """
     Grabs data from confluence pages and servicelab docs and leverages sphinx to
     convert them into a single man page that will be queried for high level info.
@@ -35,8 +35,6 @@ def compile_man_page(path):
         manf.writelines("   " + elem + "\n" for elem in man_yaml["slab_docs"])
 
     # Manually download all desired sites, and leverage Sphinx's "make man" command
-    user = click.prompt("Please confirm CEC Use Name", type=str)
-    password = click.prompt("password", hide_input=True, type=str)
     # to build a single man page using pages indexed above
     for item in man_yaml['confluence_pages']:
         url = 'https://confluence.sco.cisco.com/display/' + item
