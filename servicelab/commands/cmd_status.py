@@ -1,6 +1,8 @@
 """
 The module contains the status subcommand implemenation.
 """
+import os
+
 import click
 
 from servicelab.stack import pass_context
@@ -29,13 +31,28 @@ def cmd_repo_status(ctx):
 @pass_context
 def cmd_vm_status(ctx):
     """
-    Shows the details of git repos.
+    Shows the vm status
     """
-    error_message = "Error occurred while connecting to Vagrant."
-    returncode, _ = status_utils.show_vm_status(ctx.path)
-    if returncode == 2:
-        ctx.logger.error(error_message)
+    display_vm_status(ctx)
+
+
+def display_vm_status(ctx):
+    """
+    Shows the vm status.
+    """
+    vagrant_file_path = os.path.join(ctx.path, "Vagrantfile")
+    error_message = "\nCannot show VM status since internal error "\
+        "has occurred. Most probably this file does not "\
+        "exist : %s . Please, run : stack workon <project name>"\
+        " to fix the issue." % (vagrant_file_path)
+    if os.path.isfile(vagrant_file_path) == False:
         click.echo(error_message)
+        sys.exit(1)
+    else:
+        returncode, _ = status_utils.show_vm_status(ctx.path)
+        if returncode == 2:
+            click.echo(error_message)
+            sys.exit(1)
 
 
 @cli.command('all', short_help='Shows all status of servicelab project repos.')
@@ -44,9 +61,5 @@ def show_all_status(ctx):
     """
     Shows the Vm status.
     """
-    error_message = "Error occurred while connecting to Vagrant."
     status_utils.show_repo_status(ctx.path)
-    returncode, _ = status_utils.show_vm_status(ctx.path)
-    if returncode == 2:
-        ctx.logger.error(error_message)
-        click.echo(error_message)
+    display_vm_status(ctx)

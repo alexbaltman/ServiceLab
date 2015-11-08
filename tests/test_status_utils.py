@@ -46,6 +46,9 @@ class TestStatusUtils(unittest.TestCase):
         self.assertEqual(0, retcode,
                          "Unable to run stack workon service-sdlc-pulp")
 
+        up_cmd = "stack up -s service-sdlc-pulp"
+        retcode, _ = service_utils.run_this(up_cmd)
+
     def test_cmd_repo_status_nochange(self):
         """ Tests pipeline status command.
         """

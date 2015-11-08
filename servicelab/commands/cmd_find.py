@@ -76,7 +76,8 @@ def validate_artifact_ip_cb(ctx, param, value):
               flag_value=True,
               help="interactive editor")
 @pass_context
-def find_artifact(ctx, search_term, ip_address, username, password, interactive):
+def find_artifact(ctx, search_term, ip_address,
+                  username, password, interactive):
     """
     Searches through Artifactory's API for artifacts using your search term.
     """
@@ -84,14 +85,23 @@ def find_artifact(ctx, search_term, ip_address, username, password, interactive)
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
     if ip_address is None:
         ip_address = ctx.get_artifactory_info()
     click.echo('Searching for %s artifact in Artifactory' % search_term)
     find_url = ip_address + "/api/search/artifact?name=" + search_term
     requests.packages.urllib3.disable_warnings()
     res = requests.get(find_url, auth=HTTPBasicAuth(username, password))
-    for val in json.loads(res.content)["results"]:
-        click.echo(val["uri"])
+    if json.loads(res.content).get('results'):
+        for val in json.loads(res.content)["results"]:
+            click.echo(val["uri"])
+    else:
+        click.echo("No results found.")
+        sys.exit(1)
 
 
 def validate_pipe_ip_cb(ctx, param, value):
@@ -128,7 +138,8 @@ def validate_pipe_ip_cb(ctx, param, value):
               flag_value=True,
               help="interactive editor")
 @pass_context
-def find_pipe(ctx, search_term, localrepo, username, password, ip_address, interactive):
+def find_pipe(ctx, search_term, localrepo, username,
+              password, ip_address, interactive):
     """
     Searches through GO's API for pipelines using your search term.
     """
@@ -139,7 +150,7 @@ def find_pipe(ctx, search_term, localrepo, username, password, ip_address, inter
         """
         server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
         res = requests.get(server_url, auth=HTTPBasicAuth(username, password))
-        soup = BeautifulSoup(res.content)
+        soup = BeautifulSoup(res.content, "html.parser")
         pipelines = soup.findAll('pipeline')
         return pipelines
 
@@ -147,27 +158,35 @@ def find_pipe(ctx, search_term, localrepo, username, password, ip_address, inter
         """
         find the match in the pipeline for services and other projects
         """
-        search_string = pipeline['href']
-        split_string = search_string.split('/')
-        search_string = search_term
-        match_obj = re.search(search_string,
-                              split_string[len(split_string) - 2],
-                              re.M | re.I)
-        if match_obj:
-            if localrepo:
-                for sdir in servicesdirs:
-                    if sdir.startswith("service-"):
-                        service = sdir.split("service-", 1)[1]
-                        if service == match_obj.group():
-                            return split_string[len(split_string) - 2]
-            else:
-                return split_string[len(split_string) - 2]
-        return None
+        try:
+            search_string = pipeline['href']
+            split_string = search_string.split('/')
+            search_string = search_term
+            match_obj = re.search(search_string,
+                                  split_string[len(split_string) - 2],
+                                  re.M | re.I)
+            if match_obj:
+                if localrepo:
+                    for sdir in servicesdirs:
+                        if sdir.startswith("service-"):
+                            service = sdir.split("service-", 1)[1]
+                            if service == match_obj.group():
+                                return split_string[len(split_string) - 2], 0
+                else:
+                    return split_string[len(split_string) - 2], 0
+        except re.error:
+            return None, 1
+        return None, 0
 
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
         servicesdirs = os.listdir(os.path.join(ctx.path, "services"))
@@ -175,9 +194,15 @@ def find_pipe(ctx, search_term, localrepo, username, password, ip_address, inter
     pipelines = _get_pipeline()
 
     for pipeline in pipelines:
-        match_str = _get_match(pipeline)
-        if match_str:
-            click.echo(match_str)
+        match_str, return_code = _get_match(pipeline)
+        if return_code == 1:
+            click.echo("Internal error occurred. The regular "
+                       "expression supplied seems to be invalid. "
+                       "Please, retry with a correct regular expression.")
+            sys.exit(1)
+        else:
+            if match_str:
+                click.echo(match_str)
 
 
 def validate_build_ip_cb(ctx, param, value):
@@ -216,6 +241,11 @@ def find_build(ctx, search_term, username, password, ip_address, interactive):
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
 
     server = jenkins_utils.get_server_instance(ip_address, username, password)
     for key in server.keys():
