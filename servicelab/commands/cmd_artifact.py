@@ -50,6 +50,11 @@ def display_artifact_status(ctx,
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
     requests.packages.urllib3.disable_warnings()
     res = requests.get(url, auth=HTTPBasicAuth(username, password))
     click.echo(res.content)
@@ -64,9 +69,9 @@ def display_artifact_status(ctx,
               '--password',
               help='Provide artifactory password')
 @click.option('-d',
-              '--destintaion',
+              '--destination',
               help='Provide destination folder',
-              required=True)
+              default=".")
 @click.option('-i',
               '--interactive',
               flag_value=True,
@@ -90,7 +95,8 @@ def download_artifact(ctx,
     download_uri = json.loads(res.content)["downloadUri"]
 
     file_name = download_uri.split('/')[-1]
-    click.echo("Starting download of {0} to {1}".format(download_uri, destination))
+    click.echo("Starting download of {0} to {1}".format(download_uri,
+                                                        destination))
     with open(os.path.join(destination, file_name), 'wb') as handle:
         response = requests.get(download_uri,
                                 stream=True,
@@ -113,7 +119,7 @@ def download_artifact(ctx,
 @click.option('-p',
               '--password',
               help='Provide artifactory password')
-@click.option('-q',
+@click.option('-f',
               '--filepath',
               help='Provide file path',
               required=True)
@@ -135,6 +141,10 @@ def upload_artifact(ctx,
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
     click.echo("Starting upload of {0} to {1}".format(filepath, url))
     subprocess.call(['curl',
                      '-X',

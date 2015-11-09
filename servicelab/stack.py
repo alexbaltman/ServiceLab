@@ -154,7 +154,7 @@ class Context(object):
         """
         if interactive and not self.password:
             self.password = click.prompt("password", hide_input=True, type=str)
-
+        return self.password
 
 pass_context = click.make_pass_decorator(Context, ensure=True)
 
