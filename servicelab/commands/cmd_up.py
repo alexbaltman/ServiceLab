@@ -46,7 +46,7 @@ from servicelab.utils import Vagrantfile_utils as Vf_utils
               help="Enables HA for core OpenStack components by booting "
                    "the necessary extra VMs.")
 @click.option('--redhouse-branch',
-              default="origin/release/2.3.3",
+              default="release/2.3.3",
               help='Choose a branch to run against for service redhouse tenant and svc.')
 @click.option('--data-branch',
               default="master",
@@ -100,7 +100,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         hostname = target
 
     # Setup data and inventory
-    if not target:
+    if not target and not mini and not full:
         yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
                                         "ccs-dev-1")
         yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
@@ -302,6 +302,46 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         myvfile._vbox_os_provider_env_vars(float_net, mynets, my_sec_grps)
         if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
+        puppet_path = os.path.join(redhouse_ten_path, "puppet")
+        if not os.path.exists(os.path.join(puppet_path, "glance")):
+            ctx.logger.info('Updating sub repo.s under service-redhouse-tenant')
+            ctx.logger.info('This may take a few minutes.')
+            returncode, myinfo = service_utils.run_this(
+                                    "USER={0} librarian-puppet install".format(username),
+                                    puppet_path)
+            if returncode > 0:
+                ctx.logger.error('Failed to retrieve the necessary puppet configurations.')
+                ctx.logger.error(myinfo)
+            returncode = service_utils.copy_certs(os.path.join(
+                                                               ctx.path,
+                                                               "provision"),
+                                                  puppet_path)
+            if returncode > 0:
+                ctx.logger.error('Failed to copy haproxy certs to ccs puppet module.')
+                sys.exit(1)
+        if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
+            service_utils.sync_service(ctx.path, data_branch, username, 'ccs-data')
+
+        if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data', 'out')):
+            returncode, myinfo = service_utils.build_data(ctx.path)
+            if returncode > 0:
+                ctx.logger.error('Failed to build ccs-data data b/c ' + myinfo)
+                sys.exit(1)
+
+        if not os.path.islink(os.path.join(redhouse_ten_path,
+                                           "dev",
+                                           "ccs-data")):
+            ctx.logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
+                                                                'ccs-data') + "with  " +
+                             os.path.join(ctx.path, "services", "ccs-data"))
+            # Note: os.symlink(src, dst)
+            os.symlink(os.path.join(ctx.path,
+                                    "services",
+                                    "ccs-data"
+                                    ),
+                       os.path.join(redhouse_ten_path,
+                                    "dev",
+                                    "ccs-data"))
         for i in allmy_vms:
             if ha:
                 ha_vm = i.replace("001", "002")

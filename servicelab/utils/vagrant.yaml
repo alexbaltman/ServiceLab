@@ -2,16 +2,15 @@ hosts:
   infra-001:
     role: build
     domain: 1
-    profile: None 
+    profile: None
     ip: 192.168.100.30
     mac: "000027000030"
     memory: 1024
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
-    min: True
   infra-002:
     role: build
     domain: 1
-    profile: None 
+    profile: None
     ip: 192.168.100.31
     mac: "000027000031"
     memory: 1024
