@@ -55,6 +55,7 @@ fi
 
 if [ -f /vagrant/provision/ssh-config ]; then
   sudo cp /vagrant/provision/ssh-config /root/.ssh/config
+  sudo chmod 0700 /home/vagrant/.ssh/config
 fi
 
 # Vault pass for decrypting keys
