@@ -327,7 +327,7 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
     # Note: if requested remote or local and our vm's state is same then just
     #       make sure it's booted w/ ispoweron being 0 for that.
     if isremote == remote and ispoweron == 0:
-        infra_connection.v.reload(hostname)
+        infra_connection.v.reload(hostname, 'provision')
         return 0, hostname
     # Note: it's what we want just not booted, so boot it.
     elif isremote == remote and ispoweron == 1:
