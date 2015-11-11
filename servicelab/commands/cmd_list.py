@@ -10,6 +10,7 @@ List command submodule implements listing all the
 """
 import os
 import re
+import sys
 
 import click
 import json
@@ -228,6 +229,12 @@ def list_pipe(ctx, localrepo, username, password, ip_address, interactive):
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
+
     server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
@@ -235,7 +242,7 @@ def list_pipe(ctx, localrepo, username, password, ip_address, interactive):
 
     # Find latest run info
     res = requests.get(server_url, auth=HTTPBasicAuth(username, password))
-    soup = BeautifulSoup(res.content)
+    soup = BeautifulSoup(res.content, "html.parser")
     pipelines = soup.findAll('pipeline')
     display_pipelines(pipelines, localrepo, servicesdirs)
 
