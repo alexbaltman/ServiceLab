@@ -265,7 +265,8 @@ def display_pipelines(pipelines, localrepo, servicesdirs):
                         if service == pipeline_name:
                             click.echo(pipeline_name)
             else:
-                click.echo(pipeline_name)
+                tokens = pipeline_name.split('/')
+                click.echo(tokens[len(tokens) - 2])
 
 
 @cli.command('ospvms', short_help='List all OpenStack Platform VMs')
