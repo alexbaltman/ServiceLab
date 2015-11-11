@@ -42,7 +42,8 @@ def compile_man_page(path, user, password):
         file_title = item.translate(maketrans("+", "-")).lower()[4:]
         content = requests.get(url, auth=(user, password))
         if content.status_code != 200:
-            click.echo("Unable to login to CEC. Initialization failed")
+            click.echo("Unable to login to {0} as user {1} "
+                       " with supplied password.".format(url, user))
             return
         with open(os.path.join(path_to_docs, 'man_pages', '%s.rst' % file_title),
                   'w') as manf:
