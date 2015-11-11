@@ -6,9 +6,9 @@ confluence_pages:
   CCS/Ansible+site+variable+framework: ['ansible']
   CCS/Ansible+playbook+runtime+commands: ['ansible']
   CCS/Ansible+introduction+and+primitives: ['ansible']
-  CCS/Heighliner+Workflow: ['nimbus', 'heighliner']
+  CCS/SDLC+Heighliner+Overview: ['nimbus', 'heighliner']
   CCS/SDLC+Setup+Process: []
-  CCS/SDLC+Gerrit+Branching+and+Workflow: ['git', 'feature']
+  CCS/SDLC+Gerrit+Branching: ['git', 'feature']
   CCS/SDLC+Gerrit+Release+Tagging: ['tag']
 # Documents created by SLAB members, located in the docs 
 # folder. THE HEADINGS OF THESE MUST MATCH THEIR TITLES.
