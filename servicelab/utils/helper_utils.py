@@ -171,12 +171,7 @@ def name_vm(name, path):
         rhel7-001
     """
     for i in xrange(1, 100):
-        i = str(i)
-        if len(i) == 1:
-            i = "00" + i
-        elif len(i) == 2:
-            i = "0" + i
-        hostname = name + "-" + i
+        hostname = name + "-" + "%03d".format(i)
         returncode = yaml_utils.host_exists_vagrantyaml(hostname, path)
         if returncode == 1:
             return hostname
