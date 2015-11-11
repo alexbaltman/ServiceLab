@@ -6,6 +6,7 @@ Pipe stack command submodule implements
 """
 import copy
 import requests
+import sys
 
 import click
 from bs4 import BeautifulSoup
@@ -57,19 +58,29 @@ def display_pipeline_log(ctx,
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
     stages_url = "http://{0}/go/api/pipelines/{1}/stages.xml"
     # Find latest run info
     res = requests.get(stages_url.format(ip_address, pipeline_name),
                        auth=HTTPBasicAuth(username, password))
-    soup = BeautifulSoup(res.content)
-    latest_job_info_url = soup.findAll('entry')[0].findAll('link')[0]['href']
+    soup = BeautifulSoup(res.content, "html.parser")
+    try:
+        latest_job_info_url = soup.findAll('entry')[0].findAll('link')[0]['href']
+    except Exception as ex:
+        click.echo("Internal error occurred. Please, check arguments supplied.")
+        click.echo("Error details : %s " % (ex))
+        sys.exit(1)
 
     # Find all the job info for that run
     latest_job_info_url = latest_job_info_url.replace("gocd_java_server",
                                                       ip_address)
     job_info_res = requests.get(latest_job_info_url,
                                 auth=HTTPBasicAuth(username, password))
-    soup = BeautifulSoup(job_info_res.content)
+    soup = BeautifulSoup(job_info_res.content, "html.parser")
     job_urls = soup.findAll('job')
 
     # for each of the job, pull the log and display the log
@@ -78,12 +89,12 @@ def display_pipeline_log(ctx,
                                                   ip_address)
         job_url_res = requests.get(job_url['href'],
                                    auth=HTTPBasicAuth(username, password))
-        soup = BeautifulSoup(job_url_res.content)
+        soup = BeautifulSoup(job_url_res.content, "html.parser")
         log_url = soup.find('artifacts')['baseuri']
         log_url = log_url.replace("gocd_java_server", ip_address)
         log_url_res = requests.get(log_url + "/cruise-output/console.log",
                                    auth=HTTPBasicAuth(username, password))
-        soup = BeautifulSoup(log_url_res.content)
+        soup = BeautifulSoup(log_url_res.content, "html.parser")
         print "\n\n-------------------Printing job log for pipeline : ", \
               log_url, "-------------------------"
         print soup
@@ -165,7 +176,7 @@ def trigger_pipeline(ctx,
     server_url = "http://{0}/go/api/pipelines/{1}/schedule"
     res = requests.post(server_url.format(ip_address, pipeline_name),
                         auth=HTTPBasicAuth(username, password))
-    soup = BeautifulSoup(res.content)
+    soup = BeautifulSoup(res.content, "html.parser")
     print soup
 
 
