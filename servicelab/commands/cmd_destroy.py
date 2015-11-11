@@ -70,6 +70,12 @@ def destroy_min(ctx, force):
                    '.vagrant/machines']
     files = ['Vagrantfile', 'vagrant.yaml']
 
+    # before we destroy lets check if we have any machine not destroyed still
+    if vagrant_utils.check_vm_is_available(ctx.path):
+        click.echo("There are active VMs in the stack environment. "
+                   "Please destroy these using stack destroy vm command\n")
+        sys.exit(-1)
+
     directories = [os.path.join(ctx.path, di) for di in directories]
     files = [os.path.join(ctx.path, fi) for fi in files]
 
