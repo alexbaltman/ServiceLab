@@ -390,3 +390,27 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
             return 0, hostname
         except CalledProcessError:
             return 1, hostname
+
+
+def check_vm_is_available(path):
+    def fn(vagrant_folder, vm_name):
+        if not os.path.isfile(os.path.join(vagrant_folder, "Vagrantfile")):
+            return False
+        v = vagrant.Vagrant(vagrant_folder)
+        return v.status(vm_name) != 'not_created'
+
+    dir = ['services/service-redhouse-tenant', '']
+
+    # get the names of the machines
+    vm_lst = map(lambda x: os.path.join(path, '.vagrant/machines', x), dir)
+    vm_lst = filter(lambda x: os.path.isdir(x), vm_lst)
+    vm_lst = [vm for dir_name in vm_lst for vm in os.listdir(dir_name)]
+
+    # check if they are installed or not
+    for folder in map(lambda x: os.path.join(path, x), dir):
+        vagrant_utils_logger.debug("checking {}".format(folder))
+        for vm in vm_lst:
+            if fn(folder, vm):
+                vagrant_utils_logger.debug("VM {} is available".format(vm))
+                return True
+    return False
