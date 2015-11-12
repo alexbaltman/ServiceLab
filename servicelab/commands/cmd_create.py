@@ -35,7 +35,7 @@ def cli(_):
 @click.argument('repo_name',
                 required=True)
 @click.option('--repo_type',
-              default='empty',
+              default='ansible',
               type=click.Choice(['project', 'ansible', 'puppet', "empty"]),
               help="The type of repo (empty, project, ansible, puppet)\n"
                    "A project repo type will create a project of normal type.\n"

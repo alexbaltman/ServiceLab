@@ -109,10 +109,6 @@ class Repo(object):
             del pdict[name]
         os.remove(fpath)
 
-        fpath = os.path.join(self.get_reponame(), "serverspec", "properties.yaml")
-        with open(fpath, "w") as yamlf:
-            yamlf.write(yaml.dump(pdict, default_flow_style=False))
-
     def create_repo(self, username):
         """
         create a repo on the local machine. Returns -1 if the repo creation fails.
@@ -159,6 +155,13 @@ Current version: 0.1.1
         with open("{}/release-notes.md".format(self.get_reponame()), "w") as relfile:
             relfile.write(release_note)
 
+    def remove(self, name):
+        """
+        if the repo exist, then remove
+        """
+        if os.path.exists(name):
+            os.remove(name)
+
     @abstractmethod
     def download_template(self, name):
         """
@@ -196,26 +199,21 @@ class Ansible(Repo):
 
     def create_nimbus(self):
         """
-        create the nimbus file for teh Ansible project. By default .nimbus.yaml
-        is created. For downward compatability we create .nimbus.yml as a link to
-        .nimbus.yaml.
+        create the nimbus file .nimbus.yml for Ansible project.
         """
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
                                            default="./check.sh", type=str)
 
         nimbusdict = dict(service=str(self.name + "-ansible"), version="0.0.1",
-                          deploy=dict(type="ansible", playbook=str(self.name + ".yaml")),
+                          deploy=dict(type="ansible", playbook=str(self.name + ".yml")),
                           verify=dict(type="serverspec"))
         if self.chk_script:
             nimbusdict['check'] = dict(script=self.chk_script)
 
-        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
+        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yml")
         with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
-
-        os.remove(os.path.join(".", self.get_reponame(), ".nimbus.yml"))
-        os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def create_ansible(self, user):
         """
@@ -245,15 +243,12 @@ class Ansible(Repo):
 
         def _write_playfile(playdict):
             """
-            write the ansible project yaml file.
+            write the ansible project yml file.
             """
             playfile = "./{}/ansible/{}".format(self.get_reponame(),
-                                                self.name + ".yaml")
+                                                self.name + ".yml")
             with open(playfile, "w") as playbook:
                 playbook.write(yaml.dump(playdict, default_flow_style=False))
-
-            os.link(playfile, "./{}/ansible/{}".format(
-                self.get_reponame(), self.name + ".yml"))
 
         # make the necessary directory
         ansibledir = "./{}/ansible".format(self.get_reponame())
@@ -302,9 +297,7 @@ class Ansible(Repo):
         shutil.rmtree(os.path.join(self.get_reponame(), ".git"))
         self.cleanup_properties("helloworld-test")
 
-        os.remove(os.path.join(self.get_reponame(), "doc", "README.md"))
-        os.remove(os.path.join(self.get_reponame(), "data", "dev.yaml"))
-        os.remove(os.path.join(self.get_reponame(), "data", "service.yaml"))
+        self.remove(os.path.join(self.get_reponame(), "doc", "README.md"))
 
         with open(os.path.join(self.get_reponame(), "data", "dev.yaml"), "w") as devfile:
             devfile.write("# This generated file is the local replacement of ccs-data for\n"
@@ -328,7 +321,7 @@ class Ansible(Repo):
                    "import sys\n"\
                    "\n"\
                    "try:\n"\
-                   "    playbook = yaml.load(open('ansible/{0}.yaml','r'))\n"\
+                   "    playbook = yaml.load(open('ansible/{0}.yml','r'))\n"\
                    "except:\n"\
                    "    print 'Error loading the playbook, must be a yaml syntax problem'\n"\
                    "    sys.exit(1)\n"\
@@ -344,7 +337,7 @@ class Ansible(Repo):
 
         # changing contents of the Vagrant file
         content = ""
-        with open('{}/Vagrantfile'.format("service-biostar-ansible"), 'r') as content_file:
+        with open('{}/Vagrantfile'.format(self.get_reponame()), 'r') as content_file:
             content = ''.join(content_file.readlines())
             content = content.replace("service_name = 'helloworld-ansible'",
                                       "service_name = '{0}-ansible'".format(self.name))
@@ -399,9 +392,7 @@ class Puppet(Repo):
 
     def create_nimbus(self):
         """
-        Create the nimbus file for the Puppet project. By default .nimbus.yaml
-        is created. For downward compatability we create .nimbus.yml as a link to
-        .nimbus.yaml.
+        Create the nimbus file .nimbus.yml for the Puppet project.
         """
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
@@ -415,12 +406,9 @@ class Puppet(Repo):
         if self.chk_script is not "./check.sh":
             os.remove(os.path.join(self.get_reponame(), "check.sh"))
 
-        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
+        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yml")
         with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
-
-        os.remove(os.path.join(".", self.get_reponame(), ".nimbus.yml"))
-        os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def download_template(self, username):
         """
@@ -447,7 +435,6 @@ class Puppet(Repo):
 
         os.remove(os.path.join(self.get_reponame(), "doc", "README.md"))
 
-        os.remove(os.path.join(self.get_reponame(), "data", "dev.yaml"))
         with open(os.path.join(self.get_reponame(), "data", "dev.yaml"), "w") as devf:
             devf.write("# this is generated file\n")
             devf.write("environment_name: dev\n")
@@ -456,15 +443,14 @@ class Puppet(Repo):
             devf.write("  This is an example of data that you would expect to be\n")
             devf.write("  provided per site, for example, in\n")
             devf.write("  ccs-data/sites/<site>/environments/"
-                       "<env_name>/data.d/environment.yaml.\n")
+                       "<env_name>/data.d/environment.yml.\n")
 
-        os.remove(os.path.join(self.get_reponame(), "data", "service.yaml"))
         with open(os.path.join(self.get_reponame(),
                                "data",
                                "service.yaml"), "w") as servf:
             sdict = {}
-            banner = "service {} - service.yaml".format(self.name)
-            note = "This was populated from service.yaml"
+            banner = "service {} - service.yml".format(self.name)
+            note = "This was populated from service.yml"
             sdict["{}::banner".format(self.name)] = banner
             sdict["{}::service-note".format(self.name)] = note
             servf.write(yaml.dump(yaml.dump(sdict, default_flow_style=False)))
@@ -588,9 +574,7 @@ class Project(Repo):
 
     def create_nimbus(self):
         """
-        Create the nimbus file for the project. By default .nimbus.yaml
-        is created. For downward compatability we create .nimbus.yml as a link to
-        .nimbus.yaml.
+        Create the nimbus file .nimbus.yml for the project.
         """
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
@@ -604,14 +588,9 @@ class Project(Repo):
         if self.chk_script:
             nimbusdict['check'] = dict(script=self.chk_script)
 
-        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
+        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yml")
         with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
-
-        ymlfile = os.path.join(".", self.get_reponame(), ".nimbus.yml")
-        if os.path.exists(ymlfile):
-            os.remove(ymlfile)
-        os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def construct(self):
         """
