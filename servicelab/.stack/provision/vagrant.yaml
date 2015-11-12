@@ -178,7 +178,6 @@ hosts:
     memory: 512
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   proxyexternal-001:
-    min: True
     role: tenant_proxy_external
     domain: 1
     profile: tenant
