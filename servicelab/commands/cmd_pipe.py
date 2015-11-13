@@ -4,6 +4,7 @@ Pipe stack command submodule implements
     2. Displays a pipeline status.
     3. Runs a pipeline.
 """
+import json
 import copy
 import requests
 import sys
@@ -134,6 +135,11 @@ def display_pipeline_status(ctx,
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
     server_url = "http://{0}/go/api/pipelines/{1}/status"
     res = requests.get(server_url.format(ip_address, pipeline_name),
                        auth=HTTPBasicAuth(username, password))
@@ -155,6 +161,11 @@ def display_pipeline_status(ctx,
               callback=gocd_utils.validate_pipe_ip_cb,
               help='Provide the go server ip address and port <ip:port>.',
               required=False)
+@click.option('-e',
+              '--env',
+              default=None,
+              help='Provide environment variables in json format e.x {"var1" : "val1"}',
+              required=False)
 @click.option('-i',
               '--interactive',
               flag_value=True,
@@ -165,6 +176,7 @@ def trigger_pipeline(ctx,
                      username,
                      password,
                      ip_address,
+                     env,
                      interactive):
     """
     Runs a pipeline.
@@ -173,9 +185,23 @@ def trigger_pipeline(ctx,
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
     server_url = "http://{0}/go/api/pipelines/{1}/schedule"
+    env_data = None
+    if env is not None:
+        env_json = json.loads(env)
+        for env_key in env_json:
+            env_val = env_json[env_key]
+            if env_data is None:
+                env_data = "variables[{0}]={1}".format(env_key, env_val)
+            else:
+                env_data = "{0}&variables[{1}]={2}".format(env_data, env_key, env_val)
     res = requests.post(server_url.format(ip_address, pipeline_name),
-                        auth=HTTPBasicAuth(username, password))
+                        auth=HTTPBasicAuth(username, password), data=env_data)
     soup = BeautifulSoup(res.content, "html.parser")
     print soup
 
@@ -214,6 +240,11 @@ def clone_pipeline(ctx,
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
     config_xmlurl = "http://{0}/go/api/admin/config/current.xml".format(
         ip_address)
     post_config_xmlurl = "http://{0}/go/api/admin/config.xml".format(

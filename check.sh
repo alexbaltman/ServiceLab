@@ -29,6 +29,7 @@ tar -xzvf git-2.0.0.tar.gz
 sudo yum install -y libcurl-devel zlib-devel
 sudo yum install -y autoconf
 sudo yum install -y perl-ExtUtils-MakeMaker
+sudo yum install -y gcc
 cd git-2.0.0
 sudo make configure
 sudo ./configure --prefix=/usr
