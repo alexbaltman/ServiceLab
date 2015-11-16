@@ -394,10 +394,13 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
 
 def check_vm_is_available(path):
     def fn(vagrant_folder, vm_name):
-        if not os.path.isfile(os.path.join(vagrant_folder, "Vagrantfile")):
+        try:
+            if not os.path.isfile(os.path.join(vagrant_folder, "Vagrantfile")):
+                return False
+            v = vagrant.Vagrant(vagrant_folder)
+            return v.status(vm_name)[0].state != 'not_created'
+        except:
             return False
-        v = vagrant.Vagrant(vagrant_folder)
-        return v.status(vm_name) != 'not_created'
 
     dir = ['services/service-redhouse-tenant', '']
 
