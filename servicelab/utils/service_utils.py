@@ -3,6 +3,7 @@ Stack utility functions.
 """
 import os
 import re
+import shutil
 import subprocess32 as subprocess
 
 import logging
@@ -104,6 +105,36 @@ def build_data(path):
                                   cwd=os.path.join(path, "services",
                                                    data_reponame))
     return(returncode, myinfo)
+
+
+def copy_certs(frompath, topath):
+    """Copy certs to ccs puppet module.
+
+    Args:
+        frompath (str): Where the certs currently reside.
+        topath (str): The base path to puppet dir.
+
+    Returns:
+        returncode (int) -- 0 if successful, failure otherwise
+
+    Example Usage:
+        returncode = service_utils.copy_certs(ctx.reporoot_path(),puppet_path)
+    """
+
+    certdir = os.path.join(topath, "modules", "ccs", "files", "certs", "dev-csi-a")
+    if not os.path.exists(certdir):
+        os.mkdir(certdir)
+    returncode = 0
+    for certfile in ['ccsapi.dev-csi-a',
+                     'meter.dev-csi-a',
+                     'ha_dev-csi-a',
+                     'ha_storage.dev-csi-a']:
+        try:
+            shutil.copy("{0}/{1}.cis.local.pem".format(frompath, certfile),
+                        certdir)
+        except:
+            returncode = 1
+    return returncode
 
 
 def _git_clone(path, branch, username, service_name):
