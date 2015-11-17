@@ -52,6 +52,7 @@ class TestVMYamlCreate(unittest.TestCase):
         output_file = os.path.join(output_path, 'environment.yaml')
         yaml_data = {'domain_name': 'test.site.com',
                      'region': 'csm',
+                     'controller_internal_vip': '10.1.2.3',
                      }
         self.write_file(output_file, yaml_data)
         output_path = os.path.join(env_path, self.site, 'hosts.d')
