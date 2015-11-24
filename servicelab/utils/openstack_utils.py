@@ -11,6 +11,7 @@ import click
 from keystoneclient.exceptions import AuthorizationFailure, Unauthorized
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client
+from neutronclient.common.exceptions import NotFound
 
 import helper_utils
 import vagrant_utils
@@ -261,6 +262,8 @@ class SLab_OS(object):
         parts = [i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
         # ['SLAB', 'mgmt', 'network']
         for network in networks['networks']:
+            if network['tenant_id'] != self.tenant_id:
+                continue
             if all(i in network['name'] for i in parts):
                 if 'mgmt' not in parts and 'mgmt' in network['name']:
                     continue
@@ -314,6 +317,8 @@ class SLab_OS(object):
         parts = [i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
         # ['SLAB', 'mgmt', 'subnet']
         for subnet in subnets['subnets']:
+            if subnet['tenant_id'] != self.tenant_id:
+                continue
             if all(i in subnet['name'] for i in parts):
                 if 'mgmt' not in parts and 'mgmt' in subnet['name']:
                     continue
@@ -356,6 +361,8 @@ class SLab_OS(object):
         parts = [i for i in parts if i in ['SLAB', 'mgmt', 'network', 'subnet', 'router']]
         # ['SLAB', 'mgmt', 'router']
         for router in routers['routers']:
+            if router['tenant_id'] != self.tenant_id:
+                continue
             if all(i in router['name'] for i in parts):
                 if 'mgmt' not in parts and 'mgmt' in router['name']:
                     continue
@@ -558,6 +565,8 @@ class SLab_OS(object):
                  ]
         # ['SLAB', 'mgmt', 'subnet']
         for security_group in security_groups['security_groups']:
+            if security_group['tenant_id'] != self.tenant_id:
+                continue
             if all(i in security_group['name'] for i in parts):
                 if 'mgmt' not in parts and 'mgmt' in security_group['name']:
                     continue
@@ -1144,6 +1153,8 @@ def os_delete_networks(path, force):
     try:
         networks = netw['networks']
         for network in networks:
+            if network['tenant_id'] != slab.tenant_id:
+                continue
             if 'SLAB' in network['name']:
                 if force:
                     os_delete_networking_components(slab.neutron, network)
@@ -1182,9 +1193,12 @@ def os_delete_subnets(neutron, network):
     Returns:
         Returncode
     """
-    for subnet in network['subnets']:
-        click.echo("Deleting subnet : %s " % (subnet))
-        neutron.delete_subnet(subnet)
+    try:
+        for subnet in network['subnets']:
+            click.echo("Deleting subnet : %s " % (subnet))
+            neutron.delete_subnet(subnet)
+    except NotFound as ex:
+        pass
 
 
 def os_delete_routers(neutron, force):
@@ -1198,17 +1212,22 @@ def os_delete_routers(neutron, force):
     routers = neutron.list_routers(retrieve_all=True)
     if routers['routers']:
         for router in routers['routers']:
-            if force:
-                neutron.delete_router(router['id'])
-                click.echo("Deleted router : %s " % (router['name']))
-            else:
-                if yes_or_no("Do you want to delete router : %s ? "
-                             % (router['name'])):
+            if router['tenant_id'] != os.getenv('OS_TENANT_ID'):
+                continue
+            try:
+                if force:
                     neutron.delete_router(router['id'])
-                    click.echo("Deleted router : %s " % (router['id']))
+                    click.echo("Deleted router : %s " % (router['name']))
                 else:
-                    click.echo("Skipping deletion of router : %s "
-                               % (router['name']))
+                    if yes_or_no("Do you want to delete router : %s ? "
+                                 % (router['name'])):
+                        neutron.delete_router(router['id'])
+                        click.echo("Deleted router : %s " % (router['id']))
+                    else:
+                        click.echo("Skipping deletion of router : %s "
+                                   % (router['name']))
+            except NotFound as ex:
+                    pass
 
 
 def os_delete_ports(neutron, network):
@@ -1226,9 +1245,12 @@ def os_delete_ports(neutron, network):
             if network['id'] == port['network_id']:
                 click.echo("Deleting ports : %s in network %s "
                            % (port['id'], network['name']))
-                port['device_owner'] = None
-                neutron.update_port(port['id'], {'port': {'device_owner': ''}})
-                neutron.delete_port(port['id'])
+                try:
+                    port['device_owner'] = None
+                    neutron.update_port(port['id'], {'port': {'device_owner': ''}})
+                    neutron.delete_port(port['id'])
+                except NotFound as ex:
+                    pass
 
 
 def yes_or_no(question):
