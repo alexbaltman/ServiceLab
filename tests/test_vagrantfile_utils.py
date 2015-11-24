@@ -191,7 +191,7 @@ class TestVagrantFileUtils(unittest.TestCase):
             f.write(self.vagrant_data)
             f.write('end\n')
         sec_groups = [{'name': "default"}]
-        self.vf_utils._vbox_os_provider_env_vars(self.float_net, self.networks, sec_groups)
+        self.vf_utils.vbox_os_provider_env_vars(self.float_net, self.networks, sec_groups)
         self.vf_utils.add_openstack_vm(self.host_dict)
         with open(self.vagrant_file, 'r') as f:
             file_data = f.read()
@@ -200,7 +200,7 @@ class TestVagrantFileUtils(unittest.TestCase):
 
     def test_vbox_os_provider_env_vars(self):
         """
-        Test the _vbox_os_provider_env_vars method
+        Test the vbox_os_provider_env_vars method
         """
         compare_data = {'username': 'test_user',
                         'openstack_auth_url': 'http://slab.cisco.com:5000/v2.0/',
@@ -212,21 +212,21 @@ class TestVagrantFileUtils(unittest.TestCase):
                         'networks': self.noaddr_nets,
                         'security_groups': "[{name: 'default'}]"}
         sec_groups = [{'name': "default"}]
-        self.vf_utils._vbox_os_provider_env_vars(self.float_net, self.networks, sec_groups)
+        self.vf_utils.vbox_os_provider_env_vars(self.float_net, self.networks, sec_groups)
         self.assertEqual(self.vf_utils.env_vars, compare_data)
         self.ctx.logger.info('Created env_vars with expected data')
 
     def test_vbox_os_provider_parse_multiple_networks(self):
         """
-        Test the _vbox_os_provider_parse_multiple_networks method
+        Test the vbox_os_provider_parse_multiple_networks method
         """
-        net = self.vf_utils._vbox_os_provider_parse_multiple_networks(self.networks)
+        net = self.vf_utils.vbox_os_provider_parse_multiple_networks(self.networks)
         self.assertEqual(net, self.noaddr_nets)
         self.ctx.logger.info('Tenant networks data parsed as expected')
 
     def test_vbox_os_provider_parse_security_groups(self):
         """
-        Test the _vbox_os_provider_parse_security_groups method
+        Test the vbox_os_provider_parse_security_groups method
         """
         compare_data = "[{name: 'default'},{name: 'something'},{name: 'myfancysecgroup'}]"
         sec_groups = [{'name': 'default',
@@ -234,17 +234,17 @@ class TestVagrantFileUtils(unittest.TestCase):
                       {'name': 'something'},
                       {'name': 'myfancysecgroup'}
                       ]
-        parsed_groups = self.vf_utils._vbox_os_provider_parse_security_groups(sec_groups)
+        parsed_groups = self.vf_utils.vbox_os_provider_parse_security_groups(sec_groups)
         self.assertEqual(parsed_groups, compare_data)
         self.ctx.logger.info('Security group data parsed as expected')
 
     def test_vbox_os_provider_host_vars(self):
         """
-        Test the _vbox_os_provider_host_vars method
+        Test the vbox_os_provider_host_vars method
         """
         compare_data = {'image': 'slab-RHEL7.1v8', 'flavor': '2cpu.4ram.20sas'}
         self.vf_utils.hostname = self.test_host
-        self.vf_utils._vbox_os_provider_host_vars(self.ctx.path)
+        self.vf_utils.vbox_os_provider_host_vars(self.ctx.path)
         self.assertEqual(self.vf_utils.host_vars, compare_data)
         self.ctx.logger.info('Host variables parsed as expected')
 
