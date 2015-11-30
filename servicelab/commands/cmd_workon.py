@@ -19,10 +19,10 @@ from servicelab.utils import service_utils
               help='Choose a branch to run against for your service.')
 @click.option('-db', '--data-branch', default="master",
               help='Choose a ccs-data branch to run against your service.')
-@click.option('-u', '--user',
+@click.option('-u', '--username',
               help='Enter the username')
 @pass_context
-def cli(ctx, branch, data_branch, user, service_name):
+def cli(ctx, branch, data_branch, username, service_name):
     """
     Creates a service user wants to work on.
 
@@ -35,8 +35,8 @@ def cli(ctx, branch, data_branch, user, service_name):
         service_name
     """
     current = ""
-    if not user:
-        user = ctx.get_username()
+    if not username:
+        username = ctx.get_username()
     if os.path.isfile(os.path.join(ctx.path, "current")):
         current_file = os.path.join(ctx.path, "current")
         with open(current_file, 'r') as cfile:
@@ -53,11 +53,11 @@ def cli(ctx, branch, data_branch, user, service_name):
                 ctx.logger.debug("Service repo does not exist")
                 sys.exit(1)
 
-            service_utils.sync_service(ctx.path, branch, user,
+            service_utils.sync_service(ctx.path, branch, username,
                                        service_name)
-            service_utils.link(ctx.path, service_name, branch, user)
+            service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
-            service_utils.sync_service(ctx.path, data_branch, user,
+            service_utils.sync_service(ctx.path, data_branch, username,
                                        "ccs-data")
         # Note: variable current and string current
         elif service_name != current and service_name != "current":
@@ -67,11 +67,11 @@ def cli(ctx, branch, data_branch, user, service_name):
                 sys.exit(1)
 
             service_utils.clean(ctx.path)
-            service_utils.sync_service(ctx.path, branch, user,
+            service_utils.sync_service(ctx.path, branch, username,
                                        service_name)
-            service_utils.link(ctx.path, service_name, branch, user)
+            service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
-            service_utils.sync_service(ctx.path, data_branch, user,
+            service_utils.sync_service(ctx.path, data_branch, username,
                                        "ccs-data")
         else:
             # Note: notice we're passing the variable current not service_name.
@@ -80,18 +80,18 @@ def cli(ctx, branch, data_branch, user, service_name):
                 ctx.logger.debug("Service repo does not exist")
                 sys.exit(1)
 
-            service_utils.sync_service(ctx.path, branch, user, current)
-            service_utils.link(ctx.path, service_name, branch, user)
+            service_utils.sync_service(ctx.path, branch, username, current)
+            service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
-            service_utils.sync_service(ctx.path, data_branch, user,
+            service_utils.sync_service(ctx.path, data_branch, username,
                                        "ccs-data")
     else:
         returncode = service_utils.check_service(ctx.path, service_name)
         if returncode > 0:
             ctx.logger.debug("Service repo does not exist")
             sys.exit(1)
-        service_utils.sync_service(ctx.path, branch, user, service_name)
-        service_utils.sync_service(ctx.path, data_branch, user,
+        service_utils.sync_service(ctx.path, branch, username, service_name)
+        service_utils.sync_service(ctx.path, data_branch, username,
                                    "ccs-data")
-        service_utils.link(ctx.path, service_name, branch, user)
+        service_utils.link(ctx.path, service_name, branch, username)
         service_utils.setup_vagrant_sshkeys(ctx.path)
