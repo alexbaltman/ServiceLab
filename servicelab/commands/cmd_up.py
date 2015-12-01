@@ -349,6 +349,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                     "dev",
                                     "ccs-data"))
         for i in order:
+            # Need to build nodes in specific order
+            # so filter out everything but
+            # if result is empty, then don't built this node and skip
+            # variables aren't referenced outside of a lambda, so had
+            # to pass in current node (i) as variable o
             vhosts = filter(lambda x, o=i: o in x, allmy_vms)
             if len(vhosts) == 0:
                 continue
