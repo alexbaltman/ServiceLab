@@ -11,22 +11,21 @@ List command submodule implements listing all the
 import os
 import re
 import sys
+import json
 
 import click
-import json
-import requests
-
 from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
+import requests
 
 from servicelab.stack import pass_context
-
 from servicelab.utils import ccsdata_utils
 from servicelab.utils import jenkins_utils
 from servicelab.utils import artifact_utils
 from servicelab.utils import gocd_utils
 from servicelab.utils import gerrit_functions
 from servicelab.utils import yaml_utils
+from servicelab.utils import pulp_utils
 
 
 @click.group('list', short_help='You can list objects in pipeline resources.',
@@ -53,8 +52,8 @@ def list_sites(ctx):
         for site in val_lst:
             click.echo(site)
     except Exception as ex:
-        ctx.logger.info("unable to get site list. unable to read ccs-data")
-        ctx.logger.info(ex)
+        ctx.logger.error("unable to get site list. unable to read ccs-data")
+        ctx.logger.error(ex)
 
 
 @cli.command('envs', short_help="List all environments in ccs-data.")
@@ -73,8 +72,9 @@ def list_envs(ctx):
         for env in val_lst:
             click.echo(env)
     except Exception as ex:
-        ctx.logger.info("unable to get environment list. unable to read ccs-data")
-        ctx.logger.info(ex)
+        ctx.logger.error(
+            "unable to get environment list. unable to read ccs-data")
+        ctx.logger.error(ex)
 
 
 @cli.command('hosts', short_help="List all hosts in ccs-data.")
@@ -89,8 +89,9 @@ def list_hosts(ctx):
             for _, l2_values in values.iteritems():
                 click.echo(l2_values)
     except Exception as ex:
-        ctx.logger.info("unable to get environment list. unable to read ccs-data")
-        ctx.logger.info(ex)
+        ctx.logger.error(
+            "unable to get environment list. unable to read ccs-data")
+        ctx.logger.error(ex)
 
 
 @cli.command('reviews', short_help='List your outstanding reviews in Gerrit.')
@@ -320,3 +321,48 @@ def flavors_list(ctx, site):
 
     for flavor in flavor_list:
         click.echo(flavor)
+
+
+@cli.command('rpms', short_help='List rpms in site')
+@click.option(
+    '-u',
+    '--username',
+    help='Provide pulp server username')
+@click.option(
+    '-p',
+    '--password',
+    help='Provide pulp server password',
+    required=True)
+@click.option(
+    '-ip',
+    '--ip_address',
+    help='Provide the pulp server url ip address and port '
+         'no in format http://<ip:portno>.',
+    default=None,
+    callback=pulp_utils.validate_pulp_ip_cb)
+@click.option(
+    '-s',
+    '--site',
+    help='Provide the site id ',
+    required=True,
+    default=None)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
+@pass_context
+def list_rpms(ctx, ip_address, username, password, site, interactive):
+    """
+    Lists rpms using Pulp Server API.
+    """
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
+    url = "/pulp/api/v2/repositories/%s/search/units/" % (site)
+    payload = '{ "criteria": { "fields": { "unit": [ "name",'\
+              '"version", "filename", "relative_url" ] },'\
+              '"type_ids": [ "rpm" ] } }'
+    val = pulp_utils.post(url, ip_address, ctx, username, password, payload)
+
+    click.echo(json.dumps(json.loads(val), indent=4, sort_keys=True))
