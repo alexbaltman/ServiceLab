@@ -81,7 +81,7 @@ hosts:
     memory: 1024
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   neutronapi-001:
-    role: tenant_neutron_ctl
+    role: tenant_neutron_api
     domain: 1
     profile: tenant
     ip: 192.168.100.151
@@ -89,7 +89,7 @@ hosts:
     memory: 1024
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   neutronapi-002:
-    role: tenant_neutron_ctl
+    role: tenant_neutron_api
     domain: 1
     profile: tenant
     ip: 192.168.100.152
@@ -194,7 +194,7 @@ hosts:
     memory: 512
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   nova-001:
-    role: tenant_compute
+    role: tenant_compute_dev
     domain: 1
     profile: aio,tenant
     ip: 192.168.100.50
@@ -202,7 +202,7 @@ hosts:
     memory: 1024
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   nova-002:
-    role: tenant_compute
+    role: tenant_compute_dev
     domain: 1
     profile: aio,tenant
     ip: 192.168.100.51
@@ -340,17 +340,17 @@ hosts:
     memory: 1024
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   nova-001:
-    role: compute_local
+    role: tenant_compute_dev
     domain: 1
-    profile: aio
+    profile: aio,tenant
     ip: 192.168.100.50
     mac: "000027000050"
     memory: 1024
     box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
   nova-002:
-    role: compute_local
+    role: tenant_compute_dev
     domain: 1
-    profile: aio
+    profile: aio,tenant
     ip: 192.168.100.51
     mac: "000027000051"
     memory: 1024
