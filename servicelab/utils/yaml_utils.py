@@ -158,6 +158,47 @@ def gethost_byname(hostname, pathto_yaml):
         return 1, yourdict
 
 
+def get_host_order(pathto_yaml):
+    """Returns results of order.yaml, which contains the order that osp vms must be brought up.
+
+       Used by mini and full to ensure vms are brought up in the correct order.
+
+    Args:
+        path (str): The path to the order.yaml file.  This will contain the names of the
+                    vms in the specific order to be brought up.  mini will only bring
+                    up the vms that also have mini: true in vagrant.yaml, even though
+                    this will return all the vms.
+    Returns:
+        Returncode (int):
+            0 -- Success
+            1 -- Failure
+        Hosts (list): This is the list of hosts, in the order they must be provisioned.
+
+    Example Usage:
+        >>> print get_host_order('/home/riffraff/src/servicelab/servicelab/.stack/provision')
+        ['proxyinternal-001', 'proxyinternal-002', 'db-001', 'db-002', 'db-003',
+            'keystonectl-001', 'keystonectl-002', 'infra-001', 'infra-002',
+            'glancectl-001', 'glancectl-002', 'cinderctl-001', 'cinderctl-002',
+            'novactl-001', 'novactl-002', 'neutronapi-001', 'neutronapi-002',
+            'ceilometerctl-001', 'ceilometerctl-002', 'heatctl-001', 'heatctl-002',
+            'net-001', 'net-002', 'proxyexternal-001', 'proxyexternal-002', 'nova-001',
+            'nova-002', 'ceph-mon-001', 'ceph-mon-002', 'ceph-mon-003', 'ceph-osd-001',
+            'ceph-osd-002', 'ceph-osd-003', 'ceph-rgw-001', 'aio-003', 'nova-001',
+            'nova-002', 'horizon-001', 'horizon-002']
+
+    """
+    try:
+        with open(os.path.join(pathto_yaml, "order.yaml"), 'r') as f:
+            doc = yaml.load(f)
+            if "order" in doc:
+                return 0, doc["order"]
+            else:
+                return 1, []
+    except IOError as error:
+        yaml_utils_logger.error('File error: ' + str(error))
+        return 1, []
+
+
 def getmin_OS_vms(path):
     """Return a list of host dictionaries that have min set to True in the vagrant.yaml
 

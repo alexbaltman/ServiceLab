@@ -202,8 +202,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         if not os.path.exists(os.path.join(puppet_path, "glance")):
             ctx.logger.info('Updating sub repo.s under service-redhouse-tenant')
             ctx.logger.info('This may take a few minutes.')
-            returncode, myinfo = service_utils.run_this("librarian-puppet install",
-                                                        puppet_path)
+            returncode, myinfo = service_utils.run_this(
+                    "USER={0}.librarian-puppet install".format(username),
+                    puppet_path)
             if returncode > 0:
                 ctx.logger.error('Failed to retrieve the necessary puppet configurations.')
                 ctx.logger.error(myinfo)
@@ -288,6 +289,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     if returncode > 0:
         ctx.logger.error("Couldn't get the vms from the vagrant.yaml.")
         sys.exit(1)
+
+    returncode, order = yaml_utils.get_host_order(os.path.join(ctx.path, 'provision'))
+    if returncode > 0:
+        ctx.logger.error("Couldn't get order of vms from order.yaml")
+        sys.exit(1)
     try:
         # Note: not sure if this will work w/ vm_name set to infra-001 arbitrarily
         # Note: move path to ctx.path if able to boot OSP pieces via infra/heighliner
@@ -342,9 +348,12 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                        os.path.join(redhouse_ten_path,
                                     "dev",
                                     "ccs-data"))
-        for i in allmy_vms:
+        for i in order:
+            vhosts = filter(lambda x, o=i: o in x, allmy_vms)
+            if len(vhosts) == 0:
+                continue
             if ha:
-                ha_vm = i.replace("001", "002")
+                ha_vm = vhosts.replace("001", "002")
                 returncode, ha_vm_dicts = yaml_utils.gethost_byname(ha_vm,
                                                                     os.path.join(ctx.path,
                                                                                  'provision')
@@ -354,32 +363,35 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                     sys.exit(1)
                 else:
                     allmy_vms.append(ha_vm_dicts)
-            for host in i:
-                retcode = yaml_utils.host_add_vagrantyaml(path=ctx.path,
-                                                          file_name="vagrant.yaml",
-                                                          hostname=host,
-                                                          site='ccs-dev-1',
-                                                          memory=(i[host]['memory'] / 512),
-                                                          box=i[host]['box'],
-                                                          role=i[host]['role'],
-                                                          profile=i[host]['profile'],
-                                                          domain=i[host]['domain'],
-                                                          mac_nocolon=i[host]['mac'],
-                                                          ip=i[host]['ip'],
-                                                          )
+            for hosts in vhosts:
+                for host in hosts:
+                    newmem = (hosts[host]['memory']/512)
+                    retcode = yaml_utils.host_add_vagrantyaml(path=ctx.path,
+                                                              file_name="vagrant.yaml",
+                                                              hostname=host,
+                                                              site='ccs-dev-1',
+                                                              memory=newmem,
+                                                              box=hosts[host]['box'],
+                                                              role=hosts[host]['role'],
+                                                              profile=hosts[host]['profile'],
+                                                              domain=hosts[host]['domain'],
+                                                              mac_nocolon=hosts[host]['mac'],
+                                                              ip=hosts[host]['ip'],
+                                                              )
                 if retcode > 0:
                     ctx.logger.error("Failed to add host" + host)
                     ctx.logger.error("Continuing despite failure...")
+            curhost = vhosts[0].keys()[0]
             settingsyaml = {'openstack_provider': True}
-            returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml, hostname=host)
+            returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml, hostname=curhost)
             if returncode > 0:
-                ctx.logger.error('writing to settings yaml failed on: ' + host)
+                ctx.logger.error('writing to settings yaml failed on: ' + curhost)
             if remote:
-                myvfile.add_openstack_vm(i)
-                a.v.up(vm_name=host, provider='openstack')
+                myvfile.add_openstack_vm(vhosts[0])
+                a.v.up(vm_name=curhost, provider='openstack')
             else:
-                myvfile.add_virtualbox_vm(i)
-                a.v.up(vm_name=host)
+                myvfile.add_virtualbox_vm(vhosts[0])
+                a.v.up(vm_name=curhost)
     except IOError as e:
         ctx.logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
         sys.exit(1)
