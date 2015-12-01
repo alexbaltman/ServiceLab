@@ -269,6 +269,13 @@ def vm_isrunning(hostname, path):
         # Note: remote OS value: shutoff
         elif status[0][1] == 'shutoff':
             return 1, True
+        # Note: remote OS value: saved
+        elif status[0][1] == 'saved':
+            return 1, True
+        # Note: remote OS value: un created
+        elif status[0][1] == 'not_created':
+            vm_connection.v.up(hostname)
+            return 0, False
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
         return 2, False
@@ -276,7 +283,7 @@ def vm_isrunning(hostname, path):
     return 3, False
 
 
-def infra_ensure_up(mynets, float_net, path=None):
+def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
     '''Best effort to ensure infra-001 or -002 will be booted in correct env.
 
     Args:
@@ -320,7 +327,7 @@ def infra_ensure_up(mynets, float_net, path=None):
     # Note: if requested remote or local and our vm's state is same then just
     #       make sure it's booted w/ ispoweron being 0 for that.
     if isremote == remote and ispoweron == 0:
-        infra_connection.v.reload(hostname)
+        infra_connection.v.reload(hostname, 'provision')
         return 0, hostname
     # Note: it's what we want just not booted, so boot it.
     elif isremote == remote and ispoweron == 1:
@@ -341,7 +348,9 @@ def infra_ensure_up(mynets, float_net, path=None):
 
     # Note: b/c the infra exists but isn't in desired location we alter hostname
     if isremote != remote:
-        hostname = 'infra-002'
+        # Added in case remote hypervisor did not find infra-001
+        if not ispoweron == 2:
+            hostname = 'infra-002'
         infra_connection.vm_name = hostname
         if yaml_utils.addto_inventory(hostname, path) > 0:
             return 1, hostname
@@ -381,3 +390,30 @@ def infra_ensure_up(mynets, float_net, path=None):
             return 0, hostname
         except CalledProcessError:
             return 1, hostname
+
+
+def check_vm_is_available(path):
+    def fn(vagrant_folder, vm_name):
+        try:
+            if not os.path.isfile(os.path.join(vagrant_folder, "Vagrantfile")):
+                return False
+            v = vagrant.Vagrant(vagrant_folder)
+            return v.status(vm_name)[0].state != 'not_created'
+        except:
+            return False
+
+    dir = ['services/service-redhouse-tenant', '']
+
+    # get the names of the machines
+    vm_lst = map(lambda x: os.path.join(path, '.vagrant/machines', x), dir)
+    vm_lst = filter(lambda x: os.path.isdir(x), vm_lst)
+    vm_lst = [vm for dir_name in vm_lst for vm in os.listdir(dir_name)]
+
+    # check if they are installed or not
+    for folder in map(lambda x: os.path.join(path, x), dir):
+        vagrant_utils_logger.debug("checking {}".format(folder))
+        for vm in vm_lst:
+            if fn(folder, vm):
+                vagrant_utils_logger.debug("VM {} is available".format(vm))
+                return True
+    return False

@@ -17,16 +17,22 @@ def show_repo_status(path):
     """
     Shows the details of git repos.
     """
-    click.echo('\nShowing repo status of services')
     service_dir = os.path.join(path, SERVICE_DIR)
-    Gitcheckutils().git_check(service_dir)
+
+    if os.path.isdir(service_dir) == True and os.walk(service_dir).next()[1]:
+        click.echo('\nShowing git repo status of services :')
+        Gitcheckutils().git_check(service_dir)
+    else:
+        click.echo("Cannot show repository status "
+                   "since no projects found in directory : %s \n"
+                   % (service_dir))
 
 
 def show_vm_status(path):
     """
     Shows the details of git repos.
     """
-    click.echo('\nShowing vm status of services')
+    click.echo('\nShowing vm status of services :')
     vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=VM_NAME,
                                                      path=path)
     try:

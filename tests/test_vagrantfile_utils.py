@@ -242,7 +242,7 @@ class TestVagrantFileUtils(unittest.TestCase):
         """
         Test the _vbox_os_provider_host_vars method
         """
-        compare_data = {'image': 'slab-RHEL7.1v7', 'flavor': '2cpu.4ram.20sas'}
+        compare_data = {'image': 'slab-RHEL7.1v8', 'flavor': '2cpu.4ram.20sas'}
         self.vf_utils.hostname = self.test_host
         self.vf_utils._vbox_os_provider_host_vars(self.ctx.path)
         self.assertEqual(self.vf_utils.host_vars, compare_data)

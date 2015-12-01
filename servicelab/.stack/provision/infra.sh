@@ -28,6 +28,9 @@ cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /e
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/site.yaml /etc/ccs/data/environments/dev-tenant/site.yaml
 cp /opt/ccs/services/ccs-data/out/ccs-dev-1/dev-tenant/etc/ccs/data/hosts.yaml /etc/ccs/data/environments/dev-tenant/hosts.yaml
 
+cp /vagrant/provision/hydsslg2.crt /etc/pki/ca-trust/source/anchors
+sudo update-ca-trust
+
 
 chmod +x /etc/ansible/nimbus.py
 chmod +x /usr/share/ansible_plugins/lookup_plugins/hiera.py
@@ -52,6 +55,7 @@ fi
 
 if [ -f /vagrant/provision/ssh-config ]; then
   sudo cp /vagrant/provision/ssh-config /root/.ssh/config
+  sudo chmod 0700 /home/vagrant/.ssh/config
 fi
 
 # Vault pass for decrypting keys

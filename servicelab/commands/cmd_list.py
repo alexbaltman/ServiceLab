@@ -10,6 +10,7 @@ List command submodule implements listing all the
 """
 import os
 import re
+import sys
 
 import click
 import json
@@ -44,10 +45,15 @@ def list_sites(ctx):
     '''
     Here we list all the sites using the git submodule ccs-data.
     '''
-    ctx.logger.debug("Gathered sites from ccs-data submodule.")
-
-    for keys in ccsdata_utils.list_envs_or_sites(ctx.path):
-        click.echo(keys)
+    try:
+        val_lst = []
+        for keys in ccsdata_utils.list_envs_or_sites(ctx.path):
+            val_lst.append(keys)
+        val_lst.sort()
+        click.echo(val_lst)
+    except Exception as ex:
+        ctx.logger.info("unable to get site list. unable to read ccs-data")
+        ctx.logger.info(ex)
 
 
 @cli.command('envs', short_help="List environments")
@@ -56,11 +62,17 @@ def list_envs(ctx):
     '''
     Here we list all the environments using the git submodule ccs-data.
     '''
-    ctx.logger.debug("Gathered environments from ccs-data submodule.")
-    data = ccsdata_utils.list_envs_or_sites(ctx.path)
-    for _, values in data.iteritems():
-        for val in values:
-            click.echo(val)
+    try:
+        val_lst = []
+        data = ccsdata_utils.list_envs_or_sites(ctx.path)
+        for _, values in data.iteritems():
+            for val in values:
+                val_lst.append(val)
+        val_lst.sort()
+        click.echo(val_lst)
+    except Exception as ex:
+        ctx.logger.info("unable to get environment list. unable to read ccs-data")
+        ctx.logger.info(ex)
 
 
 @cli.command('hosts', short_help="List hosts")
@@ -69,11 +81,14 @@ def list_hosts(ctx):
     '''
     Here we list all the hosts using the git submodule ccs-data.
     '''
-    ctx.logger.debug("Gathered hosts from ccs-data submodule.")
-    data = ccsdata_utils.list_envs_or_sites(ctx.path)
-    for _, values in data.iteritems():
-        for _, l2_values in values.iteritems():
-            click.echo(l2_values)
+    try:
+        data = ccsdata_utils.list_envs_or_sites(ctx.path)
+        for _, values in data.iteritems():
+            for _, l2_values in values.iteritems():
+                click.echo(l2_values)
+    except Exception as ex:
+        ctx.logger.info("unable to get environment list. unable to read ccs-data")
+        ctx.logger.info(ex)
 
 
 @cli.command('reviews', short_help='List reviews in Gerrit.')
@@ -111,13 +126,11 @@ def list_repos(ctx):
 @click.option(
     '-u',
     '--username',
-    help='Provide jenkins username',
-    required=True)
+    help='Provide jenkins username')
 @click.option(
     '-p',
     '--password',
-    help='Provide jenkins server password',
-    required=True)
+    help='Provide jenkins server password')
 @click.option(
     '-ip',
     '--ip_address',
@@ -154,8 +167,7 @@ def list_build(ctx, ip_address, username, password, interactive):
 @click.option(
     '-p',
     '--password',
-    help='Provide artifactory password',
-    required=True)
+    help='Provide artifactory password')
 @click.option(
     '-ip',
     '--ip_address',
@@ -197,15 +209,13 @@ def list_artifact(ctx, ip_address, username, password, interactive):
               help='Provide go server username')
 @click.option('-p',
               '--password',
-              help='Provide go server password',
-              required=True)
+              help='Provide go server password')
 @click.option('-ip',
               '--ip_address',
               help='Provide the go server url ip address and port'
                    'no in format <ip:portno>.',
               default=None,
-              callback=gocd_utils.validate_pipe_ip_cb,
-              required=True)
+              callback=gocd_utils.validate_pipe_ip_cb)
 @click.option('-i',
               '--interactive',
               flag_value=True,
@@ -219,6 +229,12 @@ def list_pipe(ctx, localrepo, username, password, ip_address, interactive):
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
+
     server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
@@ -226,7 +242,7 @@ def list_pipe(ctx, localrepo, username, password, ip_address, interactive):
 
     # Find latest run info
     res = requests.get(server_url, auth=HTTPBasicAuth(username, password))
-    soup = BeautifulSoup(res.content)
+    soup = BeautifulSoup(res.content, "html.parser")
     pipelines = soup.findAll('pipeline')
     display_pipelines(pipelines, localrepo, servicesdirs)
 
@@ -249,7 +265,8 @@ def display_pipelines(pipelines, localrepo, servicesdirs):
                         if service == pipeline_name:
                             click.echo(pipeline_name)
             else:
-                click.echo(pipeline_name)
+                tokens = pipeline_name.split('/')
+                click.echo(tokens[len(tokens) - 2])
 
 
 @cli.command('ospvms', short_help='List all OpenStack Platform VMs')

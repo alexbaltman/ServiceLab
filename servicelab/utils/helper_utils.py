@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import logging
 import fnmatch
 import getpass
@@ -67,9 +68,9 @@ def set_user(path):
             1 -- Failure
 
     Example Usage:
-        >>> print ctx.path
+        >>> print path
         /Users/aaltman/Git/servicelab/servicelab/.stack
-        >>> print set_user(ctx.path)
+        >>> print set_user(path)
         (0, aaltman)
     """
     matches = None
@@ -107,9 +108,9 @@ def get_current_service(path):
                                one word string.
 
     Example Usage:
-        >>> print ctx.path
+        >>> print path
         /Users/aaltman/Git/servicelab/servicelab/.stack
-        >>> print get_current_service(ctx.path)
+        >>> print get_current_service(path)
         (0, service-redhouse-tenant)
     """
     if os.path.isfile(os.path.join(path, "current")):
@@ -134,9 +135,9 @@ def get_path_to_utils(path):
         path (str): Absolute path to utils folder within servicelab.
 
     Example Usage:
-        >>> print ctx.path
+        >>> print path
             '/Users/aaltman/Git/servicelab/servicelab/.stack'
-        >>> print path_to_utils(ctx.path)
+        >>> print path_to_utils(path)
             '/Users/aaltman/Git/servicelab/servicelab/utils'
     """
     split_path = os.path.split(path)
@@ -159,23 +160,72 @@ def name_vm(name, path):
     Args:
         name (str): The suffix to attach to the name.
         path (str): The path to the yaml file that's holding your inventory. Typically,
-                    the vagrant.yaml in ctx.path --> .stack/vagrant.yaml
+                    the vagrant.yaml in path --> .stack/vagrant.yaml
 
     Returns:
         hsotname (str): The name of the next vm inline that's not in the
         vagrant.yaml for the given path.
 
     Example Usage:
-        >>> helper_utils.name_vm('rhel7', ctx.path)
+        >>> helper_utils.name_vm('rhel7', path)
         rhel7-001
     """
     for i in xrange(1, 100):
-        i = str(i)
-        if len(i) == 1:
-            i = "00" + i
-        elif len(i) == 2:
-            i = "0" + i
-        hostname = name + "-" + i
+        hostname = name + "-" + "%03d" % (i)
         returncode = yaml_utils.host_exists_vagrantyaml(hostname, path)
         if returncode == 1:
             return hostname
+
+
+def destroy_files(paths_to_files):
+    """For cmd_destroy mostly - allows you to delete a batch of files.
+
+    Args:
+        paths_to_files (list): Take a list of paths to files as strings so
+                               that they can be removed.
+
+    Returns:
+        0 - Successfully deleted
+        1 - Didn't delete successfully
+
+    Example Usage:
+        >>> destroy_files(['/root/.bashrc', '/root/.config', '/home/aaltman/myfile'])
+        0
+    """
+    for mypath in paths_to_files:
+        helper_utils_logger.debug("Destroying {0}".format(mypath))
+        if os.path.exists(mypath):
+            try:
+                os.remove(mypath)
+            except OSError as ex:
+                helper_utils_logger.debug('Caught error: ')
+                helper_utils_logger.debug(ex)
+                return 1
+    return 0
+
+
+def destroy_dirs(paths):
+    """For cmd_destroy mostly - allows you to delete a batch of directories.
+
+    Args:
+        paths (list): Take a list of paths to directories as strings so
+                      that they can be removed.
+
+    Returns:
+        0 - Successfully deleted
+        1 - Didn't delete successfully
+
+    Example Usage:
+        >>> destroy_dirs(['/home/aaltman', '/etc', '/'])
+        0
+    """
+    for path in paths:
+        if os.path.exists(path):
+            helper_utils_logger.debug("Destroying {0}".format(path))
+            try:
+                shutil.rmtree(path)
+            except OSError as ex:
+                helper_utils_logger.debug('Caught error: ')
+                helper_utils_logger.debug(ex)
+                return 1
+    return 0

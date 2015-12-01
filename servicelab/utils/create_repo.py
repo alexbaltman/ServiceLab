@@ -67,16 +67,16 @@ class Repo(object):
             Raises Exception if type is not Ansible, Puppet, Project or
             EmptyProject.
         """
-        repo_type = type(self).__name__
-        if repo_type is "Ansible":
-            return "service-" + self.name + "-ansible"
-        if repo_type is "Puppet":
-            return "service-" + self.name + "-puppet"
-        if repo_type is "Project":
-            return "project-" + self.name
-        if repo_type is "EmptyProject":
-            return self.name
-        assert type(self).__name__ != "Repo", "no repo name available for i" + repo_type
+        assert type(self).__name__ != "Repo", "no repo name available "
+
+    def check(self):
+        """
+        if the repo exist, print message and return true.
+        """
+        if os.path.exists("./{}".format(self.get_reponame())):
+            click.echo("repo for {0} exist as {1}".format(self.name, self.get_reponame()))
+            return True
+        return False
 
     def create_project(self):
         """
@@ -105,13 +105,9 @@ class Repo(object):
         fpath = os.path.join(self.get_reponame(), "serverspec", "properties.yml")
         with open(self.get_reponame() + "/serverspec/properties.yml") as ydata:
             pdict = yaml.load(ydata)
-            pdict[self.name] = pdict[name]
+            pdict[str(self.name)] = pdict[name]
             del pdict[name]
         os.remove(fpath)
-
-        fpath = os.path.join(self.get_reponame(), "serverspec", "properties.yaml")
-        with open(fpath, "w") as yamlf:
-            yamlf.write(yaml.dump(pdict, default_flow_style=False))
 
     def create_repo(self, username):
         """
@@ -141,6 +137,31 @@ class Repo(object):
         # now get the template repo
         return ret_code
 
+    def releasenote(self, rtype):
+        """
+        creates the correct rlease nootes file.
+        """
+        # correcting the release note
+        release_note = """#
+# Release Notes for component service-{0}-{1}
+#
+
+Current version: 0.1.1
+
+## 0.1.1
+ * Baseline Component Version to support SDLC Pipeline Tooling
+ * SDLC Docs: https://confluence.sco.cisco.com/display/CCS/SDLC+Group+Onboarding
+        """.format(self.name, rtype)
+        with open("{}/release-notes.md".format(self.get_reponame()), "w") as relfile:
+            relfile.write(release_note)
+
+    def remove(self, name):
+        """
+        if the repo exist, then remove
+        """
+        if os.path.exists(name):
+            os.remove(name)
+
     @abstractmethod
     def download_template(self, name):
         """
@@ -163,29 +184,36 @@ class Ansible(Repo):
     def __init__(self, gsrvr, path, name, interactive):
         super(Ansible, self).__init__(gsrvr, path, name, interactive)
         self.play_roles = []
+        self.chk_script = "python test.py"
+
+    def get_reponame(self):
+        """
+        get ansible projcet of type service-<project name>-ansible
+        """
+        name = self.name
+        if not name.startswith("service-"):
+            name = "service-" + name
+        if not name.endswith("-ansible"):
+            name = name + "-ansible"
+        return name
 
     def create_nimbus(self):
         """
-        create the nimbus file for teh Ansible project. By default .nimbus.yaml
-        is created. For downward compatability we create .nimbus.yml as a link to
-        .nimbus.yaml.
+        create the nimbus file .nimbus.yml for Ansible project.
         """
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
                                            default="./check.sh", type=str)
 
-        nimbusdict = dict(service=self.name + "-ansible", version="0.0.1",
-                          deploy=dict(type="ansible", playbook=self.name + ".yaml"),
+        nimbusdict = dict(service=str(self.name + "-ansible"), version="0.0.1",
+                          deploy=dict(type="ansible", playbook=str(self.name + ".yml")),
                           verify=dict(type="serverspec"))
         if self.chk_script:
             nimbusdict['check'] = dict(script=self.chk_script)
 
-        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
+        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yml")
         with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
-
-        os.remove(os.path.join(".", self.get_reponame(), ".nimbus.yml"))
-        os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def create_ansible(self, user):
         """
@@ -197,37 +225,35 @@ class Ansible(Repo):
             enter the various roles.
             """
             if not self.interactive:
-                self.play_roles.append(self.name)
+                self.play_roles.append(str(self.name))
                 return
 
             if not self.play_roles:
                 while True:
-                    role = click.prompt("role", default=self.name, type=str)
+                    role = click.prompt("role", default=str(self.name), type=str)
                     if not role:
                         break
                     if role in self.play_roles:
-                        lst = [astr.encode('ascii') for astr in self.play_roles]
+                        lst = [str(play_role) for play_role in self.play_roles]
                         click.echo(" entered roles:" + str(lst))
                         if click.confirm(' do you want to continue?'):
                             continue
                         break
                     self.play_roles.append(role)
 
-        ansibledir = "./{}/ansible".format(self.get_reponame())
-        if not os.path.isdir(ansibledir):
-            os.mkdir(ansibledir)
-
         def _write_playfile(playdict):
             """
-            write the ansible project yaml file.
+            write the ansible project yml file.
             """
             playfile = "./{}/ansible/{}".format(self.get_reponame(),
-                                                self.name + ".yaml")
+                                                self.name + ".yml")
             with open(playfile, "w") as playbook:
                 playbook.write(yaml.dump(playdict, default_flow_style=False))
 
-            os.link(playfile, "./{}/ansible/{}".format(
-                self.get_reponame(), self.name + ".yml"))
+        # make the necessary directory
+        ansibledir = "./{}/ansible".format(self.get_reponame())
+        if not os.path.isdir(ansibledir):
+            os.mkdir(ansibledir)
 
         _add_roles()
         playdict = dict(hosts="{}-ansible".format(self.name),
@@ -271,20 +297,55 @@ class Ansible(Repo):
         shutil.rmtree(os.path.join(self.get_reponame(), ".git"))
         self.cleanup_properties("helloworld-test")
 
-        os.remove(os.path.join(self.get_reponame(), "doc", "README.md"))
-        os.remove(os.path.join(self.get_reponame(), "data", "dev.yaml"))
-        os.remove(os.path.join(self.get_reponame(), "data", "service.yaml"))
+        self.remove(os.path.join(self.get_reponame(), "doc", "README.md"))
 
         with open(os.path.join(self.get_reponame(), "data", "dev.yaml"), "w") as devfile:
-            devfile.write("# this is generated file")
+            devfile.write("# This generated file is the local replacement of ccs-data for\n"
+                          "# local development, otherwise your playbook will error out.\n"
+                          "# If using servicelab to deploy for real site please update \n"
+                          "#  ccs-dev/environments/dev-tenant "
+                          "in ccs-data appropriately.")
 
         with open(os.path.join(self.get_reponame(),
                                "data",
                                "service.yaml"), "w") as sfile:
-            sfile.write("# this is a generated file")
+            sfile.write("# This generated file contains service specific parameters.")
 
         shutil.rmtree(os.path.join(self.get_reponame(), "ansible",
                                    "roles", "helloworld-test"))
+
+        # correcting the test.py
+        testdata = "#!/usr/bin/env python\n"\
+                   "# A syntax check for an ansible yaml file\n"\
+                   "import yaml\n"\
+                   "import sys\n"\
+                   "\n"\
+                   "try:\n"\
+                   "    playbook = yaml.load(open('ansible/{0}.yml','r'))\n"\
+                   "except:\n"\
+                   "    print 'Error loading the playbook, must be a yaml syntax problem'\n"\
+                   "    sys.exit(1)\n"\
+                   "else:\n"\
+                   "    print 'YAML syntax looks good.'".format(self.name)
+        with open("{}/test.py".format(self.get_reponame()), "w") as tfile:
+            tfile.write(testdata)\
+
+        # removing not required ansible/helloworld.yml file
+        red_file = "./{}/ansible/helloworld.yml".format(self.get_reponame())
+        if os.path.exists(red_file):
+            os.remove(red_file)
+
+        # changing contents of the Vagrant file
+        content = ""
+        with open('{}/Vagrantfile'.format(self.get_reponame()), 'r') as content_file:
+            content = ''.join(content_file.readlines())
+            content = content.replace("service_name = 'helloworld-ansible'",
+                                      "service_name = '{0}-ansible'".format(self.name))
+        content_file = open('{}/Vagrantfile'.format(self.get_reponame()), 'w')
+        content_file.write(content)
+        content_file.close()
+
+        self.releasenote("ansible")
 
     def construct(self):
         """
@@ -297,6 +358,8 @@ class Ansible(Repo):
             6. Creating the roles directory.
         """
         try:
+            if self.check():
+                return
             user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
@@ -316,16 +379,25 @@ class Puppet(Repo):
     def __init__(self, gsrvr, path, name, interactive):
         super(Puppet, self).__init__(gsrvr, path, name, interactive)
 
+    def get_reponame(self):
+        """
+        get a puppet service project name of type service-<project_name>-puppet
+        """
+        name = self.name
+        if not name.startswith("service-"):
+            name = "service-" + name
+        if not name.endswith("-puppet"):
+            name = name + "-puppet"
+        return name
+
     def create_nimbus(self):
         """
-        Create the nimbus file for the Puppet project. By default .nimbus.yaml
-        is created. For downward compatability we create .nimbus.yml as a link to
-        .nimbus.yaml.
+        Create the nimbus file .nimbus.yml for the Puppet project.
         """
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
                                            default="./check.sh", type=str)
-        nimbusdict = dict(service=self.name + "-puppet",
+        nimbusdict = dict(service=str(self.name + "-puppet"),
                           version="0.0.1",
                           deploy=dict(type="puppet", manifest="manifests/site.pp"),
                           verify=dict(type="serverspec"))
@@ -334,12 +406,9 @@ class Puppet(Repo):
         if self.chk_script is not "./check.sh":
             os.remove(os.path.join(self.get_reponame(), "check.sh"))
 
-        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
+        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yml")
         with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
-
-        os.remove(os.path.join(".", self.get_reponame(), ".nimbus.yml"))
-        os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def download_template(self, username):
         """
@@ -366,7 +435,6 @@ class Puppet(Repo):
 
         os.remove(os.path.join(self.get_reponame(), "doc", "README.md"))
 
-        os.remove(os.path.join(self.get_reponame(), "data", "dev.yaml"))
         with open(os.path.join(self.get_reponame(), "data", "dev.yaml"), "w") as devf:
             devf.write("# this is generated file\n")
             devf.write("environment_name: dev\n")
@@ -375,15 +443,14 @@ class Puppet(Repo):
             devf.write("  This is an example of data that you would expect to be\n")
             devf.write("  provided per site, for example, in\n")
             devf.write("  ccs-data/sites/<site>/environments/"
-                       "<env_name>/data.d/environment.yaml.\n")
+                       "<env_name>/data.d/environment.yml.\n")
 
-        os.remove(os.path.join(self.get_reponame(), "data", "service.yaml"))
         with open(os.path.join(self.get_reponame(),
                                "data",
                                "service.yaml"), "w") as servf:
             sdict = {}
-            banner = "service {} - service.yaml".format(self.name)
-            note = "This was populated from service.yaml"
+            banner = "service {} - service.yml".format(self.name)
+            note = "This was populated from service.yml"
             sdict["{}::banner".format(self.name)] = banner
             sdict["{}::service-note".format(self.name)] = note
             servf.write(yaml.dump(yaml.dump(sdict, default_flow_style=False)))
@@ -424,11 +491,13 @@ class Puppet(Repo):
 
         self.cleanup_properties("helloworld-puppet")
 
-        with open(os.path.join(self.get_reponame(), "Vagrantfile"), 'r+') as vagf:
-            lns = [ln.replace("helloworld", self.name) for ln in vagf.readlines()]
-            vagf.seek(0)
-            vagf.write("".join(lns))
-            vagf.truncate()
+        with open(os.path.join(self.get_reponame(), "Vagrantfile"), 'r+') as vfile:
+            lns = [ln.replace("helloworld", self.name) for ln in vfile.readlines()]
+            vfile.seek(0)
+            vfile.write("".join(lns))
+            vfile.truncate()
+
+        self.releasenote("puppet")
 
     def construct(self):
         """
@@ -440,6 +509,8 @@ class Puppet(Repo):
             5. Creating the nimbus
         """
         try:
+            if self.check():
+                return
             user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
@@ -457,6 +528,15 @@ class Project(Repo):
     def __init__(self, gsrvr, path, name, interactive):
         super(Project, self).__init__(gsrvr, path, name, interactive)
 
+    def get_reponame(self):
+        """
+        get project repo name of type project-<project name>.
+        """
+        name = self.name
+        if not name.startswith("project-"):
+            name = "project-" + name
+        return name
+
     def download_template(self, username):
         """
         Download the created project from the gerrit server
@@ -469,13 +549,14 @@ class Project(Repo):
                                           port,
                                           self.get_reponame())
         ret_code, ret_str = service_utils.run_this(cmd)
-        assert ret_code == 0, "unable to get puppet template project:" + ret_str
+        assert ret_code == 0, "unable to get project template project:" + ret_str
 
     def instantiate_template(self):
         """
         Instantiating the project involves creating the project spec file.
         """
-        with open(self.name + ".spec", "w") as specf:
+        with open(os.path.join(".", self.get_reponame(), self.name + ".spec"),
+                  "w") as specf:
             specf.write("Name:" + self.name + "\n"
                         "Version:        1.0\n"
                         "Release:        1%{?build_number}%{?branch_name}%{?dist}\n"
@@ -493,26 +574,23 @@ class Project(Repo):
 
     def create_nimbus(self):
         """
-        Create the nimbus file for the project. By default .nimbus.yaml
-        is created. For downward compatability we create .nimbus.yml as a link to
-        .nimbus.yaml.
+        Create the nimbus file .nimbus.yml for the project.
         """
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
                                            default="/bin/true",
                                            type=str)
-        nimbusdict = dict(project=self.name,
+        nimbusdict = dict(project=str(self.name),
                           version="0.0.1",
-                          package=dict(name=self.name,
-                                       specfile=os.path.join(".", self.name+".spec"),
-                                       src=os.path.join(".", "src")))
+                          package=dict(name=str(self.name),
+                                       specfile=str(os.path.join(".", self.name+".spec")),
+                                       src=str(os.path.join(".", "src"))))
         if self.chk_script:
             nimbusdict['check'] = dict(script=self.chk_script)
 
-        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yaml")
+        nimbus_name = os.path.join(".", self.get_reponame(), ".nimbus.yml")
         with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
-        os.link(nimbus_name, os.path.join(".", self.get_reponame(), ".nimbus.yml"))
 
     def construct(self):
         """
@@ -523,6 +601,8 @@ class Project(Repo):
             4. Creating the nimbus
         """
         try:
+            if self.check():
+                return
             user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)
@@ -538,6 +618,12 @@ class EmptyProject(Repo):
     """
     def __init__(self, gsrvr, path, name, interactive):
         super(EmptyProject, self).__init__(gsrvr, path, name, interactive)
+
+    def get_reponame(self):
+        """
+        get an project name of type <project name>
+        """
+        return self.name
 
     def download_template(self, username):
         """
@@ -573,6 +659,8 @@ class EmptyProject(Repo):
             4. Creating the nimbus
         """
         try:
+            if self.check():
+                return
             user = helper_utils.get_username(self.ctx_path)
             self.create_project()
             self.download_template(user)

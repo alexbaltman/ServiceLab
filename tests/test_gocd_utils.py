@@ -28,6 +28,11 @@ class TestGoCdUtils(unittest.TestCase):
     GOCD_SERVER = "localhost:8153"
     GOCD_USER = "slab"
     GOCD_PASS = "badger"
+    GOCD_ENV_GOCD = "{\"ENV_VAR_1\":\"Override_value\"}"
+    GOCD_ENV_GOCD_OVERRIDE = "Override_value"
+    GOCD_ENV_GOCD_INVALID = "{\"ENV_VAR_INVALID\":\"Value\"}"
+    GOCD_ENV_INVALID_ERROR = "Variable 'ENV_VAR_INVALID' "\
+                             "has not been configured for pipeline"
     GOCD_REMOTE_USER = "ragkatti"
     GOCD_REMOTE_PASS = "NEWjob2015"
     PIPELINE_NAME = "servicelab-test-only-pipeline"
@@ -98,6 +103,44 @@ class TestGoCdUtils(unittest.TestCase):
                                 '-ip',
                                 TestGoCdUtils.GOCD_SERVER])
         self.assertEqual(result.output.strip(), TestGoCdUtils.F_SCHED)
+        time.sleep(25)
+        result = runner.invoke(cmd_pipe.cli,
+                               ['run',
+                                TestGoCdUtils.PIPELINE_NAME,
+                                '-u',
+                                TestGoCdUtils.GOCD_USER,
+                                '-p',
+                                TestGoCdUtils.GOCD_PASS,
+                                '-ip',
+                                TestGoCdUtils.GOCD_SERVER,
+                                '-e',
+                                TestGoCdUtils.GOCD_ENV_GOCD])
+        time.sleep(45)
+        result = runner.invoke(cmd_pipe.cli,
+                               ['log',
+                                TestGoCdUtils.PIPELINE_NAME,
+                                '-u',
+                                TestGoCdUtils.GOCD_USER,
+                                '-p',
+                                TestGoCdUtils.GOCD_PASS,
+                                '-ip',
+                                TestGoCdUtils.GOCD_SERVER])
+        self.assertTrue(TestGoCdUtils.GOCD_ENV_GOCD_OVERRIDE in
+                        result.output.strip())
+        time.sleep(5)
+        result = runner.invoke(cmd_pipe.cli,
+                               ['run',
+                                TestGoCdUtils.PIPELINE_NAME,
+                                '-u',
+                                TestGoCdUtils.GOCD_USER,
+                                '-p',
+                                TestGoCdUtils.GOCD_PASS,
+                                '-ip',
+                                TestGoCdUtils.GOCD_SERVER,
+                                '-e',
+                                TestGoCdUtils.GOCD_ENV_GOCD_INVALID])
+        self.assertTrue(TestGoCdUtils.GOCD_ENV_INVALID_ERROR in
+                        result.output.strip())
 
     def test_cmd_list(self):
         """ Tests pipeline list command.

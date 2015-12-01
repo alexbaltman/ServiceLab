@@ -283,6 +283,7 @@ def build_yaml_data(source_data, vlan):
                source_data['domain'])
     yaml_data = {
         'deploy_args': {
+            'auth_url': 'http://' + source_data['auth_ip'] + ':5000/v2.0',
             'availability_zone': source_data['az'],
             'flavor': source_data['flavor'],
             'image': 'RHEL-7',
@@ -341,6 +342,8 @@ def extract_env_data(source_data):
     env_data = open_yaml(env_file)
     if env_data == 1:
         return 1
+    if 'controller_internal_vip' in env_data:
+        source_data['auth_ip'] = env_data['controller_internal_vip']
     if 'domain_name' in env_data:
         source_data['domain'] = env_data['domain_name']
     if 'region' in env_data:
@@ -350,7 +353,7 @@ def extract_env_data(source_data):
         match = re.search(regex, source_data['domain'])
         if match:
             source_data['domain'] = match.group(1)
-    if 'domain' in source_data:
+    if 'domain' in source_data and 'auth_ip' in source_data:
         pass
     else:
         return 1

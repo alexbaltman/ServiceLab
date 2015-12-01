@@ -28,7 +28,7 @@ def cli(_):
 
 
 @cli.command('repo', short_help='Show the details of a repo in Gerrit.')
-@click.argument('item')
+@click.argument('repo')
 @pass_context
 def show_repo(ctx, repo):
     """
@@ -39,17 +39,17 @@ def show_repo(ctx, repo):
     gfx.print_gerrit("summary")
 
 
-@cli.command('review', short_help='Show the details of a review in Gerrit.')
-@click.argument('review')
-@pass_context
-def show_review(ctx, review):
-    """
-    Shows the details ofa review using Gerrit's API.
-    """
-    username = ctx.get_username()
-    project = helper_utils.get_current_service(ctx.path)[1]
-    gfx = gerrit_functions.GerritFns(username, project, ctx)
-    gfx.print_gerrit("detail", review)
+# @cli.command('review', short_help='Show the details of a review in Gerrit.')
+# @click.argument('review')
+# @pass_context
+# def show_review(ctx, review):
+#     """
+#     Shows the details ofa review using Gerrit's API.
+#     """
+#     username = ctx.get_username()
+#     project = helper_utils.get_current_service(ctx.path)[1]
+#     gfx = gerrit_functions.GerritFns(username, project, ctx)
+#     gfx.print_gerrit("detail", review)
 
 
 @cli.command('build', short_help='Show the details of a build in Jenkins.')

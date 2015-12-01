@@ -732,7 +732,7 @@ def gen_mac_from_ip(ip):
 
 def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
                            env="dev-tenant", flavor='2cpu.4ram.20sas',
-                           image='slab-RHEL7.1v7'):
+                           image='slab-RHEL7.1v8'):
     """Given an ip address generate a mac address.
 
     Mac will be in form: 02:00:27:00:0x:xx where the Xs will depend
@@ -840,16 +840,21 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
         doc['hostname'] = hostname
         doc['interfaces']['eth0']['ip_address'] = ip
         doc['role'] = role
-        match = re.search('^(?:cs[lmsx]-\w\d?-)?(?:service-)?([\w-]+)-\d+$', hostname)
+        match = re.search('^(?:cs[lmsx]-\w\d?-)?(service-)?([\w-]+)-\d+$', hostname)
         if match:
-            osp_list = ('ceilometerctl', 'ceph-mon', 'ceph-osd', 'ceph-rgw', 'cinderctl',
-                        'db', 'glancectl', 'heatctl', 'horizon', 'infra', 'keystonectl',
-                        'net', 'neutronapi', 'nova', 'novactl', 'proxyexternal',
-                        'proxyinternal')
-            if match.group(1) in osp_list:
-                doc['groups'].append('redhouse-tenant')
+            # All hostnames starting with 'service-' use the remaining text for sec group
+            # Otherwise compare the hostname to the list of Openstack providers
+            if not match.group(1):
+                osp_list = ('ceilometerctl', 'ceph-mon', 'ceph-osd', 'ceph-rgw', 'cinderctl',
+                            'db', 'glancectl', 'heatctl', 'horizon', 'infra', 'keystonectl',
+                            'net', 'neutronapi', 'nova', 'novactl', 'proxyexternal',
+                            'proxyinternal')
+                if match.group(2) in osp_list:
+                    doc['groups'].append('redhouse-tenant')
+                else:
+                    doc['groups'].append(match.group(2))
             else:
-                doc['groups'].append(match.group(1))
+                doc['groups'].append(match.group(2))
 
         if os.path.exists(os.path.join(deploy_hostyaml_to, hostname + ".yaml")):
             yaml_utils_logger.error("Host yaml already exists.")
@@ -1006,6 +1011,10 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
         print('no env var base_url')
         return 1
 
+    sgrparry = []
+    for security_group in my_security_groups:
+        sgrparry.append(str(security_group['name']))
+
     a = Vagrantfile_utils.SlabVagrantfile(path)
     # Note: setup host_vars under instance of class
     a.hostname = hostname
@@ -1023,6 +1032,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
                    'floating_ip_pool':   str(float_net),
                    'os_network_url':     'https://' + base_url + '.cisco.com:9696/v2.0',
                    'os_image_url':       'https://' + base_url + '.cisco.com:9292/v2',
+                   'security_groups':    sgrparry,
                    }
             for k, v in settingsyaml.iteritems():
                 doc[k] = v

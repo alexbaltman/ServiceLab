@@ -35,7 +35,7 @@ class SlabVagrantfile(object):
         # ccs-data flavor image settings
         self.host_vars = {}
         self.default_flavor = '2cpu.4ram.20sas'
-        self.default_image = 'slab-RHEL7.1v7'
+        self.default_image = 'slab-RHEL7.1v8'
 
     def init_vagrantfile(self):
         """
@@ -289,8 +289,8 @@ class SlabVagrantfile(object):
                     "\"\n"
                     "    os.openstack_image_url  = \"" + env_vars['openstack_image_url'] +
                     "\"\n"
-                    "    os.networks             = " + env_vars['networks'] + '\'' +
-                    ip + '\'}]\n'
+                    "    os.networks             = " + env_vars['networks'] + '\'' + ip +
+                    '\'}]\n'
                     "    os.security_groups      = " + sec_groups + "\n"
                     "    override.vm.box = \"openstack\"\n"
                     "  end\n")
@@ -423,7 +423,7 @@ class SlabVagrantfile(object):
         Returns:
             Nothing, instead sets the self.host_vars 'image' and 'flavor' key values
             self.host_vars['flavor'] = '2cpu.4ram.20sas'
-            self.host_vars['image']  = 'slab-RHEL7.1v7'
+            self.host_vars['image']  = 'slab-RHEL7.1v8'
 
         Example Usage:
             my_class_var._vbox_os_provider_host_vars(self.ctx.path)

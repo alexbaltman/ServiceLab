@@ -280,4 +280,5 @@ class Gitcheckutils(object):
         repos = Gitcheckutils.search_repositories(srch_dir)
 
         for repo in repos:
-            self.check_repository(repo)
+            if "ccs-data" not in repo:
+                self.check_repository(repo)
