@@ -376,7 +376,7 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
         return 1, hostname
 
     if remote:
-        thisvfile._vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
+        thisvfile.vbox_os_provider_env_vars(float_net, mynets, my_security_groups)
         thisvfile.add_openstack_vm(host_dict)
         try:
             infra_connection.v.up(vm_name=hostname)
