@@ -4,6 +4,7 @@ Test Functions for openstack_utils api set.
 import os
 import unittest
 
+from click.testing import CliRunner
 from keystoneclient.v2_0 import client as keystone_client
 from keystoneclient.exceptions import AuthorizationFailure
 from keystoneclient.exceptions import Unauthorized
@@ -11,8 +12,14 @@ from keystoneclient.exceptions import Unauthorized
 from neutronclient.v2_0 import client as neutron_client
 
 from servicelab.stack import Context
+from servicelab.commands import cmd_workon
 from servicelab.utils import openstack_utils
 from servicelab.utils.openstack_utils import SLab_OS
+from servicelab.utils import helper_utils
+from servicelab.utils import yaml_utils
+from servicelab.utils import service_utils
+from servicelab.utils import Vagrantfile_utils
+from servicelab.utils import vagrant_utils
 
 
 class TestSLABNetworking(unittest.TestCase):
@@ -360,6 +367,71 @@ class TestNetworkSetup(TestSLABNetworking):
                                                     os.getenv("OS_TENANT_NAME"),
                                                     os.getenv("OS_AUTH_URL")))
             self.ctx.logger.info(unauthorized)
+
+
+class TestInfraNode(TestSLABNetworking):
+    """
+    Test infra node setup for a service first does setup of the environment by
+    installing
+        1. ccs-data
+        2. service-horizon
+    It will install the infra-node for the service-horizon.
+    If unable to install the test fails.
+    """
+    def __init__(self, *args, **kwargs):
+        super(TestInfraNode, self).__init__(*args, **kwargs)
+
+    def setUp(self):
+        runner = CliRunner()
+        result = runner.invoke(cmd_workon.cli,
+                               ["ccs-data"])
+        self.assertNotEqual(result,
+                            1,
+                            "unable to get service-horizon")
+        result = runner.invoke(cmd_workon.cli,
+                               ["service-horizon"])
+        self.assertNotEqual(result,
+                            1,
+                            "unable to get service-horizon")
+
+        # get the hostname
+        self.hostname = str(helper_utils.name_vm("service-horizon", self.ctx.path))
+
+    def tearDown(self):
+        my_vm_connection = vagrant_utils.Connect_to_vagrant(vm_name=self.hostname,
+                                                            path=self.ctx.path)
+        my_vm_connection.v.destroy(vm_name=self.hostname)
+        my_vm_connection.v.destroy(vm_name=self.infra_name)
+        openstack_utils.os_delete_networks(self.ctx.path, True)
+
+    @unittest.skip("skipping as jenkins unable to run on us-rdu-3.cisco.com")
+    def test_ensure_network(self):
+        yaml_utils.host_add_vagrantyaml(self.ctx.path, "vagrant.yaml",
+                                        self.hostname, "ccs-dev-1")
+        yaml_utils.write_dev_hostyaml_out(self.ctx.path, self.hostname)
+        result, info = service_utils.build_data(self.ctx.path)
+
+        slab_vagrant_file = Vagrantfile_utils.SlabVagrantfile(path=self.ctx.path)
+        slab_vagrant_file.init_vagrantfile()
+        vagrant_env = vagrant_utils.Connect_to_vagrant(vm_name=self.hostname,
+                                                       path=self.ctx.path)
+
+        ret_val, float_net, mynets, sgrp = openstack_utils.os_ensure_network(self.ctx.path)
+        self.assertEquals(ret_val,
+                          0,
+                          "All networking test failed as test is "
+                          "unable to setup network for tenant "
+                          "{} on {}".format(os.getenv("OS_TENANT_NAME"),
+                                            os.getenv("OS_AUTH_URL")))
+        slab_vagrant_file.set_env_vars(float_net, mynets, sgrp)
+        returncode, host_dict = yaml_utils.gethost_byname(self.hostname, self.ctx.path)
+        slab_vagrant_file.add_openstack_vm(host_dict)
+
+        vagrant_env.v.up(self.hostname)
+        result, self.infra_name = vagrant_utils.infra_ensure_up(mynets, float_net,
+                                                                sgrp, path=self.ctx.path)
+        self.assertNotEqual(result, 1, "unable to install and start an infrastructure node")
+
 
 if __name__ == '__main__':
     unittest.main()
