@@ -95,8 +95,9 @@ def download_artifact(ctx,
     download_uri = json.loads(res.content)["downloadUri"]
 
     file_name = download_uri.split('/')[-1]
-    click.echo("Starting download of {0} to {1}".format(download_uri,
-                                                        destination))
+    click.echo("Starting download of {0} to {1}. It might "
+               "take a few minutes.".format(download_uri,
+                                            destination))
     with open(os.path.join(destination, file_name), 'wb') as handle:
         response = requests.get(download_uri,
                                 stream=True,
@@ -106,9 +107,9 @@ def download_artifact(ctx,
             click.echo("Error occured during downloading")
             return
 
-        handle.write(response.text)
+        handle.write(response.content)
 
-    click.echo("Download Complete" % response.text)
+    click.echo("Download Complete")
 
 
 @cli.command('upload', short_help='Upload the artifact')
