@@ -234,7 +234,6 @@ def review_minusone(ctx, review, project, username, message, interactive):
 @click.argument('review')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
->>>>>>> develop
 @click.option('-u', '--username', help='Enter the desired username')
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @click.option('-i', '--interactive', help='interactive editor')
