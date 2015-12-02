@@ -123,7 +123,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             if returncode > 0:
                 ctx.logger.debug("No OS_ environment variables found")
                 sys.exit(1)
-            myvfile.vbox_os_provider_env_vars(float_net, mynets, my_sec_grps)
+            myvfile.set_env_vars(float_net, mynets, my_sec_grps)
             returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
             if returncode > 0:
                 ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
@@ -305,7 +305,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         if returncode > 0:
             ctx.logger.error('Failed to get float net and mynets')
             sys.exit(1)
-        myvfile.vbox_os_provider_env_vars(float_net, mynets, my_sec_grps)
+        myvfile.set_env_vars(float_net, mynets, my_sec_grps)
         if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
         puppet_path = os.path.join(redhouse_ten_path, "puppet")

@@ -423,7 +423,7 @@ class TestInfraNode(TestSLABNetworking):
                           "unable to setup network for tenant "
                           "{} on {}".format(os.getenv("OS_TENANT_NAME"),
                                             os.getenv("OS_AUTH_URL")))
-        slab_vagrant_file.vbox_os_provider_env_vars(float_net, mynets, sgrp)
+        slab_vagrant_file.set_env_vars(float_net, mynets, sgrp)
         returncode, host_dict = yaml_utils.gethost_byname(self.hostname, self.ctx.path)
         slab_vagrant_file.add_openstack_vm(host_dict)
 
