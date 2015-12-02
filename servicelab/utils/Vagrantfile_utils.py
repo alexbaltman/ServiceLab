@@ -227,7 +227,7 @@ class SlabVagrantfile(object):
         Adds an Openstack VM to the Vagrantfile
 
         Args:
-            self.env_vars {dict}: Built by vbox_os_provider_env_vars
+            self.env_vars {dict}: Built by set_env_vars
                 {'username': 'test_user',
                  'openstack_auth_url': 'http://slab.cisco.com:5000/v2.0/',
                  'tenant_name': 'dev-tenant',
@@ -260,7 +260,7 @@ class SlabVagrantfile(object):
         self.hostname = self.host_dict.keys()[0]
         ip = self.host_dict[self.hostname]['ip']
         env_vars = self.env_vars
-        self.vbox_os_provider_host_vars(self.path)
+        self.set_host_image_flavors(self.path)
         setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n"
                    "  cluster.ssh.username = 'cloud-user' \n"
                    "  config.hostmanager.enabled = true\n"
@@ -304,9 +304,11 @@ class SlabVagrantfile(object):
 
         self.append_it(setitup)
 
-    def vbox_os_provider_env_vars(self, float_net, tenant_nets, tenant_security_groups):
+    def set_env_vars(self, float_net, tenant_nets, tenant_security_groups):
         """
-        Creates self.env_vars from shell variables and called methods
+        create a list of all the necessary variable in instance attribute env_vars
+        dictionary collecting this information from the OS environment settings
+        and passed tenant_nets, tenant_security_group, float_nets.
 
         Args:
             # All three imputs are built from cmd_up.os_ensure_network
@@ -330,16 +332,15 @@ class SlabVagrantfile(object):
                 'security_groups': "[{name: 'default'}]"
 
         Example Usage:
-            my_class_var.vbox_os_provider_env_vars(float_net, tenant_nets, sec_groups)
+            my_class_var.set_env_vars(float_net, tenant_nets, sec_groups)
         """
         self.env_vars['username'] = os.environ.get('OS_USERNAME')
         self.env_vars['password'] = os.environ.get('OS_PASSWORD')
         self.env_vars['openstack_auth_url'] = os.environ.get('OS_AUTH_URL')
         self.env_vars['tenant_name'] = os.environ.get('OS_TENANT_NAME')
         self.env_vars['floating_ip_pool'] = str(float_net)
-        networks = self.vbox_os_provider_parse_multiple_networks(tenant_nets)
-        security_groups = self.vbox_os_provider_parse_security_groups(
-                          tenant_security_groups)
+        networks = self.get_multiple_networks(tenant_nets)
+        security_groups = self.get_securitygroups_namelst(tenant_security_groups)
         self.env_vars['networks'] = networks
         self.env_vars['security_groups'] = security_groups
         openstack_network_url = None
@@ -351,9 +352,9 @@ class SlabVagrantfile(object):
             self.env_vars['openstack_network_url'] = openstack_network_url
             self.env_vars['openstack_image_url'] = openstack_image_url
 
-    def vbox_os_provider_parse_multiple_networks(self, tenant_nets):
+    def get_multiple_networks(self, tenant_nets):
         """
-        Parses tenant networks data
+        get the list of tenant networks name dictionary  from the tenant_nets
 
         Args:
             tenant_nets {list of dicts}:
@@ -366,7 +367,7 @@ class SlabVagrantfile(object):
                 {name: 'test_dual_home', address: ho['ip']}]
 
         Example Usage:
-            vagrant_net = my_class_var.vbox_os_provider_parse_multiple_networks(networks)
+            vagrant_net = my_class_var.get_multiple_networks(networks)
         """
         lab_net = "{name: '%s', address: "
         mgmt_net = "{name: '%s'},"
@@ -386,9 +387,10 @@ class SlabVagrantfile(object):
         vagrant_network = '[' + mgmt_network + lab_networks
         return vagrant_network
 
-    def vbox_os_provider_parse_security_groups(self, security_groups):
+    def get_securitygroups_namelst(self, security_groups):
         """
-        Parses security groups data, removing any keys other than 'name'
+        get a security groups subset dictionary of security names from security_groups data,
+        removing any keys other than 'name'
 
         Args:
             security_groups {list of dicts}:
@@ -401,7 +403,7 @@ class SlabVagrantfile(object):
                  {'name': 'my_sec_group'}]
 
         Example Usage:
-            sec_group_names = my_class_var.vbox_os_provider_parse_security_groups(sec_grps)
+            sec_group_names = my_class_var.get_securitygroups_namelst(sec_grps)
         """
         stl_security_group = "{name: '%s'},"
         vagrant_security_group = ''
@@ -412,7 +414,7 @@ class SlabVagrantfile(object):
         vagrant_security_group = '[' + vagrant_security_group.strip(",") + ']'
         return vagrant_security_group
 
-    def vbox_os_provider_host_vars(self, path):
+    def set_host_image_flavors(self, path):
         """
         Sets the host_vars image and flavor keys from VM host.yamls, or the defaults
 
@@ -426,7 +428,7 @@ class SlabVagrantfile(object):
             self.host_vars['image']  = 'slab-RHEL7.1v8'
 
         Example Usage:
-            my_class_var.vbox_os_provider_host_vars(self.ctx.path)
+            my_class_var.set_host_image_flavors(self.ctx.path)
         """
         relpath_toyaml = 'services/ccs-data/sites/ccs-dev-1/environments/dev-tenant/hosts.d/'
         if (os.path.exists(path)):

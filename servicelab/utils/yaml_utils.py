@@ -1018,7 +1018,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
     a = Vagrantfile_utils.SlabVagrantfile(path)
     # Note: setup host_vars under instance of class
     a.hostname = hostname
-    a.vbox_os_provider_host_vars(path)
+    a.set_host_image_flavors(path)
 
     try:
         with open(settings, 'w') as f:
