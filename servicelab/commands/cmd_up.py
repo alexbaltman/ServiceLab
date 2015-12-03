@@ -185,7 +185,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         command = ('vagrant ssh {0} -c \"cd /opt/ccs/services/{1}/ && sudo heighliner '
                    '--dev --debug deploy\"')
 
-        returncode, myinfo = service_utils.run_this(command.format(infra_name, service))
+        returncode, myinfo = service_utils.run_this(command.format(infra_name, service),
+                                                    path=ctx.path)
         if returncode > 0:
             ctx.logger.error("There was a failure during the heighliner deploy phase of "
                              "your service. Please see the following information"
