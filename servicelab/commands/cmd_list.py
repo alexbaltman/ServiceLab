@@ -279,27 +279,44 @@ def ospvms_list(ctx):
     """
     provision_path = os.path.join(ctx.path, 'provision')
     osp_vms = yaml_utils.getfull_OS_vms(provision_path, '001')
+    osp_vms.sort()
     for host_data in osp_vms[1]:
         for host in host_data:
             click.echo(host)
 
 
-@click.argument('site')
+@click.option('--site', '-s', default=None,
+              help='Name of a ccs-data site to search for flavors')
 @cli.command('flavors', short_help='List all of the flavors within a specified site')
 @pass_context
 def flavors_list(ctx, site):
     """
-    Lists all of the flavors within a site
+    Lists all of the flavors within all sites or a specified site
     """
     if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
         ctx.logger.error('ccs-data repo does not appear to be installed.  ' +
                          'Try "stack workon ccs-data"')
         return 1
-    site_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site)
-    if not os.path.exists(site_path):
-        ctx.logger.error('Site %s does not exist' % site)
-        return 1
-    site_env_path = os.path.join(site_path, 'environments')
-    flavor_list = ccsdata_utils.get_flavors_from_site(site_env_path)
+    if site:
+        site_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site)
+        if not os.path.exists(site_path):
+            ctx.logger.error('Site %s does not exist' % site)
+            return 1
+        site_env_path = os.path.join(site_path, 'environments')
+        flavor_list = ccsdata_utils.get_flavors_from_site(site_env_path)
+    else:
+        sites_flavor_list = []
+        sites_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites')
+        for site in os.listdir(sites_path):
+            site_env_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site,
+                                         'environments')
+            if os.path.exists(site_env_path):
+                sites_flavor_list += ccsdata_utils.get_flavors_from_site(site_env_path)
+        flavor_list = []
+        for flavor in sites_flavor_list:
+            if flavor not in flavor_list:
+                flavor_list.append(flavor)
+        flavor_list.sort()
+
     for flavor in flavor_list:
         click.echo(flavor)

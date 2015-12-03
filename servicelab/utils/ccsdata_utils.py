@@ -231,8 +231,9 @@ def get_host_data_from_site(site_env_path):
     for env in os.listdir(site_env_path):
         site_data[env] = {}
         hosts_path = os.path.join(site_env_path, env, 'hosts.d')
-        hosts = os.listdir(hosts_path)
-        for host in hosts:
-            host_file = os.path.join(hosts_path, host)
-            site_data[env][host] = tc_vm_yaml_create.open_yaml(host_file)
+        if os.path.exists(hosts_path):
+            hosts = os.listdir(hosts_path)
+            for host in hosts:
+                host_file = os.path.join(hosts_path, host)
+                site_data[env][host] = tc_vm_yaml_create.open_yaml(host_file)
     return(site_data)
