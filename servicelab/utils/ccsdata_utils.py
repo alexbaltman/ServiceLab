@@ -2,6 +2,9 @@ import logging
 import sys
 import os
 import ordered_yaml
+import yaml
+
+from servicelab.utils import tc_vm_yaml_create
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -157,3 +160,79 @@ def get_site_from_env(our_sites, env):
         for x in our_sites[k]:
             if x == env:
                 return k
+
+
+def get_flavors_from_site(site_env_path):
+    """Extract all flavors from the specified site.
+
+    Args:
+        site_env_path {str}: Path to the ccs-data site environment
+            services/ccs-data/sites/service/environments
+
+    Returns:
+        flavors {list}: Sorted list of flavors found within the site
+
+    Example Usage:
+    >>> pprint.pprint(ccsdata_utils.get_flavors_from_site(
+        '/home/paketner/repo/servicelab/servicelab/.stack/services/ccs-data' +
+        '/sites/rtp10-svc-1/environments'))
+    ['2cpu.4ram.20-96sas',
+     '2cpu.4ram.50-96sas',
+     '4cpu.16ram.50-0sas',
+     '4cpu.8ram.20-512sas',
+     etc....]
+    """
+    flavors = []
+    site_data = get_host_data_from_site(site_env_path)
+    for env in site_data:
+        for host in site_data[env]:
+            if 'deploy_args' in site_data[env][host]:
+                if 'flavor' in site_data[env][host]['deploy_args']:
+                    flavor = site_data[env][host]['deploy_args']['flavor']
+                    if flavor not in flavors:
+                        flavors.append(flavor)
+    flavors.sort()
+    return(flavors)
+
+
+def get_host_data_from_site(site_env_path):
+    """Extract all host.yaml data from all environments within the supplied site
+
+    Args:
+        site_env_path {str}: Path to the ccs-data site environment
+            services/ccs-data/sites/service/environments
+
+    Returns:
+        site_data {dict of dicts (4-5 layers)}: Extracted data from all of the host.yaml
+            files within the environments.  See example below.
+
+    Example Usage:
+        >>> pprint.pprint(ccsdata_utils.get_host_data_from_site(
+            '/home/paketner/repo/servicelab/servicelab/.stack/services/ccs-data' +
+            '/sites/ccs-dev-1/environments'))
+        {'dev': {'aio-001.yaml': {'deploy_args': {'availability_zone': 'csm-a',
+                                                  'flavor': '2cpu.4ram.20sas',
+                                                  'image': 'slab-RHEL7.1v7',
+                                                  'network_name': 'SLAB_aaltman_network',
+                                                  'security_groups': 'default',
+                                                  'subnet_name': 'SLAB_aaltman_network_subn',
+                                                  'tenant': 'dev'},
+                                  'groups': ['redhouse-svc', 'virtual'],
+                                  'hostname': 'aio-001',
+                                  'interfaces': {'eth0': {'gateway': '192.168.100.2',
+                                                          'ip_address': '192.168.100.21',
+                                                          'netmask': '255.255.255.0'}},
+                                  'nameservers': '192.168.100.2',
+                                  'role': 'aio',
+                                  'server': 'sdlc-mirror.cisco.com',
+                                  'type': 'virtual'},
+    """
+    site_data = {}
+    for env in os.listdir(site_env_path):
+        site_data[env] = {}
+        hosts_path = os.path.join(site_env_path, env, 'hosts.d')
+        hosts = os.listdir(hosts_path)
+        for host in hosts:
+            host_file = os.path.join(hosts_path, host)
+            site_data[env][host] = tc_vm_yaml_create.open_yaml(host_file)
+    return(site_data)
