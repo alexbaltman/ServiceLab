@@ -50,7 +50,8 @@ def list_sites(ctx):
         for keys in ccsdata_utils.list_envs_or_sites(ctx.path):
             val_lst.append(keys)
         val_lst.sort()
-        click.echo(val_lst)
+        for site in val_lst:
+            click.echo(site)
     except Exception as ex:
         ctx.logger.info("unable to get site list. unable to read ccs-data")
         ctx.logger.info(ex)
@@ -69,7 +70,8 @@ def list_envs(ctx):
             for val in values:
                 val_lst.append(val)
         val_lst.sort()
-        click.echo(val_lst)
+        for env in val_lst:
+            click.echo(env)
     except Exception as ex:
         ctx.logger.info("unable to get environment list. unable to read ccs-data")
         ctx.logger.info(ex)
@@ -280,3 +282,24 @@ def ospvms_list(ctx):
     for host_data in osp_vms[1]:
         for host in host_data:
             click.echo(host)
+
+
+@click.argument('site')
+@cli.command('flavors', short_help='List all of the flavors within a specified site')
+@pass_context
+def flavors_list(ctx, site):
+    """
+    Lists all of the flavors within a site
+    """
+    if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
+        ctx.logger.error('ccs-data repo does not appear to be installed.  ' +
+                         'Try "stack workon ccs-data"')
+        return 1
+    site_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site)
+    if not os.path.exists(site_path):
+        ctx.logger.error('Site %s does not exist' % site)
+        return 1
+    site_env_path = os.path.join(site_path, 'environments')
+    flavor_list = ccsdata_utils.get_flavors_from_site(site_env_path)
+    for flavor in flavor_list:
+        click.echo(flavor)
