@@ -21,7 +21,7 @@ def cli(_):
     pass
 
 
-@cli.command('status', short_help='Display build status')
+@cli.command('status', short_help='Display the status of a build in Jenkins.')
 @click.argument('job_name', required=True)
 @click.option('-u',
               '--username',
@@ -59,7 +59,7 @@ def display_build_status(ctx,
     click.echo(status)
 
 
-@cli.command('log', short_help='Display build status log')
+@cli.command('log', short_help='Display the status log of a build in Jenkins.')
 @click.argument('job_name', required=True)
 @click.option('-u',
               '--username',

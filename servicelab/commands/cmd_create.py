@@ -31,7 +31,7 @@ def cli(_):
 
 
 @cli.command('repo',
-             short_help='Create repo')
+             short_help='Create a git repository in Gerrit.')
 @click.argument('repo_name',
                 required=True)
 @click.option('--repo-type',
@@ -66,7 +66,7 @@ def repo_new(ctx, repo_name, repo_type, interactive):
     return
 
 
-@cli.command('host')
+@cli.command('host', short_help='Create a host in the local ccs-data repository.')
 @click.argument('host_name')
 @click.argument('env_name')
 @click.option('--ip_address', '-ip', default=None, help='Specify the IP address to use.  --vlan \
@@ -114,7 +114,7 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
         click.echo("File for %s was not created.  Exiting." % host_name)
 
 
-@cli.command('site')
+@cli.command('site', short_help='Create a new site in the local ccs-data repository.')
 @click.option('--continue', 'cont', flag_value='continue',
               help="If you did not finish creating your site and paused midway;"
                    " you can continue or abort it.")
@@ -194,7 +194,7 @@ def site_new(ctx, username, cont):
                "for its contents---" % (svc_site_name))
 
 
-@cli.command('env')
+@cli.command('env', short_help='Create a new environment in the local ccs-data repository.')
 @click.option('-u', '--username', help='Enter the username')
 @pass_context
 def env_new(ctx, username):
@@ -308,7 +308,8 @@ def cb_validate_ip(ctx, param, value):
     return value
 
 
-@cli.command('vip')
+@cli.command('vip', short_help='Add a vip for your service to a site in the local'
+             ' ccs-data repository.')
 @click.argument('vip_name')
 @click.argument('env_name')
 @click.argument('service_entry')

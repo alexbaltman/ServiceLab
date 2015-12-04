@@ -27,8 +27,8 @@ def cli(_):
 
 
 @cli.command('init',
-             short_help='Compiles all data specified in slab_man_data.yaml'
-                        ' into man page')
+             short_help='Compiles all wiki documentation in slab_man_data.yaml'
+                        ' into a man page.')
 @click.option('-u',
               '--username',
               help='Provide artifactory server username',
@@ -61,7 +61,7 @@ def explain_init(ctx, username, password, interactive):
 
 
 @cli.command('all', short_help='Navigate all high level topics '
-                               'specified in the slab man page')
+                               'specified in the slab man page.')
 @pass_context
 def explain_all(ctx):
     """
@@ -88,8 +88,8 @@ def explain_list(ctx):
         click.echo("please do stack explain init to run all explain subcommands")
 
 
-@cli.command('whatis', short_help='Accept a string to query all content, and let user'
-                                  'navigate to the appropriate sections that matched')
+@cli.command('whatis', short_help='Accept a string to query all documents and create'
+                                  ' a navigation menu by expected relevancy.')
 @click.argument('query')
 @pass_context
 def explain_whatis(ctx, query):

@@ -32,7 +32,7 @@ def cli(_):
     pass
 
 
-@cli.command('repo', short_help='Find a repo in Gerrit.')
+@cli.command('repo', short_help='Find a repository in Gerrit by regex.')
 @click.argument('search_term')
 @pass_context
 def find_repo(ctx, search_term):
@@ -57,7 +57,7 @@ def validate_artifact_ip_cb(ctx, param, value):
     return value
 
 
-@cli.command('artifact', short_help='Find an artifact in artifactory')
+@cli.command('artifact', short_help='Find an artifact in Artifactory by regex.')
 @click.argument('search_term')
 @click.option('-u',
               '--username',
@@ -113,7 +113,7 @@ def validate_pipe_ip_cb(ctx, param, value):
     return value
 
 
-@cli.command('pipe', short_help='Find a Go deploy pipeline')
+@cli.command('pipe', short_help='Find a specific Go pipeline by regex.')
 @click.argument('search_term')
 @click.option('-l',
               '--localrepo',
@@ -214,7 +214,7 @@ def validate_build_ip_cb(ctx, param, value):
     return value
 
 
-@cli.command('build', short_help='Find a build')
+@cli.command('build', short_help='Find a build in Jenkins by regex.')
 @click.argument('search_term')
 @click.option('-u',
               '--username',

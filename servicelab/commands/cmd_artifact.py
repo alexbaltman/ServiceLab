@@ -1,8 +1,8 @@
 """
 Stack artifact commands to
-1.  Download the artifact.
-2.  Displays a artifact stats.
-3.  Upload the artifact.
+1.  Download an artifact.
+2.  Display artifact statistics.
+3.  Upload an artifact.
 """
 import os
 import json
@@ -25,7 +25,7 @@ def cli(_):
     pass
 
 
-@cli.command('stats', short_help='Display artifact stats')
+@cli.command('stats', short_help='Display individual artifact statistics in Artifactory.')
 @click.argument('url', required=True)
 @click.option('-u',
               '--username',
@@ -60,7 +60,7 @@ def display_artifact_status(ctx,
     click.echo(res.content)
 
 
-@cli.command('download', short_help='Download the artifact')
+@cli.command('download', short_help='Download an artifact from Artifactory.')
 @click.argument('url', required=True)
 @click.option('-u',
               '--username',
@@ -112,7 +112,7 @@ def download_artifact(ctx,
     click.echo("Download Complete")
 
 
-@cli.command('upload', short_help='Upload the artifact')
+@cli.command('upload', short_help='Upload an artifact to Artifactory.')
 @click.argument('url', required=True)
 @click.option('-u',
               '--username',

@@ -13,7 +13,7 @@ from servicelab.utils import service_utils
 
 @click.group('workon',
              invoke_without_command=True,
-             short_help="Call a service that you would like to work on.")
+             short_help="Clone a service locally that you would like to work on.")
 @click.argument('service_name', default="current")
 @click.option('-b', '--branch', default="master",
               help='Choose a branch to run against for your service.')

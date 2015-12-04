@@ -9,8 +9,8 @@ from servicelab.stack import pass_context
 from servicelab.utils import status_utils
 
 
-@click.group('status', short_help='Helps you show the status of '
-             'the servicelab environment.')
+@click.group('status', short_help='Shows the status of '
+             'your servicelab environment.')
 def cli():
     """
     Helps you show the details of resources in the SDLC pipeline.
@@ -18,7 +18,8 @@ def cli():
     pass
 
 
-@cli.command('repo', short_help='Show the status of servicelab project repos.')
+@cli.command('repo', short_help='Show the status of local service repositories in '
+             'your Servicelab environment.')
 @pass_context
 def cmd_repo_status(ctx):
     """
@@ -27,7 +28,7 @@ def cmd_repo_status(ctx):
     status_utils.show_repo_status(ctx.path)
 
 
-@cli.command('vm', short_help='Show the status of servicelab project VMs.')
+@cli.command('vm', short_help='Show the status of VMs in your Servicelab environment.')
 @pass_context
 def cmd_vm_status(ctx):
     """
@@ -55,7 +56,7 @@ def display_vm_status(ctx):
             sys.exit(1)
 
 
-@cli.command('all', short_help='Shows all status of servicelab project repos.')
+@cli.command('all', short_help='Shows the complete status of your Servicelab environment.')
 @pass_context
 def show_all_status(ctx):
     """

@@ -18,7 +18,7 @@ from servicelab.utils import gocd_utils
 
 
 @click.group('show', short_help='Helps you show the details of a'
-             'pipeline resource.')
+             ' pipeline resource.')
 @pass_context
 def cli(_):
     """
@@ -27,7 +27,7 @@ def cli(_):
     pass
 
 
-@cli.command('repo', short_help='Show the details of a repo in Gerrit.')
+@cli.command('repo', short_help='Show the details of a repository in Gerrit.')
 @click.argument('repo')
 @pass_context
 def show_repo(ctx, repo):
@@ -68,8 +68,8 @@ def show_build(ctx, build_number):
                                            password, servername))
 
 
-@cli.command('artifact', short_help='Show the details of an artifact \
-              in artifactory.')
+@cli.command('artifact', short_help='Show the details of an artifact'
+             ' in Artifactory.')
 @click.argument('url')
 @click.option('-u',
               '--username',
@@ -98,7 +98,7 @@ def show_artifact(ctx, username, password, url, interactive):
     click.echo(artifact_utils.get_artifact_info(url, username, password))
 
 
-@cli.command('pipe', short_help='Show the details of a GO deploy pipeline')
+@cli.command('pipe', short_help='Show the details of a pipeline in GO.')
 @click.argument('pipeline_name', required=True)
 @click.option('-u',
               '--username',

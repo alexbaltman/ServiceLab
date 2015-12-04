@@ -18,7 +18,7 @@ from servicelab.utils import gocd_utils
 from servicelab.stack import pass_context
 
 
-@click.group('pipe', short_help='Pipeline to work with.',
+@click.group('pipe', short_help='Command subset to help you work with Go pipelines.',
              add_help_option=True)
 @click.pass_context
 def cli(_):
@@ -28,7 +28,7 @@ def cli(_):
     pass
 
 
-@cli.command('log', short_help='Display pipeline log')
+@cli.command('log', short_help='Display the log output from a specific pipeline.')
 @click.argument('pipeline_name', required=True)
 @click.option('-u',
               '--username',
@@ -103,7 +103,7 @@ def display_pipeline_log(ctx,
               log_url, "-------------------------"
 
 
-@cli.command('status', short_help='Display pipeline status')
+@cli.command('status', short_help='Display the status of a Go pipeline.')
 @click.argument('pipeline_name', required=True)
 @click.option('-u',
               '--username',
@@ -147,7 +147,7 @@ def display_pipeline_status(ctx,
     print str(soup)
 
 
-@cli.command('run', short_help='Trigger a pipeline')
+@cli.command('run', short_help='Trigger a Go pipeline.')
 @click.argument('pipeline_name', required=True)
 @click.option('-u',
               '--username',
@@ -206,7 +206,7 @@ def trigger_pipeline(ctx,
     print soup
 
 
-@cli.command('clone', short_help='Clone a pipeline')
+@cli.command('clone', short_help='Clone a Go pipeline - Go admins only.')
 @click.argument('pipeline_name', required=True)
 @click.argument('new_pipeline_name', required=True)
 @click.option('-u',

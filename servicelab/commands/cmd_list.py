@@ -39,7 +39,7 @@ def cli(_):
     pass
 
 
-@cli.command('sites', short_help="List sites")
+@cli.command('sites', short_help="List all sites in ccs-data.")
 @pass_context
 def list_sites(ctx):
     '''
@@ -57,7 +57,7 @@ def list_sites(ctx):
         ctx.logger.info(ex)
 
 
-@cli.command('envs', short_help="List environments")
+@cli.command('envs', short_help="List all environments in ccs-data.")
 @pass_context
 def list_envs(ctx):
     '''
@@ -77,7 +77,7 @@ def list_envs(ctx):
         ctx.logger.info(ex)
 
 
-@cli.command('hosts', short_help="List hosts")
+@cli.command('hosts', short_help="List all hosts in ccs-data.")
 @pass_context
 def list_hosts(ctx):
     '''
@@ -93,7 +93,7 @@ def list_hosts(ctx):
         ctx.logger.info(ex)
 
 
-@cli.command('reviews', short_help='List reviews in Gerrit.')
+@cli.command('reviews', short_help='List your outstanding reviews in Gerrit.')
 @click.option('inout',
               '--inc/--out',
               help='List the incoming or outgoing reviews.',
@@ -113,7 +113,7 @@ def list_reviews(ctx, inout):
                          reviewer=username, status="open")
 
 
-@cli.command('repos', short_help='List repos in Gerrit.')
+@cli.command('repos', short_help='List all repositories in Gerrit.')
 @pass_context
 def list_repos(ctx):
     """
@@ -124,7 +124,7 @@ def list_repos(ctx):
     gfn.print_list()
 
 
-@cli.command('builds', short_help='List a Jenkins\' builds.')
+@cli.command('builds', short_help='List all build jobs in Jenkins.')
 @click.option(
     '-u',
     '--username',
@@ -161,7 +161,7 @@ def list_build(ctx, ip_address, username, password, interactive):
         click.echo(key)
 
 
-@cli.command('artifacts', short_help='List artifacts in artifactory')
+@cli.command('artifacts', short_help='List all artifacts in Artifactory.')
 @click.option(
     '-u',
     '--username',
@@ -199,7 +199,7 @@ def list_artifact(ctx, ip_address, username, password, interactive):
         click.echo(val["uri"])
 
 
-@cli.command('pipes', short_help='List Go deployment pipelines')
+@cli.command('pipes', short_help='List all pipelines in GO.')
 @click.option('-l',
               '--localrepo',
               help='If provided stack will filter pipelines by services '

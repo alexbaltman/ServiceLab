@@ -15,7 +15,7 @@ from servicelab.utils import helper_utils
 from servicelab.utils import openstack_utils
 
 
-@click.group('destroy', short_help='Remove various local and remote pipeline resources.')
+@click.group('destroy', short_help='Remove local and remote pipeline resources.')
 @pass_context
 def cli(ctx):
     """
@@ -28,8 +28,8 @@ def cli(ctx):
               'my vm')
 @cli.command(
     'vm',
-    short_help='Destroy a vm that your servicelab vagrant environment'
-    'knows about')
+    short_help='Destroy a servicelab vm.'
+    ' knows about.')
 @click.argument('vm_name')
 @pass_context
 def destroy_vm(ctx, force, vm_name):
@@ -52,7 +52,8 @@ def destroy_vm(ctx, force, vm_name):
               'local environment')
 @cli.command(
     'min',
-    short_help='Destroy the minimum required in the local environment.')
+    short_help='Destroy the least required to put the local environment'
+               ' back into a usable state.')
 @pass_context
 def destroy_min(ctx, force):
     """ Destroy the minimum required to put us into a usable, but still mostly
@@ -97,7 +98,7 @@ def destroy_min(ctx, force):
 @cli.command(
     'more',
     short_help='Destroy my ccs-data and service-redhouse-tenant'
-    'as well as the minimum necessary to refresh env.')
+    ' as well as the minimum necessary to refresh the environment')
 @pass_context
 def destroy_more(ctx, force):
     """ Destroy my copy of ccs-data and service-redhouse-tenant in addition to the
@@ -132,7 +133,7 @@ def destroy_more(ctx, force):
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
               'an artifact')
-@cli.command('artifact', short_help='Destroy an artifact in artifactory.')
+@cli.command('artifact', short_help='Destroy an artifact in Artifactory.')
 @click.argument('artifact_name')
 @pass_context
 def destory_artifact(ctx, force, artifact_name):
@@ -142,7 +143,7 @@ def destory_artifact(ctx, force, artifact_name):
     pass
 
 
-@cli.command('repo', short_help='Destroy an repo in Gerrit.')
+@cli.command('repo', short_help='Destroy a repo in Gerrit.')
 @click.argument('repo_name')
 @pass_context
 def destory_gerritrepo(ctx, repo_name):
@@ -157,7 +158,7 @@ def destory_gerritrepo(ctx, repo_name):
               'the networking in an openstack project')
 @cli.command(
     'os-networks',
-    short_help='Destroy all networking components in a project')
+    short_help='Destroy all networking components in an Openstack project.')
 @pass_context
 def destroy_os_networks(ctx, force):
     """Destroy all the networking components in an openstack project including, routers,
@@ -179,7 +180,7 @@ def destroy_os_networks(ctx, force):
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
               'all of the vms in an openstack project')
-@cli.command('os-vms', short_help='Destroy all the VMs in a project')
+@cli.command('os-vms', short_help='Destroy all the VMs in an Openstack project.')
 @pass_context
 def destroy_os_vms(ctx, force):
     """Destroy all the vms in an openstack project. You must have your openstack env

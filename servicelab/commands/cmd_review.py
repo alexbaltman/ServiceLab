@@ -24,7 +24,8 @@ def cli(_):
     pass
 
 
-@cli.command('inc', short_help='Find incoming reviews Gerrit.')
+@cli.command('inc', short_help='Find incoming reviews in Gerrit - requested for you '
+             'to review.')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
 @click.option('-u', '--username', help='Enter the gerrit username')
@@ -59,7 +60,8 @@ def review_inc(ctx, project, username, detail, interactive):
         ctx.logger.error(str(ex))
 
 
-@cli.command('out', short_help='Find outgoing reviews in Gerrit.')
+@cli.command('out', short_help='Find outgoing reviews in Gerrit - reviews you have '
+             'requested others to assess.')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
 @click.option('-u', '--username', help='Enter the gerrit username')
@@ -94,8 +96,7 @@ def review_out(ctx, project, username, detail, interactive):
         ctx.logger.error(str(ex))
 
 
-@cli.command('plustwo', short_help='Plus two gerrit change set. '
-                                   'This can now be done by user with SDLC Admin privileges')
+@cli.command('plustwo', short_help='Plus two a Gerrit change set.')
 @click.argument('item')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
@@ -128,7 +129,7 @@ def review_plustwo(ctx, review, project, username, message, interactive):
         ctx.logger.error(str(ex))
 
 
-@cli.command('plusone', short_help='Plus one gerrit change set.')
+@cli.command('plusone', short_help='Plus one a Gerrit change set - Gerrit admins only.')
 @click.argument('review')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
@@ -162,7 +163,7 @@ def review_plusone(ctx, review, project, username, message, interactive):
         ctx.logger.error(str(ex))
 
 
-@cli.command('minusone', short_help='Minus one gerrit change set.')
+@cli.command('minusone', short_help='Minus one a Gerrit change set.')
 @click.argument('review')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
@@ -170,8 +171,6 @@ def review_plusone(ctx, review, project, username, message, interactive):
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @click.option('-i', '--interactive', help='interactive editor')
 @pass_context
-
-
 def review_minusone(ctx, review, project, username, message, interactive):
     """
     Prefer the code is not submitted.
@@ -230,7 +229,7 @@ def review_minusone(ctx, review, project, username, message, interactive):
 #        ctx.logger.error(str(ex))
 
 
-@cli.command('abandon', short_help='Abandon gerrit change set.')
+@cli.command('abandon', short_help='Abandon a Gerrit change set.')
 @click.argument('review')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
@@ -263,7 +262,7 @@ def review_abandon(ctx, review, project, username, message, interactive):
         ctx.logger.error(str(ex))
 
 
-@cli.command('show', short_help='display  particular review')
+@cli.command('show', short_help='Display a specific review by Gerrit change ID')
 @click.argument('review')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
@@ -292,7 +291,8 @@ def review_show(ctx, review, project, username, interactive):
         ctx.logger.error(str(ex))
 
 
-@cli.command('filediff', short_help='display  particular review changeset details')
+@cli.command('filediff', short_help='Display the file diff from a review changeset by '
+             'change ID.')
 @click.argument('review')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
