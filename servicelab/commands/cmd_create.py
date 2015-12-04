@@ -83,7 +83,7 @@ the default is "none"')
 def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, sec_groups):
     """
     Creates a host.yaml file in an environment so that a vm can then be
-    booted.
+    booted.\b
 
     HOST_NAME can be the service name and number - my-service-001
 
@@ -118,11 +118,12 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
 @click.option('--continue', 'cont', flag_value='continue',
               help="If you did not finish creating your site and paused midway;"
                    " you can continue or abort it.")
-@click.option('-u', '--username', help='Enter the username')
+@click.option('-u', '--username', help='Username used for cloning repos from gerrit')
 @pass_context
 def site_new(ctx, username, cont):
     """Compiles data for a new site in the ccs-data repo.
 
+    \b
     1) Syncs the ccs-data and ccs-build-tools repo into the .stack/services directory.
     2) Allows the user to dynamically input data pertaining to the new site which
        is comprised of a single tenant cloud built on top of a service cloud.
@@ -145,13 +146,6 @@ def site_new(ctx, username, cont):
                *number of virtualized nova, ceph, net and proxy nodes
     4) Within ccs-build-tool, a vagrant environment and virtualbox is used to compile all
        of the data into a single site directory, which is copied into ccs-data.
-
-    Args:
-        ctx: context
-        username: credential used for cloning repos from gerrit
-        cont: continue bool flag, which, if set to true, accesses .stack/cache/
-              temp_site_data.yaml for data input by the user during an
-              earlier run and loads that data.
     """
     click.echo("Creating a new site in ccs-data")
     if not username:
@@ -201,6 +195,7 @@ def env_new(ctx, username):
     """Compiles data for a new environment to be built on top of an existing
     site in the ccs-data repo.
 
+    \b
     1) Syncs the ccs-data and ccs-build-tools repo into the .stack/services directory.
     2) Allows the user to dynamically input data pertaining to the new environment, which
        will be built on top of an existing, specified service cloud.
@@ -334,10 +329,10 @@ def vip_new(ctx, vip_name, env_name, service_entry, location, ip_address, server
     instance is missing from the environemt yaml file then service is not
     added.
 
+    \b
     By default only certain entries will be generated. For instance:
         stack create vip vip123 dev internal celiometer
     will create the following entries in haproxy:
-
         ccs::proxy_internal::haproxy_instances:
           ceilometer:
             port: 62970

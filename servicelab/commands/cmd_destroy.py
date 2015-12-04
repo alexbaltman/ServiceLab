@@ -36,6 +36,7 @@ def destroy_vm(ctx, force, vm_name):
     """Destroy non OSP VMs in either virtualbox or Openstack. This function
     will do some basic cleanup as well.
 
+    \b
     1. Remove from inventory. (?)
     2. Delete from Vagrantfile (?)
     3. Remove from dev-tenant in ccs-data (?)
@@ -59,6 +60,7 @@ def destroy_min(ctx, force):
     """ Destroy the minimum required to put us into a usable, but still mostly
     brownfield environment.
 
+    \b
     Delete:
     1. .stack/vagrant.yaml
     2. .stack/Vagrantfile
@@ -104,6 +106,7 @@ def destroy_more(ctx, force):
     """ Destroy my copy of ccs-data and service-redhouse-tenant in addition to the
     minimum need to get us into a usable, but still mostly brownfield environment.
 
+    \b
     Delete:
     1. .stack/vagrant.yaml
     2. .stack/Vagrantfile

@@ -25,14 +25,6 @@ from servicelab.utils import service_utils
 def cli(ctx, branch, data_branch, username, service_name):
     """
     Creates a service user wants to work on.
-
-    Attributes
-        ctx
-        interactive
-        branch
-        data_branch
-        user
-        service_name
     """
     current = ""
     if not username:
