@@ -16,7 +16,7 @@ from servicelab.stack import pass_context
 from servicelab.utils import explain_utils
 
 
-@click.group('explain', short_help='Provide high level explanations of servicelab',
+@click.group('explain', short_help='Provide high level explanations of servicelab.',
              add_help_option=True)
 @pass_context
 def cli(_):

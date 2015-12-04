@@ -29,7 +29,7 @@ from servicelab.utils import gerrit_functions
 from servicelab.utils import yaml_utils
 
 
-@click.group('list', short_help='You can list available pipeline objects',
+@click.group('list', short_help='You can list objects in pipeline resources.',
              add_help_option=True)
 @pass_context
 def cli(_):

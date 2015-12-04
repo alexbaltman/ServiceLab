@@ -11,7 +11,7 @@ from servicelab.utils import jenkins_utils
 from servicelab.utils import context_utils
 
 
-@click.group('build', short_help='Build to work with.',
+@click.group('build', short_help='Work with builds in Jenkins with this command subset.',
              add_help_option=True)
 @click.pass_context
 def cli(_):

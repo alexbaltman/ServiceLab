@@ -62,7 +62,7 @@ from servicelab.utils import Vagrantfile_utils as Vf_utils
               help='Walk through booting VMs')
 @click.group('up',
              invoke_without_command=True,
-             short_help="Boots VM(s).")
+             short_help="Boot VM(s).")
 @pass_context
 def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, data_branch,
         service_branch, username, interactive):

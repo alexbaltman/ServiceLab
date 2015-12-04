@@ -17,8 +17,8 @@ from servicelab.utils import artifact_utils
 from servicelab.utils import gocd_utils
 
 
-@click.group('show', short_help='Helps you show the details of a \
-             pipeline resource.')
+@click.group('show', short_help='Helps you show the details of a'
+             'pipeline resource.')
 @pass_context
 def cli(_):
     """

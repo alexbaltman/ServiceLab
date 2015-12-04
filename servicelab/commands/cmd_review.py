@@ -15,7 +15,7 @@ from servicelab.utils import helper_utils
 from servicelab.utils import gerrit_functions
 
 
-@click.group('review', short_help='Helps you work with Gerrit')
+@click.group('review', short_help='Helps you work with reviews in Gerrit.')
 @pass_context
 def cli(_):
     """

@@ -15,8 +15,8 @@ from requests.auth import HTTPBasicAuth
 from servicelab.stack import pass_context
 
 
-@click.group('artifact', short_help='Artifact to work with.',
-             add_help_option=True)
+@click.group('artifact', short_help='Work with artifacts from artifactory with this command'
+             ' subset.', add_help_option=True)
 @click.pass_context
 def cli(_):
     """

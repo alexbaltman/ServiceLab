@@ -21,8 +21,8 @@ from servicelab.utils import jenkins_utils
 from servicelab.utils import gerrit_functions
 
 
-@click.group('find', short_help='Helps you search \
-             pipeline resources.', invoke_without_command=True,
+@click.group('find', short_help='Helps you search pipeline resources.',
+             invoke_without_command=True,
              add_help_option=True)
 @pass_context
 def cli(_):

@@ -15,7 +15,7 @@ from servicelab.utils import helper_utils
 from servicelab.utils import openstack_utils
 
 
-@click.group('destroy', short_help='Destroys VMs.')
+@click.group('destroy', short_help='Remove various local and remote pipeline resources.')
 @pass_context
 def cli(ctx):
     """

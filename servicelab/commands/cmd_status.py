@@ -9,8 +9,8 @@ from servicelab.stack import pass_context
 from servicelab.utils import status_utils
 
 
-@click.group('status', short_help='Helps you show the details of a \
-             status of the servicelab environment.')
+@click.group('status', short_help='Helps you show the status of '
+             'the servicelab environment.')
 def cli():
     """
     Helps you show the details of resources in the SDLC pipeline.
