@@ -5,7 +5,7 @@ import logging
 import fnmatch
 import getpass
 
-from servicelab.utils import yaml_utils
+import servicelab.utils.yaml_utils
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -172,7 +172,7 @@ def name_vm(name, path):
     """
     for i in xrange(1, 100):
         hostname = name + "-" + "%03d" % (i)
-        returncode = yaml_utils.host_exists_vagrantyaml(hostname, path)
+        returncode = servicelab.utils.yaml_utils.host_exists_vagrantyaml(hostname, path)
         if returncode == 1:
             return hostname
 
