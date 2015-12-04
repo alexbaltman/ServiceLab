@@ -34,7 +34,7 @@ def cli(_):
              short_help='Create repo')
 @click.argument('repo_name',
                 required=True)
-@click.option('--repo_type',
+@click.option('--repo-type',
               default='ansible',
               type=click.Choice(['project', 'ansible', 'puppet', "empty"]),
               help="The type of repo (empty, project, ansible, puppet)\n"

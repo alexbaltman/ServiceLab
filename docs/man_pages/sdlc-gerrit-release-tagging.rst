@@ -33,24 +33,4 @@ Git tags are created against commits so you cannot have duplicate tags.
 
 
 
-I am unable to push my tags.  Receive this error from gerrit
-
-BHPRABHA-M-G05Y:ccs-api bprabhak$ git push --tagsTotal 0 (delta 0), reused 0 (delta 0)remote: Processing changes: refs: 1, done    To ssh://bhprabha@cis-gerrit.cisco.com:29418/ccs-api ! [remote rejected] v3.0.1 -> v3.0.1 (prohibited by Gerrit)error: failed to push some refs to 'ssh://bhprabha@cis-gerrit.cisco.com:29418/ccs-api'
-
-Can you please help?
-
-Thanks!
-
-
-
-
-
-
-Can you send an email to ccs-sdlc-support mailer? We will take a look.
-
-
-
-
-
-
 
