@@ -302,11 +302,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         a = v_utils.Connect_to_vagrant(vm_name='infra-001',
                                        path=os.path.join(redhouse_ten_path))
         myvfile = Vf_utils.SlabVagrantfile(path=ctx.path)
-        returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
-        if returncode > 0:
-            ctx.logger.error('Failed to get float net and mynets')
-            sys.exit(1)
-        myvfile.set_env_vars(float_net, mynets, my_sec_grps)
+        if remote:
+            returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
+            if returncode > 0:
+                ctx.logger.error('Failed to get float net and mynets')
+                sys.exit(1)
+            myvfile.set_env_vars(float_net, mynets, my_sec_grps)
+
         if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
         puppet_path = os.path.join(redhouse_ten_path, "puppet")
@@ -388,11 +390,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                     ctx.logger.error("Failed to add host" + host)
                     ctx.logger.error("Continuing despite failure...")
             curhost = vhosts[0].keys()[0]
-            settingsyaml = {'openstack_provider': True}
-            returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml, hostname=curhost)
-            if returncode > 0:
-                ctx.logger.error('writing to settings yaml failed on: ' + curhost)
             if remote:
+                settingsyaml = {'openstack_provider': True}
+                returncode = yaml_utils.wr_settingsyaml(ctx.path,
+                                                        settingsyaml,
+                                                        hostname=curhost)
+                if returncode > 0:
+                    ctx.logger.error('writing to settings yaml failed on: ' + curhost)
                 myvfile.add_openstack_vm(vhosts[0])
                 a.v.up(vm_name=curhost, provider='openstack')
             else:
