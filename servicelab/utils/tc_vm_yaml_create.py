@@ -138,8 +138,9 @@ def find_ip(env_path, vlan):
                             ipaddy = ipaddress.IPv4Address(addy)
                             if ipaddy in all_ips:
                                 all_ips.remove(ipaddy)
-                    except:
-                        pass
+                    except TypeError:
+                        tcvm_logger.info('%s did not contain any data for interface %s'
+                                         % (hostfile, interface))
     for ip in all_ips:
         try:
             # Host lookup

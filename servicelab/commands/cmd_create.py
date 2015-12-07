@@ -81,11 +81,11 @@ the vm.  Default is set to 2cpu.4ram.20-96sas')
 the default is "none"')
 @click.option('--group', '-g', help='Choose the group, default is virtual')
 @click.option('--sec-groups', '-s', help='Choose the security groups, comma delimited')
-@click.option('--from-file', default=None, help='Source file to extract data from.  \
+@click.option('--template', default=None, help='Source file to extract data from.  \
 Needs to be in the same env as the new vm to be created')
 @pass_context
 def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, sec_groups,
-             from_file):
+             template):
     """
     Creates a host.yaml file in an environment so that a vm can then be
     booted.
@@ -101,9 +101,9 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
         click.echo("%s is an invalid env. Please select one from "
                    "stack list envs" % env_name)
         return 1
-    if from_file:
+    if template:
         env_path = os.path.join(ccs_datapath, 'sites', site, 'environments', env_name)
-        ret_code, yaml_data = yaml_utils.read_host_yaml(from_file, env_path)
+        ret_code, yaml_data = yaml_utils.read_host_yaml(template, env_path)
         if ret_code > 0:
             return 1
         if 'groups' in yaml_data:
