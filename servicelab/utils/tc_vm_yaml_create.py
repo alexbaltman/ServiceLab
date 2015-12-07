@@ -55,12 +55,11 @@ def write_file(yaml_data, output_file):
             '%s already exists.  Aborting host create.' %
             output_file)
         return 1
-    # default_flow_style=False breaks lists into individual lines with leading
-    # '-'
+    # default_flow_style=False breaks lists into individual lines with leading '-'
     with open(output_file, 'w') as outfile:
         outfile.write(yaml.dump(yaml_data, default_flow_style=False))
-    tcvm_logger.info(output_file)
-    tcvm_logger.info('File created successfully')
+    click.echo(output_file)
+    click.echo('File created successfully')
 
 
 def find_vlan(source_data):
@@ -130,14 +129,18 @@ def find_ip(env_path, vlan):
             if 'interfaces' in host_data:
                 # Not all interface names are created equally
                 for interface in host_data['interfaces']:
-                    # Not all interfaces have an ip_address
-                    if 'ip_address' in host_data['interfaces'][interface]:
-                        addy = unicode(
-                            host_data['interfaces'][interface]['ip_address'])
-                        # Turn IP into ipaddress module object for list search
-                        ipaddy = ipaddress.IPv4Address(addy)
-                        if ipaddy in all_ips:
-                            all_ips.remove(ipaddy)
+                    try:
+                        # Not all interfaces have an ip_address
+                        if 'ip_address' in host_data['interfaces'][interface]:
+                            addy = unicode(
+                                host_data['interfaces'][interface]['ip_address'])
+                            # Turn IP into ipaddress module object for list search
+                            ipaddy = ipaddress.IPv4Address(addy)
+                            if ipaddy in all_ips:
+                                all_ips.remove(ipaddy)
+                    except TypeError:
+                        tcvm_logger.info('%s did not contain any data for interface %s'
+                                         % (hostfile, interface))
     for ip in all_ips:
         try:
             # Host lookup

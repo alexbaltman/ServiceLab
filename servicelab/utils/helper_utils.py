@@ -172,8 +172,7 @@ def name_vm(name, path):
     """
     for i in xrange(1, 100):
         hostname = name + "-" + "%03d" % (i)
-        returncode = servicelab.utils.yaml_utils.host_exists_vagrantyaml(hostname,
-                                                                         path)
+        returncode = servicelab.utils.yaml_utils.host_exists_vagrantyaml(hostname, path)
         if returncode == 1:
             return hostname
 

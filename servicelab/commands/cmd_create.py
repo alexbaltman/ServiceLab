@@ -20,6 +20,8 @@ from servicelab.utils import service_utils
 from servicelab.utils import ccsbuildtools_utils
 from servicelab.utils import ccsdata_utils
 from servicelab.utils import tc_vm_yaml_create
+from servicelab.utils import yaml_utils
+from servicelab.utils import helper_utils
 
 
 @click.group('create', short_help='Creates pipeline resources to work with.',
@@ -69,8 +71,8 @@ def repo_new(ctx, repo_name, repo_type, interactive):
 @cli.command('host', short_help='Create a host in the local ccs-data repository.')
 @click.argument('host_name')
 @click.argument('env_name')
-@click.option('--ip_address', '-ip', default=None, help='Specify the IP address to use.  --vlan \
-will be ignored if this option is used')
+@click.option('--ip_address', '-ip', default=None, help='Specify the IP address to use.  \
+--vlan will be ignored if this option is used')
 @click.option('--vlan', '-v', default="66", help='Choose the vlan to add your vm to or \
 default is set to 66')
 @click.option('--flavor', '-f', default="2cpu.4ram.20-96sas", help='Choose the flavor for \
@@ -79,8 +81,11 @@ the vm.  Default is set to 2cpu.4ram.20-96sas')
 the default is "none"')
 @click.option('--group', '-g', help='Choose the group, default is virtual')
 @click.option('--sec-groups', '-s', help='Choose the security groups, comma delimited')
+@click.option('--template', default=None, help='Source file to extract data from.  \
+Needs to be in the same env as the new vm to be created')
 @pass_context
-def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, sec_groups):
+def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, sec_groups,
+             template):
     """
     Creates a host.yaml file in an environment so that a vm can then be
     booted.\b
@@ -89,17 +94,37 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
 
     ENV_NAME is the name of the tenant cloud.  Use 'stack list envs' to show all tenants
     """
-    ccs_datapath = os.path.join(ctx.path, "services", "ccs-data")
+    ccs_datapath = os.path.join(ctx.path, 'services', 'ccs-data')
     our_sites = ccsdata_utils.list_envs_or_sites(ctx.path)
     site = ccsdata_utils.get_site_from_env(our_sites, env_name)
     if site is None:
         click.echo("%s is an invalid env. Please select one from "
                    "stack list envs" % env_name)
         return 1
-    if not group:
-        groups = ['virtual']
-    else:
-        groups = ['virtual', str(group)]
+    if template:
+        env_path = os.path.join(ccs_datapath, 'sites', site, 'environments', env_name)
+        ret_code, yaml_data = yaml_utils.read_host_yaml(template, env_path)
+        if ret_code > 0:
+            return 1
+        if 'groups' in yaml_data:
+            groups = yaml_data['groups']
+        if 'role' in yaml_data:
+            role = yaml_data['role']
+        if 'deploy_args' in yaml_data:
+            if 'flavor' in yaml_data['deploy_args']:
+                flavor = yaml_data['deploy_args']['flavor']
+            if 'security_groups' in yaml_data['deploy_args']:
+                sec_groups = yaml_data['deploy_args']['security_groups']
+            if 'network_name' in yaml_data['deploy_args']:
+                net_name = yaml_data['deploy_args']['network_name']
+                match = re.search('\D+(\d+)$', net_name)
+                if match:
+                    vlan = match.group(1)
+    if not groups:
+        if not group:
+            groups = ['virtual']
+        else:
+            groups = ['virtual', str(group)]
     if sec_groups:
         sec_groups = 'default,' + sec_groups
     else:

@@ -1084,6 +1084,83 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
         return 1
 
 
+def read_host_yaml(host_name, env_path):
+    """This function is used to validate the existance of the specified host yaml within
+       the proviced env path
+
+    Args:
+        host_name {str}: Name of the host to search.  Does not have to end in .yaml
+        env_path {str}: Full path to env directory within ccs-data
+
+    Returns:
+        returncode {int}: 0 for success
+                          1 for failures
+        data_dict {dict of dicts}: Dictionary of the host.yaml file contents
+
+    Example Usage:
+        ret_code, yaml_data = yaml_utils.read_host_yaml(hostname, env_path)
+        pprint.pprint(yaml_data)
+        {'deploy_args': {'allowed_address_pairs': [],
+                          'auth_url': 'http://10.207.232.55:5000/v2.0/',
+                          'availability_zone': 'csm-a',
+                          'flavor': 'HS-Large',
+                          'image': 'RHEL-7',
+                          'key_name': 'tenant_deploy_key',
+                          'network_name': 'Nimbus-Management-iv67',
+                          'password': 'redacted',
+                          'region': 'csm',
+                          'security_groups': 'default',
+                          'subnet_name': 'Nimbus-Management-iv67-subnet',
+                          'tenant': 'CIS-Infra',
+                          'username': 'admin'},
+                          'groups': ['virtual', 'sa_client', 'ossdm-logstash-agent'],
+          'hostname': 'rtp10-1-csl-pscapp-001.cisco.com',
+          'interfaces': {'eth0': {'gateway': '10.207.235.129',
+                                  'ip_address': '10.207.235.143',
+                                  'netmask': '255.255.255.128'}},
+          'role': 'none',
+          'server': '10.207.232.10',
+    """
+    data_dict = {}
+    if not re.search('\w+\.yaml$', host_name):
+        host_name += '.yaml'
+    host_yaml = os.path.join(env_path, 'hosts.d', host_name)
+    if not os.path.isfile(host_yaml):
+        yaml_utils_logger.error('''
+Unable to find %s.  Please check the spelling and env to try again.''' % host_yaml)
+        return(1, data_dict)
+    retcode, data_dict = open_yaml_file(host_yaml)
+    if retcode > 0:
+        return(1, data_dict)
+    return(0, data_dict)
+
+
+def open_yaml_file(yaml_file):
+    """This function is used to open any .yaml file and return the contents as a dictionary
+
+    Args:
+        yaml_file {str}: Full path to the .yaml file
+
+    Returns:
+        returncode {int}: 0 for pass
+                          1 for fail
+        yaml_data {dict}: Exact data structure will vary based on the file read
+
+    Example Usage:
+        ret_code, yaml_data = open_yaml_file
+        pprint.pprint(yaml_data)
+        {'deploy_args': {'allowed_address_pairs': [],
+                  etc  . . .
+    """
+    try:
+        with open(yaml_file, 'r') as stream:
+            yaml_data = yaml.load(stream)
+    except IOError:
+        yaml_utils_logger.error('Unable to open %s' % yaml_file)
+        return(1, {})
+    return(0, yaml_data)
+
+
 # small driver stub
 if __name__ == "__main__":
     validate_syntax(sys.argv[1])
