@@ -279,7 +279,7 @@ def ospvms_list(ctx):
     """
     provision_path = os.path.join(ctx.path, 'provision')
     osp_vms = yaml_utils.getfull_OS_vms(provision_path, '001')
-    osp_vms.sort()
+    osp_vms[1].sort()
     for host_data in osp_vms[1]:
         for host in host_data:
             click.echo(host)
