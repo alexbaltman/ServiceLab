@@ -197,14 +197,14 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             sys.exit(0)
     elif target:
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
-        service_utils.sync_service(ctx.path, service_branch,
+        service_utils.sync_service(ctx.path, redhouse_branch,
                                    username, "service-redhouse-tenant")
         puppet_path = os.path.join(redhouse_ten_path, "puppet")
-        if not os.path.exists(os.path.join(puppet_path, "glance")):
+        if not os.path.exists(os.path.join(puppet_path, "modules", "glance")):
             ctx.logger.info('Updating sub repo.s under service-redhouse-tenant')
             ctx.logger.info('This may take a few minutes.')
             returncode, myinfo = service_utils.run_this(
-                    "USER={0}.librarian-puppet install".format(username),
+                    "USER={0} librarian-puppet install".format(username),
                     puppet_path)
             if returncode > 0:
                 ctx.logger.error('Failed to retrieve the necessary puppet configurations.')
@@ -312,7 +312,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
         puppet_path = os.path.join(redhouse_ten_path, "puppet")
-        if not os.path.exists(os.path.join(puppet_path, "glance")):
+        if not os.path.exists(os.path.join(puppet_path, "modules", "glance")):
             ctx.logger.info('Updating sub repo.s under service-redhouse-tenant')
             ctx.logger.info('This may take a few minutes.')
             returncode, myinfo = service_utils.run_this(
