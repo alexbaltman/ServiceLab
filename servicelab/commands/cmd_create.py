@@ -94,6 +94,7 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
 
     ENV_NAME is the name of the tenant cloud.  Use 'stack list envs' to show all tenants
     """
+    groups = ''
     ccs_datapath = os.path.join(ctx.path, 'services', 'ccs-data')
     our_sites = ccsdata_utils.list_envs_or_sites(ctx.path)
     site = ccsdata_utils.get_site_from_env(our_sites, env_name)
