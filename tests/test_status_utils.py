@@ -3,9 +3,12 @@ Tests status utils
 """
 import os
 import unittest
+from subprocess import CalledProcessError
 
+import click
 from click.testing import CliRunner
 
+from servicelab.utils import vagrant_utils
 from servicelab.utils import service_utils
 from servicelab.stack import Context
 from servicelab.commands import cmd_status
@@ -31,7 +34,12 @@ class TestStatusUtils(unittest.TestCase):
         """ Setup variables required to test the os_provider functions
         """
         self.ctx = Context()
+        if not self.success_flag:
+            self.fail(self.message)
 
+    @classmethod
+    def setUpClass(cls):
+        cls.success_flag = True
         set_git_cmd = "git config --global user.email"\
                       " \"ragkatti@cisco.com\"; "\
             "git config --global user.name \"Raghu Katti\";"
@@ -40,12 +48,17 @@ class TestStatusUtils(unittest.TestCase):
 
         if "@cisco.com" not in check_val:
             retcode, _ = service_utils.run_this(set_git_cmd)
+            if retcode != 0:
+                cls.success_flag = False
+                cls.message = "Unable to run : git config user.email"
+                return
 
         workon_cmd = "stack workon service-sdlc-pulp"
         retcode, _ = service_utils.run_this(workon_cmd)
-        self.assertEqual(0, retcode,
-                         "Unable to run stack workon service-sdlc-pulp")
-
+        if retcode != 0:
+            cls.success_flag = False
+            cls.message = "Unable to run stack workon service-sdlc-pulp"
+            return
         up_cmd = "stack up -s service-sdlc-pulp"
         retcode, _ = service_utils.run_this(up_cmd)
 
@@ -119,6 +132,24 @@ class TestStatusUtils(unittest.TestCase):
                                ['all'])
         self.assertTrue(TestStatusUtils.REPO_NOCHANGE in result.output)
         self.assertTrue(TestStatusUtils.VM_STATUS in result.output)
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Perform cleanup
+        """
+        click.echo('Cleaning up all the VMs :')
+        ctx = Context()
+        vm_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra001",
+                                                         path=ctx.path)
+        try:
+            statuses = vm_connection.v.status()
+            for status in statuses:
+                vm_connection.v.destroy(status[0])
+                click.echo("Destroyed VM name : {} ".format(status[0]))
+        except CalledProcessError:
+            click.echo("Could not perform VM cleanup. Exiting")
+
 
 if __name__ == '__main__':
     unittest.main()
