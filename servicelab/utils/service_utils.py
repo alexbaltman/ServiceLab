@@ -98,6 +98,10 @@ def build_data(path):
         (0,"")
 
     """
+    from servicelab.utils import yaml_utils
+    if yaml_utils.decrypt_set(path) != 0:
+        return(1, "unable to decrypt the pulp password")
+
     data_reponame = "ccs-data"
     SERVICE_UTILS_LOGGER.debug("Building the data.")
     returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml '

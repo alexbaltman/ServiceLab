@@ -1161,6 +1161,63 @@ def open_yaml_file(yaml_file):
     return(0, yaml_data)
 
 
+def decrypt_set(path):
+    """
+    This functions decrypts pulp_epassword and adds the tag
+        pulp_password
+    to commons.yaml for ccs-dev-1.
+    Args:
+        path (str):     The path to working .stack directory
+
+    Returns:
+        0 - success
+        1 - failure
+    """
+    yaml_path = os.path.join(path,
+                             "provision",
+                             "servicelab.yaml")
+    with open(yaml_path, 'r') as yaml_strm:
+        slab_doc = yaml.load(yaml_strm)
+
+    if not all(k in slab_doc.keys() for k in ("pulp_user", "pulp_password")):
+        yaml_utils_logger.error("Unable to decrypt the pulp encrypted password key missing")
+        return 1
+
+    # write the password
+    from servicelab.utils import encrypt_utils
+    cert = os.path.join(path,
+                        "provision",
+                        "servicelab.crt")
+    key = os.path.join(path,
+                       "provision",
+                       "servicelab.key")
+
+    enc_password = slab_doc["pulp_password"][5:-2]
+    ret, decrypt = encrypt_utils.decrypt(cert, key, enc_password)
+    if ret != 0:
+        yaml_utils_logger.error("Unable to decrypt the pulp password")
+        yaml_utils_logger.error(decrypt)
+        return 1
+
+    yaml_path = os.path.join(path,
+                             "services",
+                             "ccs-data",
+                             "sites",
+                             "ccs-dev-1",
+                             "environments",
+                             "dev-tenant",
+                             "data.d",
+                             "environment.yaml")
+    with file(yaml_path, 'r') as yaml_strm:
+        ccsdata_doc = yaml.load(yaml_strm)
+        ccsdata_doc["pulp_user"] = slab_doc["pulp_user"]
+        ccsdata_doc["pulp_password"] = decrypt
+
+    with file(yaml_path, 'w') as yaml_strm:
+        yaml.dump(ccsdata_doc, yaml_strm, default_flow_style=False)
+    return 0
+
+
 # small driver stub
 if __name__ == "__main__":
     validate_syntax(sys.argv[1])
