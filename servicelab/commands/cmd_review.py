@@ -97,14 +97,14 @@ def review_out(ctx, project, username, detail, interactive):
 
 
 @cli.command('plustwo', short_help='Plus two a Gerrit change set.')
-@click.argument('item')
+@click.argument('gerrit_change_id')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
 @click.option('-u', '--username', help='Enter the gerrit username')
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @click.option('-i', '--interactive', help='interactive editor')
 @pass_context
-def review_plustwo(ctx, review, project, username, message, interactive):
+def review_plustwo(ctx, gerrit_change_id, project, username, message, interactive):
     """
     Approves and merges a gerrit change set.
     """
@@ -124,20 +124,20 @@ def review_plustwo(ctx, review, project, username, message, interactive):
             message = click.prompt("Message", default=message)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
-        gfn.change_review(review, 2, 1, message)
+        gfn.change_review(gerrit_change_id, 2, 1, message)
     except Exception as ex:
         ctx.logger.error(str(ex))
 
 
 @cli.command('plusone', short_help='Plus one a Gerrit change set - Gerrit admins only.')
-@click.argument('review')
+@click.argument('gerrit_change_id')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
 @click.option('-u', '--username', help='Enter the gerrit username')
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @click.option('-i', '--interactive', help='interactive editor')
 @pass_context
-def review_plusone(ctx, review, project, username, message, interactive):
+def review_plusone(ctx, gerrit_change_id, project, username, message, interactive):
     """
     Approves, but does not merge a gerrit change set, which means change set
     requires another approver.
@@ -158,20 +158,20 @@ def review_plusone(ctx, review, project, username, message, interactive):
             message = click.prompt("Message", default=message)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
-        gfn.change_review(review, 1, 0, message)
+        gfn.change_review(gerrit_change_id, 1, 0, message)
     except Exception as ex:
         ctx.logger.error(str(ex))
 
 
 @cli.command('minusone', short_help='Minus one a Gerrit change set.')
-@click.argument('review')
+@click.argument('gerrit_change_id')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
 @click.option('-u', '--username', help='Enter the gerrit username')
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @click.option('-i', '--interactive', help='interactive editor')
 @pass_context
-def review_minusone(ctx, review, project, username, message, interactive):
+def review_minusone(ctx, gerrit_change_id, project, username, message, interactive):
     """
     Prefer the code is not submitted.
     """
@@ -191,20 +191,20 @@ def review_minusone(ctx, review, project, username, message, interactive):
             message = click.prompt("Message", default=message)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
-        gfn.change_review(review, -1, 0, message)
+        gfn.change_review(gerrit_change_id, -1, 0, message)
     except Exception as ex:
         ctx.logger.error(str(ex))
 
 
 # @cli.command('minustwo', short_help='Minus two gerrit change set.')
-# @click.argument('review')
+# @click.argument('gerrit_change_id')
 # @click.option('-p', '--project', help='Enter the project. '
 #                                       'Default is current selected using stack workon.')
 # @click.option('-u', '--username', help='Enter the gerrit username')
 # @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 # @click.option('-i', '--interactive', help='interactive editor')
 # @pass_context
-# def review_minustwo(ctx, review, project, username, message, interactive):
+# def review_minustwo(ctx, gerrit_change_id, project, username, message, interactive):
 #     """
 #     Do not submit the code
 #     """
@@ -224,20 +224,20 @@ def review_minusone(ctx, review, project, username, message, interactive):
 #             message = click.prompt("Message", default=message)
 #
 #         gfn = gerrit_functions.GerritFns(username, project, ctx)
-#         gfn.change_review(review, -1, 0, message)
+#         gfn.change_review(gerrit_change_id, -1, 0, message)
 #    except Exception as ex:
 #        ctx.logger.error(str(ex))
 
 
 @cli.command('abandon', short_help='Abandon a Gerrit change set.')
-@click.argument('review')
+@click.argument('gerrit_change_id')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
 @click.option('-u', '--username', help='Enter the desired username')
 @click.option('-m', '--message', help='Enter the desired message', type=str, default="")
 @click.option('-i', '--interactive', help='interactive editor')
 @pass_context
-def review_abandon(ctx, review, project, username, message, interactive):
+def review_abandon(ctx, gerrit_change_id, project, username, message, interactive):
     """
     Abandon a gerrit change set.
     """
@@ -257,19 +257,19 @@ def review_abandon(ctx, review, project, username, message, interactive):
             message = click.prompt("Message", default=message)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
-        gfn.code_state(review, "abandon", message)
+        gfn.code_state(gerrit_change_id, "abandon", message)
     except Exception as ex:
         ctx.logger.error(str(ex))
 
 
 @cli.command('show', short_help='Display a specific review by Gerrit change ID')
-@click.argument('review')
+@click.argument('gerrit_change_id')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
 @click.option('-u', '--username', help='Enter the desired username')
 @click.option('-i', '--interactive', help='interactive editor')
 @pass_context
-def review_show(ctx, review, project, username, interactive):
+def review_show(ctx, gerrit_change_id, project, username, interactive):
     """
     Display the review
     """
@@ -286,20 +286,20 @@ def review_show(ctx, review, project, username, interactive):
                 click.echo("current project is " + project)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
-        gfn.print_gerrit("detail", review)
+        gfn.print_gerrit("detail", gerrit_change_id)
     except Exception as ex:
         ctx.logger.error(str(ex))
 
 
 @cli.command('filediff', short_help='Display the file diff from a review changeset by '
              'change ID.')
-@click.argument('review')
+@click.argument('gerrit_change_id')
 @click.option('-p', '--project', help='Enter the project. '
                                       'Default is current selected using stack workon.')
 @click.option('-u', '--username', help='Enter the desired username')
 @click.option('-i', '--interactive', help='interactive editor')
 @pass_context
-def review_code(ctx, review, project, username, interactive):
+def review_code(ctx, gerrit_change_id, project, username, interactive):
     """
     Display the review
     """
@@ -316,6 +316,6 @@ def review_code(ctx, review, project, username, interactive):
                 click.echo("current project is " + project)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
-        gfn.code_review(review)
+        gfn.code_review(gerrit_change_id)
     except Exception as ex:
         ctx.logger.error(str(ex))
