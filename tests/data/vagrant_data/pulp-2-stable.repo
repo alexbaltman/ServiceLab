@@ -1,0 +1,8 @@
+ [pulp-2-stable]
+
+name=Pulp 2 Production Releases
+
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/stable/2/7Server/x86_64/
+enabled=1
+gpgcheck=0
+priority = 1

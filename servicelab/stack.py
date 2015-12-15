@@ -85,7 +85,8 @@ class Context(object):
             {"ip": "sdlc-go.cisco.com"}
         self.__jenkins_info = \
             {"url": "https://ccs-jenkins.cisco.com"}
-
+        self.__pulp_info = \
+            {"url": "https://ccs-mirror.cisco.com"}
         self.username = helper_utils.get_username(self.path)
         self.password = None
 
@@ -126,6 +127,12 @@ class Context(object):
         returns the artifactory info
         """
         return self.__artifactory_info
+
+    def get_pulp_info(self):
+        """
+        returns the pulp info
+        """
+        return self.__pulp_info
 
     def reporoot_path(self):
         """
