@@ -198,41 +198,11 @@ class ComplexCLI(click.MultiCommand):
 @click.command(cls=ComplexCLI, context_settings=CONTEXT_SETTINGS)
 @click.option('--username', '-u', help="user")
 @click.option('--password', '-p', help="password")
-@click.option('--path', '-p',
-              type=click.Path(exists=True,
-                              file_okay=False,
-                              resolve_path=True),
-              help='Indicates your working servicelab folder.')
-@click.option("--verbose", "-v",
-              is_flag=True, default=False,
-              help="Enables verbose mode.")
-@click.option("--vverbose", "-vv",
-              is_flag=True, default=False,
-              help='Enables extra verbose mode.')
-@click.option("--debug", '-vvv',
-              is_flag=True, default=False,
-              help='Enables debug mode.')
-@click.option('--config', '-c',
-              help="You can specify a config file for "
-              "stack to pull information from.")
 @pass_context
-def cli(ctx, verbose, vverbose, debug, path, config, username, password):
+def cli(ctx, username, password):
     """A CLI for Cisco Cloud Services."""
-    ctx.verbose = verbose
-    ctx.vverbose = vverbose
-    ctx.debug = debug
     ctx.console_handler.setLevel(logging.CRITICAL)
 
-    if ctx.verbose:
-        ctx.console_handler.setLevel(logging.ERROR)
-    if ctx.vverbose:
-        ctx.console_handler.setLevel(logging.WARNING)
-    if ctx.debug:
-        ctx.console_handler.setLevel(logging.DEBUG)
-    if path is not None:
-        ctx.path = path
-    if config is not None:
-        ctx.config = config
     if username:
         ctx.username = username
     if password:

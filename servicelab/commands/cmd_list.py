@@ -12,8 +12,9 @@ import os
 import re
 import sys
 import json
-
+import yaml
 import click
+
 from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
 import requests
@@ -295,7 +296,7 @@ def flavors_list(ctx, site):
     Lists all of the flavors within all sites or a specified site
     """
     if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
-        ctx.logger.error('ccs-data repo does not appear to be installed.  ' +
+        ctx.logger.error('The ccs-data repo does not appear to be installed.  ' +
                          'Try "stack workon ccs-data"')
         return 1
     if site:
@@ -306,17 +307,19 @@ def flavors_list(ctx, site):
         site_env_path = os.path.join(site_path, 'environments')
         flavor_list = ccsdata_utils.get_flavors_from_site(site_env_path)
     else:
-        sites_flavor_list = []
-        sites_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites')
-        for site in os.listdir(sites_path):
-            site_env_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site,
-                                         'environments')
-            if os.path.exists(site_env_path):
-                sites_flavor_list += ccsdata_utils.get_flavors_from_site(site_env_path)
+        try:
+            source_file = os.path.join(ctx.path, 'cache', 'all_sites_flavors.yaml')
+            with open(source_file, 'r') as stream:
+                source_data = yaml.load(stream)
+        except IOError:
+            ctx.logger.error('Unable to open %s.  Run the "make_flavors_yaml.py" to ' +
+                             'create this file' % source_file)
+            return 1
         flavor_list = []
-        for flavor in sites_flavor_list:
-            if flavor not in flavor_list:
-                flavor_list.append(flavor)
+        for site in source_data:
+            for flavor in source_data[site]:
+                if flavor not in flavor_list:
+                    flavor_list.append(flavor)
         flavor_list.sort()
 
     for flavor in flavor_list:

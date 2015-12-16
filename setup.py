@@ -11,12 +11,12 @@ requires = [
 ]
 
 setup(
-    name='develop-servicelab',
-    version='0.1',
+    name='ServiceLab',
+    version='1.0',
     description='The CLI for Cisco Cloud Services',
     long_description=open('README.md').read(),
-    author='Alex Altmann, Nick Foster',
-    author_email='aaltman@cisco.com, nickfost@cisco.com',
+    author='ServiceLab Team',
+    author_email='ccs-slab-support@cisco.com',
     packages=find_packages(exclude=['tests*']),
     include_package_data=True,
     zip_safe=False,
