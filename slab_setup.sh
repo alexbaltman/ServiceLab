@@ -1,7 +1,7 @@
 #!/bin/sh
 OS=`cat /etc/redhat-release | awk {'print $1'}`
 echo "OS value is ..... $OS"
-if [ "$OS" == "Red" ]
+if [ "$OS" == "Red" ] ||  [ "$OS" == "CentOS" ]
 then
 export http_proxy='proxy-wsa.esl.cisco.com:80'
 gpg2 --keyserver hkp://keys.gnupg.net:80 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3

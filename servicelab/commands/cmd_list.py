@@ -323,7 +323,7 @@ def flavors_list(ctx, site):
         click.echo(flavor)
 
 
-@cli.command('rpms', short_help='List rpms in site')
+@cli.command('rpms', short_help='List rpms in pulp repository')
 @click.option(
     '-u',
     '--username',
@@ -331,8 +331,7 @@ def flavors_list(ctx, site):
 @click.option(
     '-p',
     '--password',
-    help='Provide pulp server password',
-    required=True)
+    help='Provide pulp server password')
 @click.option(
     '-ip',
     '--ip_address',
@@ -342,8 +341,8 @@ def flavors_list(ctx, site):
     callback=pulp_utils.validate_pulp_ip_cb)
 @click.option(
     '-s',
-    '--site',
-    help='Provide the site id ',
+    '--pulp-repo',
+    help='Provide the pulp repo id ',
     required=True,
     default=None)
 @click.option('-i',
@@ -351,7 +350,7 @@ def flavors_list(ctx, site):
               flag_value=True,
               help="interactive editor")
 @pass_context
-def list_rpms(ctx, ip_address, username, password, site, interactive):
+def list_rpms(ctx, ip_address, username, password, pulp_repo, interactive):
     """
     Lists rpms using Pulp Server API.
     """
@@ -359,10 +358,70 @@ def list_rpms(ctx, ip_address, username, password, site, interactive):
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
-    url = "/pulp/api/v2/repositories/%s/search/units/" % (site)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
+    url = "/pulp/api/v2/repositories/%s/search/units/" % (pulp_repo)
     payload = '{ "criteria": { "fields": { "unit": [ "name",'\
               '"version", "filename", "relative_url" ] },'\
               '"type_ids": [ "rpm" ] } }'
     val = pulp_utils.post(url, ip_address, ctx, username, password, payload)
+    rpms = json.loads(val)
 
-    click.echo(json.dumps(json.loads(val), indent=4, sort_keys=True))
+    if rpms is not None and len(rpms) > 0:
+        for rpm in rpms:
+            click.echo("Id      : %s" % rpm["id"])
+            click.echo("Filename: %s" % rpm["metadata"]["filename"])
+            click.echo("Name    : %s" % rpm["metadata"]["name"])
+            click.echo("Version : %s" % rpm["metadata"]["version"] + "\n")
+    else:
+        click.echo("No rpms found in this repository.")
+
+
+@cli.command('pulp-repos', short_help='List all the pulp repositories')
+@click.option(
+    '-u',
+    '--username',
+    help='Provide pulp server username')
+@click.option(
+    '-p',
+    '--password',
+    help='Provide pulp server password')
+@click.option(
+    '-ip',
+    '--ip_address',
+    help='Provide the pulp server url ip address and port '
+         'no in format http://<ip:portno>.',
+    default=None,
+    callback=pulp_utils.validate_pulp_ip_cb)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
+@pass_context
+def list_pulp_repos(ctx, ip_address, username, password, interactive):
+    """
+    Lists rpms using Pulp Server API.
+    """
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
+    url = "/pulp/api/v2/repositories/"
+    val = pulp_utils.get(url, ip_address, ctx, username, password)
+    repos = json.loads(val)
+
+    if repos is not None and len(repos) > 0:
+        for repo in repos:
+            click.echo("Repo Id      : %s" % repo["id"])
+            click.echo("Repo Name    : %s" % repo["display_name"])
+            click.echo("Repo path    : %s" % repo["_href"] + "\n")
+    else:
+        click.echo("No repositories found on this pulp server.")

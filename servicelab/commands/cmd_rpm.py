@@ -6,6 +6,7 @@ Stack rpm commands to
 """
 import json
 import time
+import sys
 
 import click
 import requests
@@ -24,7 +25,7 @@ def cli(_):
     pass
 
 
-@cli.command('stats', short_help='Display rpm stats')
+@cli.command('stats', short_help='Display rpm stats from pulp repository')
 @click.argument('rpm', required=True)
 @click.option('-u',
               '--username',
@@ -41,8 +42,8 @@ def cli(_):
     callback=pulp_utils.validate_pulp_ip_cb)
 @click.option(
     '-s',
-    '--site',
-    help='Provide the site id ',
+    '--pulp-repo',
+    help='Provide the pulp repo id ',
     required=True,
     default=None)
 @click.option('-i',
@@ -52,7 +53,7 @@ def cli(_):
 @pass_context
 def display_rpm_status(ctx,
                        rpm,
-                       site,
+                       pulp_repo,
                        ip_address,
                        username,
                        password,
@@ -64,7 +65,12 @@ def display_rpm_status(ctx,
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
-    url = "/pulp/api/v2/repositories/%s/search/units/" % (site)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
+    url = "/pulp/api/v2/repositories/%s/search/units/" % (pulp_repo)
     payload = '{ "criteria": { "filters" : { "unit" : { "name" : "%s"}},'\
               ' "fields": { "unit": [ "name", "version" ] }, "type_ids":'\
               ' [ "rpm" ] } }' % (rpm)
@@ -73,7 +79,7 @@ def display_rpm_status(ctx,
     click.echo(json.dumps(json.loads(val), indent=4, sort_keys=True))
 
 
-@cli.command('download', short_help='Download the rpm')
+@cli.command('download', short_help='Download the rpm from pulp repository')
 @click.argument('rpm', required='True')
 @click.option('-u',
               '--username',
@@ -90,8 +96,8 @@ def display_rpm_status(ctx,
     callback=pulp_utils.validate_pulp_ip_cb)
 @click.option(
     '-s',
-    '--site',
-    help='Provide the site id ',
+    '--pulp-repo',
+    help='Provide the pulp repo id ',
     required=True,
     default=None)
 @click.option('-i',
@@ -102,7 +108,7 @@ def display_rpm_status(ctx,
 def download_rpm(ctx, username,
                  password,
                  ip_address,
-                 site,
+                 pulp_repo,
                  rpm,
                  interactive):
     """
@@ -112,14 +118,19 @@ def download_rpm(ctx, username,
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
     url = "/pulp/api/v2/distributors/search/"
-    payload = '{"criteria":{"filters":{"repo_id":{"$eq": "%s"}}}}' % (site)
+    payload = '{"criteria":{"filters":{"repo_id":{"$eq": "%s"}}}}' % (pulp_repo)
     val = pulp_utils.post(url, ip_address, ctx, username, password, payload)
     res_json = json.loads(val)
-    repo_json = filter(lambda x: x['repo_id'] == site, res_json)
+    repo_json = filter(lambda x: x['repo_id'] == pulp_repo, res_json)
 
     if len(repo_json) > 0:
-        url = "/pulp/api/v2/repositories/%s/search/units/" % (site)
+        url = "/pulp/api/v2/repositories/%s/search/units/" % (pulp_repo)
         payload = '{ "criteria": { "filters" : { "unit" : { "name" : "%s"}},'\
                   ' "fields": { "unit": [ "name", "filename" ] },'\
                   ' "type_ids": [ "rpm" ] } }' % (rpm)
@@ -145,14 +156,14 @@ def download_rpm(ctx, username,
         else:
             click.echo(
                 "Rpm %s could not be download since it was"
-                " not found in repo : %s" % (rpm, site))
+                " not found in repo : %s" % (rpm, pulp_repo))
     else:
         ctx.logger.error(
             "Repo with id %s does not exist. Unable to download the rpm." %
-            (site))
+            (pulp_repo))
 
 
-@cli.command('upload', short_help='Upload the rpm')
+@cli.command('upload', short_help='Upload the rpm to pulp repository')
 @click.option('-u',
               '--username',
               help='Provide pulp username')
@@ -168,8 +179,8 @@ def download_rpm(ctx, username,
     callback=pulp_utils.validate_pulp_ip_cb)
 @click.option(
     '-s',
-    '--site',
-    help='Provide the site id ',
+    '--pulp-repo',
+    help='Provide the pulp repo id ',
     required=True,
     default=None)
 @click.option('-f',
@@ -182,7 +193,7 @@ def download_rpm(ctx, username,
               help="interactive editor")
 @pass_context
 def upload_rpm(ctx, ip_address,
-               site,
+               pulp_repo,
                filepath,
                username,
                password,
@@ -194,6 +205,11 @@ def upload_rpm(ctx, ip_address,
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
     click.echo("Starting upload of {0}".format(filepath))
     url = "/pulp/api/v2/content/uploads/"
     val = pulp_utils.post(url, ip_address, ctx, username, password, "")
@@ -217,7 +233,7 @@ def upload_rpm(ctx, ip_address,
               '"%s", "unit_key": {}, "unit_metadata": '\
               '{"checksum_type": null}}' % (res_json['upload_id'])
     post_url = '/pulp/api/v2/repositories/%s/actions'\
-               '/import_upload/' % (site)
+               '/import_upload/' % (pulp_repo)
     click.echo(
         "\nImporting rpm to server for upload id: %s " %
         (res_json['upload_id']))
@@ -225,7 +241,7 @@ def upload_rpm(ctx, ip_address,
     val = pulp_utils.post(post_url, ip_address, ctx, username,
                           password, payload)
     payload = '{"override_config": {},  "id" : "yum_distributor"}'
-    post_url = "/pulp/api/v2/repositories/%s/actions/publish/" % (site)
+    post_url = "/pulp/api/v2/repositories/%s/actions/publish/" % (pulp_repo)
     click.echo(
         "Publishing rpm to server for upload id: %s " %
         (res_json['upload_id']))
