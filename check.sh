@@ -7,6 +7,7 @@ OS=`cat /etc/redhat-release | awk {'print $1'}`
 echo "OS value is ..... $OS"
 if [ "$OS" == "Red" ]
 then
+sudo yum -y update
 sudo yum -y install wget
 sudo yum -y install gettext
 sudo yum -y install vagrant
@@ -45,6 +46,7 @@ cd osx
 ./checkosx.sh
 cd ..
 fi
+
 
 sudo pip install -r requirements.txt
 sudo pip install -r test-requirements.txt

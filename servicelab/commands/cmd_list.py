@@ -11,22 +11,22 @@ List command submodule implements listing all the
 import os
 import re
 import sys
-
-import click
 import json
-import requests
+import yaml
+import click
 
 from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
+import requests
 
 from servicelab.stack import pass_context
-
 from servicelab.utils import ccsdata_utils
 from servicelab.utils import jenkins_utils
 from servicelab.utils import artifact_utils
 from servicelab.utils import gocd_utils
 from servicelab.utils import gerrit_functions
 from servicelab.utils import yaml_utils
+from servicelab.utils import pulp_utils
 
 
 @click.group('list', short_help='You can list objects in pipeline resources.',
@@ -53,8 +53,8 @@ def list_sites(ctx):
         for site in val_lst:
             click.echo(site)
     except Exception as ex:
-        ctx.logger.info("unable to get site list. unable to read ccs-data")
-        ctx.logger.info(ex)
+        ctx.logger.error("unable to get site list. unable to read ccs-data")
+        ctx.logger.error(ex)
 
 
 @cli.command('envs', short_help="List all environments in ccs-data.")
@@ -73,8 +73,9 @@ def list_envs(ctx):
         for env in val_lst:
             click.echo(env)
     except Exception as ex:
-        ctx.logger.info("unable to get environment list. unable to read ccs-data")
-        ctx.logger.info(ex)
+        ctx.logger.error(
+            "unable to get environment list. unable to read ccs-data")
+        ctx.logger.error(ex)
 
 
 @cli.command('hosts', short_help="List all hosts in ccs-data.")
@@ -89,8 +90,9 @@ def list_hosts(ctx):
             for _, l2_values in values.iteritems():
                 click.echo(l2_values)
     except Exception as ex:
-        ctx.logger.info("unable to get environment list. unable to read ccs-data")
-        ctx.logger.info(ex)
+        ctx.logger.error(
+            "unable to get environment list. unable to read ccs-data")
+        ctx.logger.error(ex)
 
 
 @cli.command('reviews', short_help='List your outstanding reviews in Gerrit.')
@@ -294,7 +296,7 @@ def flavors_list(ctx, site):
     Lists all of the flavors within all sites or a specified site
     """
     if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
-        ctx.logger.error('ccs-data repo does not appear to be installed.  ' +
+        ctx.logger.error('The ccs-data repo does not appear to be installed.  ' +
                          'Try "stack workon ccs-data"')
         return 1
     if site:
@@ -305,18 +307,124 @@ def flavors_list(ctx, site):
         site_env_path = os.path.join(site_path, 'environments')
         flavor_list = ccsdata_utils.get_flavors_from_site(site_env_path)
     else:
-        sites_flavor_list = []
-        sites_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites')
-        for site in os.listdir(sites_path):
-            site_env_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site,
-                                         'environments')
-            if os.path.exists(site_env_path):
-                sites_flavor_list += ccsdata_utils.get_flavors_from_site(site_env_path)
+        try:
+            source_file = os.path.join(ctx.path, 'cache', 'all_sites_flavors.yaml')
+            with open(source_file, 'r') as stream:
+                source_data = yaml.load(stream)
+        except IOError:
+            ctx.logger.error('Unable to open %s.  Run the "make_flavors_yaml.py" to ' +
+                             'create this file' % source_file)
+            return 1
         flavor_list = []
-        for flavor in sites_flavor_list:
-            if flavor not in flavor_list:
-                flavor_list.append(flavor)
+        for site in source_data:
+            for flavor in source_data[site]:
+                if flavor not in flavor_list:
+                    flavor_list.append(flavor)
         flavor_list.sort()
 
     for flavor in flavor_list:
         click.echo(flavor)
+
+
+@cli.command('rpms', short_help='List rpms in pulp repository')
+@click.option(
+    '-u',
+    '--username',
+    help='Provide pulp server username')
+@click.option(
+    '-p',
+    '--password',
+    help='Provide pulp server password')
+@click.option(
+    '-ip',
+    '--ip_address',
+    help='Provide the pulp server url ip address and port '
+         'no in format http://<ip:portno>.',
+    default=None,
+    callback=pulp_utils.validate_pulp_ip_cb)
+@click.option(
+    '-s',
+    '--pulp-repo',
+    help='Provide the pulp repo id ',
+    required=True,
+    default=None)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
+@pass_context
+def list_rpms(ctx, ip_address, username, password, pulp_repo, interactive):
+    """
+    Lists rpms using Pulp Server API.
+    """
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
+    url = "/pulp/api/v2/repositories/%s/search/units/" % (pulp_repo)
+    payload = '{ "criteria": { "fields": { "unit": [ "name",'\
+              '"version", "filename", "relative_url" ] },'\
+              '"type_ids": [ "rpm" ] } }'
+    val = pulp_utils.post(url, ip_address, ctx, username, password, payload)
+    rpms = json.loads(val)
+
+    if rpms is not None and len(rpms) > 0:
+        for rpm in rpms:
+            click.echo("Id      : %s" % rpm["id"])
+            click.echo("Filename: %s" % rpm["metadata"]["filename"])
+            click.echo("Name    : %s" % rpm["metadata"]["name"])
+            click.echo("Version : %s" % rpm["metadata"]["version"] + "\n")
+    else:
+        click.echo("No rpms found in this repository.")
+
+
+@cli.command('pulp-repos', short_help='List all the pulp repositories')
+@click.option(
+    '-u',
+    '--username',
+    help='Provide pulp server username')
+@click.option(
+    '-p',
+    '--password',
+    help='Provide pulp server password')
+@click.option(
+    '-ip',
+    '--ip_address',
+    help='Provide the pulp server url ip address and port '
+         'no in format http://<ip:portno>.',
+    default=None,
+    callback=pulp_utils.validate_pulp_ip_cb)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
+@pass_context
+def list_pulp_repos(ctx, ip_address, username, password, interactive):
+    """
+    Lists rpms using Pulp Server API.
+    """
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
+    url = "/pulp/api/v2/repositories/"
+    val = pulp_utils.get(url, ip_address, ctx, username, password)
+    repos = json.loads(val)
+
+    if repos is not None and len(repos) > 0:
+        for repo in repos:
+            click.echo("Repo Id      : %s" % repo["id"])
+            click.echo("Repo Name    : %s" % repo["display_name"])
+            click.echo("Repo path    : %s" % repo["_href"] + "\n")
+    else:
+        click.echo("No repositories found on this pulp server.")

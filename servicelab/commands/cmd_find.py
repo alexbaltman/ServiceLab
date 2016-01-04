@@ -8,16 +8,18 @@ matching the given search string regular expression.
 """
 import os
 import re
+import sys
 
 import json
 import click
 import requests
+from requests.auth import HTTPBasicAuth
 
 from bs4 import BeautifulSoup
-from requests.auth import HTTPBasicAuth
 
 from servicelab.stack import pass_context
 from servicelab.utils import jenkins_utils
+from servicelab.utils import pulp_utils
 from servicelab.utils import gerrit_functions
 
 
@@ -252,3 +254,54 @@ def find_build(ctx, search_term, username, password, ip_address, interactive):
         match_obj = re.search(search_term, key, re.M | re.I)
         if match_obj:
             click.echo(key)
+
+
+@cli.command('pulp-repos', short_help='Find all the matching pulp repositories')
+@click.argument('repo_name')
+@click.option(
+    '-u',
+    '--username',
+    help='Provide pulp server username')
+@click.option(
+    '-p',
+    '--password',
+    help='Provide pulp server password')
+@click.option(
+    '-ip',
+    '--ip_address',
+    help='Provide the pulp server url ip address and port '
+         'no in format http://<ip:portno>.',
+    default=None,
+    callback=pulp_utils.validate_pulp_ip_cb)
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
+@pass_context
+def find_pulp_repos(ctx, repo_name, ip_address, username, password, interactive):
+    """
+    Lists rpms using Pulp Server API.
+    """
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
+    if not password or not username:
+        click.echo("Username is %s and password is %s. "
+                   "Please, set the correct value for both and retry." %
+                   (username, password))
+        sys.exit(1)
+    url = "/pulp/api/v2/repositories/search/"
+    payload = '{ "criteria": { "filters" : { "display_name" : {"$regex" : "%s"}}\
+                             } }' % (repo_name)
+
+    val = pulp_utils.post(url, ip_address, ctx, username, password, payload)
+    repos = json.loads(val)
+
+    if repos is not None and len(repos) > 0:
+        for repo in repos:
+            click.echo("Repo Id      : %s" % repo["id"])
+            click.echo("Repo Name    : %s" % repo["display_name"])
+            click.echo("Repo path    : %s" % repo["_href"] + "\n")
+    else:
+        click.echo("No matching repositories found on this pulp server.")

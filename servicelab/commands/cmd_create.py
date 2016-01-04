@@ -43,12 +43,15 @@ def cli(_):
                    "A project repo type will create a project of normal type.\n"
                    "Ansible will create a service repo of ansible type.\n"
                    "Puppet will create a service repo of ansible type.\n")
+@click.option('-u',
+              '--username',
+              help='Username used for cloning repos from gerrit')
 @click.option('-i',
               '--interactive',
               flag_value=True,
               help="interactive editor")
 @pass_context
-def repo_new(ctx, repo_name, repo_type, interactive):
+def repo_new(ctx, repo_name, repo_type, username, interactive):
     """Creates a repository in gerrit production, does 1st commit,
     sets up directory structure, and creates nimbus.yml.
 
@@ -60,10 +63,12 @@ def repo_new(ctx, repo_name, repo_type, interactive):
 
     Add an interactive mode so they can choose options.
     """
+    if not username:
+        username = ctx.get_username()
     kinds = dict(project="Project", ansible="Ansible",
                  puppet="Puppet", empty="EmptyProject")
     repo = create_repo.Repo.builder(kinds[repo_type], ctx.get_gerrit_server(), ctx.path,
-                                    repo_name, interactive)
+                                    repo_name, username, interactive)
     repo.construct()
     return
 
@@ -94,6 +99,7 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
 
     ENV_NAME is the name of the tenant cloud.  Use 'stack list envs' to show all tenants
     """
+    groups = ''
     ccs_datapath = os.path.join(ctx.path, 'services', 'ccs-data')
     our_sites = ccsdata_utils.list_envs_or_sites(ctx.path)
     site = ccsdata_utils.get_site_from_env(our_sites, env_name)

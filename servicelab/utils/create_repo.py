@@ -22,7 +22,6 @@ import logging
 
 from abc import ABCMeta, abstractmethod
 from servicelab.utils import service_utils
-from servicelab.utils import helper_utils
 
 LOGGER = logging.getLogger('click_application')
 logging.basicConfig()
@@ -34,40 +33,54 @@ class Repo(object):
     """
     __metaclass__ = ABCMeta
 
-    def builder(rtype, gsrvr, path, name, interactive):
+    def builder(rtype, gsrvr, path, name, username, interactive):
         """
         Static method Instantiates Concreate classes of type Repo.
         """
         if rtype is "Ansible":
-            return Ansible(gsrvr, path, name, interactive)
-        if rtype is "Puppet":
-            return Puppet(gsrvr, path, name, interactive)
-        if rtype is "Project":
-            return Project(gsrvr, path, name, interactive)
-        if rtype is "EmptyProject":
-            return EmptyProject(gsrvr, path, name, interactive)
-        assert 0, "unable to construct the project of type: " + rtype
+            repo = Ansible(gsrvr, path, name, username, interactive)
+        elif rtype is "Puppet":
+            repo = Puppet(gsrvr, path, name, username, interactive)
+        elif rtype is "Project":
+            repo = Project(gsrvr, path, name, interactive)
+        elif rtype is "EmptyProject":
+            repo = EmptyProject(gsrvr, path, name, username, interactive)
+        else:
+            assert 0, "unable to construct the project of type: " + rtype
+        repo.set_reponame()
+        return repo
+
     builder = staticmethod(builder)
 
-    def __init__(self, gsrvr, path, name, interactive):
+    def __init__(self, gsrvr, path, name, username, interactive):
         self.gsrvr = gsrvr
         self.ctx_path = path
         self.name = name
+        self.reponame = name
         self.chk_script = "./check.sh"
         self.interactive = interactive
+        self.username = username
 
     def get_reponame(self):
         """
         Get the name of the repo
 
         Returns:
-            str: The gerrit user name
+            str: The type of the repo
 
         Raises:
             Raises Exception if type is not Ansible, Puppet, Project or
             EmptyProject.
         """
         assert type(self).__name__ != "Repo", "no repo name available "
+
+    def set_reponame(self):
+        """
+        get ansible projcet of type service-<project name>-ansible
+        """
+        if self.interactive:
+            self.reponame = click.prompt("enter the reponame",
+                                         default=self.reponame, type=str)
 
     def check(self):
         """
@@ -90,9 +103,10 @@ class Repo(object):
         """
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
-        cmd = "ssh -p {} {} gerrit create-project {}".format(port,
-                                                             hostname,
-                                                             self.get_reponame())
+        cmd = "ssh -p {} {}@{} gerrit create-project {}".format(port,
+                                                                self.username,
+                                                                hostname,
+                                                                self.get_reponame())
 
         ret_code, ret_str = service_utils.run_this(cmd)
         return (ret_code, ret_str)
@@ -109,7 +123,7 @@ class Repo(object):
             del pdict[name]
         os.remove(fpath)
 
-    def create_repo(self, username):
+    def create_repo(self):
         """
         create a repo on the local machine. Returns -1 if the repo creation fails.
         Returns:
@@ -123,7 +137,7 @@ class Repo(object):
         # please see https://code.google.com/p/gerrit/issues/detail?id=1013
         # for -no-checkout option.
         cmd = "git clone --no-checkout --depth=1 "
-        cmd += "ssh://{}@{}:{}/{} /tmp/{}".format(username,
+        cmd += "ssh://{}@{}:{}/{} /tmp/{}".format(self.username,
                                                   hostname,
                                                   port,
                                                   self.get_reponame(),
@@ -163,7 +177,7 @@ Current version: 0.1.1
             os.remove(name)
 
     @abstractmethod
-    def download_template(self, name):
+    def download_template(self):
         """
         download template is an abstarct method redefined in the subclass.
         """
@@ -181,21 +195,20 @@ class Ansible(Repo):
     """
     Creates the Ansible Repo.
     """
-    def __init__(self, gsrvr, path, name, interactive):
-        super(Ansible, self).__init__(gsrvr, path, name, interactive)
+    def __init__(self, gsrvr, path, name, username, interactive):
+        super(Ansible, self).__init__(gsrvr, path, name, username, interactive)
         self.play_roles = []
         self.chk_script = "python test.py"
+        if not self.reponame.startswith("service-"):
+            self.reponame = "service-" + self.reponame
+        if not self.reponame.endswith("-ansible"):
+            self.reponame = self.reponame + "-ansible"
 
     def get_reponame(self):
         """
         get ansible projcet of type service-<project name>-ansible
         """
-        name = self.name
-        if not name.startswith("service-"):
-            name = "service-" + name
-        if not name.endswith("-ansible"):
-            name = name + "-ansible"
-        return name
+        return self.reponame
 
     def create_nimbus(self):
         """
@@ -215,7 +228,7 @@ class Ansible(Repo):
         with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
 
-    def create_ansible(self, user):
+    def create_ansible(self):
         """
         Create the ansible directory for the ansible project.
         """
@@ -257,7 +270,7 @@ class Ansible(Repo):
 
         _add_roles()
         playdict = dict(hosts="{}-ansible".format(self.name),
-                        remote_user=user, roles=self.play_roles)
+                        remote_user=self.username, roles=self.play_roles)
         _write_playfile(playdict)
         return self.play_roles
 
@@ -274,14 +287,14 @@ class Ansible(Repo):
             os.mkdir(os.path.join(path, role, "tasks"))
             os.mkdir(os.path.join(path, role, "templates"))
 
-    def download_template(self, username):
+    def download_template(self):
         """
         Download the service-helloworld-ansible template from the gerrit server
         """
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
         cmd = "git clone --depth=1 "
-        cmd += "ssh://{}@{}:{}/service-helloworld-ansible {}".format(username,
+        cmd += "ssh://{}@{}:{}/service-helloworld-ansible {}".format(self.username,
                                                                      hostname,
                                                                      port,
                                                                      self.get_reponame())
@@ -360,13 +373,12 @@ class Ansible(Repo):
         try:
             if self.check():
                 return
-            user = helper_utils.get_username(self.ctx_path)
             self.create_project()
-            self.download_template(user)
+            self.download_template()
             self.instantiate_template()
-            self.create_repo(user)
+            self.create_repo()
             self.create_nimbus()
-            roles = self.create_ansible(user)
+            roles = self.create_ansible()
             self.create_roles(roles)
         except Exception:
             raise
@@ -376,19 +388,18 @@ class Puppet(Repo):
     """
     Creates a Puppet Repo of the given name on the gerrit server and local directory.
     """
-    def __init__(self, gsrvr, path, name, interactive):
-        super(Puppet, self).__init__(gsrvr, path, name, interactive)
+    def __init__(self, gsrvr, path, name, username, interactive):
+        super(Puppet, self).__init__(gsrvr, path, name, username, interactive)
+        if not self.reponame.startswith("service-"):
+            self.reponame = "service-" + self.reponame
+        if not self.reponame.endswith("-puppet"):
+            self.reponame = self.reponame + "-puppet"
 
     def get_reponame(self):
         """
         get a puppet service project name of type service-<project_name>-puppet
         """
-        name = self.name
-        if not name.startswith("service-"):
-            name = "service-" + name
-        if not name.endswith("-puppet"):
-            name = name + "-puppet"
-        return name
+        return self.reponame
 
     def create_nimbus(self):
         """
@@ -410,14 +421,14 @@ class Puppet(Repo):
         with open(nimbus_name, "w") as nimbus:
             nimbus.write(yaml.dump(nimbusdict, default_flow_style=False))
 
-    def download_template(self, username):
+    def download_template(self):
         """
         Download the service-helloworld-ansible template from the gerrit server
         """
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
         cmd = "git clone --depth=1 "
-        cmd += "ssh://{}@{}:{}/service-helloworld-puppet {}".format(username,
+        cmd += "ssh://{}@{}:{}/service-helloworld-puppet {}".format(self.username,
                                                                     hostname,
                                                                     port,
                                                                     self.get_reponame())
@@ -511,11 +522,10 @@ class Puppet(Repo):
         try:
             if self.check():
                 return
-            user = helper_utils.get_username(self.ctx_path)
             self.create_project()
-            self.download_template(user)
+            self.download_template()
             self.instantiate_template()
-            self.create_repo(user)
+            self.create_repo()
             self.create_nimbus()
         except Exception:
             raise
@@ -525,26 +535,25 @@ class Project(Repo):
     """
     Create a Project of the given name on the gerrit server and local directory.
     """
-    def __init__(self, gsrvr, path, name, interactive):
-        super(Project, self).__init__(gsrvr, path, name, interactive)
+    def __init__(self, gsrvr, path, name, username, interactive):
+        super(Project, self).__init__(gsrvr, path, name, username, interactive)
+        if not self.reponame.startswith("project-"):
+            self.reponame = "project-" + self.reponame
 
     def get_reponame(self):
         """
         get project repo name of type project-<project name>.
         """
-        name = self.name
-        if not name.startswith("project-"):
-            name = "project-" + name
-        return name
+        return self.reponame
 
-    def download_template(self, username):
+    def download_template(self):
         """
         Download the created project from the gerrit server
         """
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
         cmd = "git clone --depth=1 "
-        cmd += "ssh://{}@{}:{}/{}".format(username,
+        cmd += "ssh://{}@{}:{}/{}".format(self.username,
                                           hostname,
                                           port,
                                           self.get_reponame())
@@ -603,9 +612,8 @@ class Project(Repo):
         try:
             if self.check():
                 return
-            user = helper_utils.get_username(self.ctx_path)
             self.create_project()
-            self.download_template(user)
+            self.download_template()
             self.instantiate_template()
             self.create_nimbus()
         except Exception:
@@ -616,22 +624,22 @@ class EmptyProject(Repo):
     """
     Create an Empty project of the given name on the gerrit server and local directory.
     """
-    def __init__(self, gsrvr, path, name, interactive):
-        super(EmptyProject, self).__init__(gsrvr, path, name, interactive)
+    def __init__(self, gsrvr, path, name, username, interactive):
+        super(EmptyProject, self).__init__(gsrvr, path, name, username, interactive)
 
     def get_reponame(self):
         """
         get an project name of type <project name>
         """
-        return self.name
+        return self.reponame
 
-    def download_template(self, username):
+    def download_template(self):
         """
         Download the created project from the gerrit server
         """
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
-        cmd = "git clone --depth=1 ssh://{}@{}:{}/{}".format(username,
+        cmd = "git clone --depth=1 ssh://{}@{}:{}/{}".format(self.username,
                                                              hostname,
                                                              port,
                                                              self.get_reponame())
@@ -661,9 +669,8 @@ class EmptyProject(Repo):
         try:
             if self.check():
                 return
-            user = helper_utils.get_username(self.ctx_path)
             self.create_project()
-            self.download_template(user)
+            self.download_template()
             self.instantiate_template()
             self.create_nimbus()
         except Exception:

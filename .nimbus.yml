@@ -1,5 +1,5 @@
 project: servicelab
-version: 0.0.001
+version: 1.0
 check:
   script: ./check.sh
 build:
