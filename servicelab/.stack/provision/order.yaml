@@ -2,8 +2,8 @@
 order:
   - "proxyinternal-001"
   - "proxyinternal-002"
-  - "proxyexternal-001"
-  - "proxyexternal-002"
+#  - "proxyexternal-001"
+#  - "proxyexternal-002"
   - "db-001"
   - "db-002"
   - "db-003"
@@ -35,5 +35,5 @@ order:
 #  - "aio-003"
 #  - "nova-001"
 #  - "nova-002"
-  - "horizon-001"
-  - "horizon-002"
+#  - "horizon-001"
+#  - "horizon-002"
