@@ -11,6 +11,7 @@ from servicelab.utils import helper_utils
 from servicelab.stack import pass_context
 from servicelab.utils import yaml_utils
 from servicelab.utils import Vagrantfile_utils as Vf_utils
+from servicelab.utils import ccsdata_utils
 
 
 @click.option('--full',
@@ -60,12 +61,19 @@ from servicelab.utils import Vagrantfile_utils as Vf_utils
 @click.option('-i',
               '--interactive',
               help='Walk through booting VMs')
+@click.option('-v',
+              '--existing-vm',
+              default=False,
+              help='Choose a VM from ccs-data to boot.')
+@click.option('-e',
+              '--env',
+              help='Choose an environment from ccs-data.  For use with --existing-vm option')
 @click.group('up',
              invoke_without_command=True,
              short_help="Boot VM(s).")
 @pass_context
 def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, data_branch,
-        service_branch, username, interactive):
+        service_branch, username, interactive, existing_vm, env):
 
     # Things the user Should not do ==================================
     if mini is True and full is True:
@@ -76,7 +84,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     if not username:
         username = ctx.get_username()
 
-    if not any([full, mini, rhel7, target, service]):
+    if not any([full, mini, rhel7, target, service, existing_vm]):
         try:
             returncode, service = helper_utils.get_current_service(ctx.path)
         except TypeError:
@@ -98,6 +106,23 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         hostname = str(helper_utils.name_vm(service, ctx.path))
     elif target:
         hostname = target
+    elif existing_vm:
+        ret_code, site = ccsdata_utils.get_site_from_env(env)
+        if ret_code > 0:
+            return 1
+        env_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site,
+                                'environments', env)
+        ret_code, yaml_data = yaml_utils.read_host_yaml(existing_vm, env_path)
+        if ret_code > 0:
+            return 1
+        for group in yaml_data['groups']:
+            if group != 'virtual':
+                service_group = 'service-' + group.replace('_', '-')
+                if not os.path.isdir(os.path.join(ctx.path, 'services', service_group)):
+                    ctx.logger.error('Unable to find %s repo.  Try "stack workon %s"'
+                                     % (service_group, service_group))
+                    return 1
+        hostname = existing_vm
 
     # Setup data and inventory
     if not target and not mini and not full:
@@ -287,6 +312,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         returncode, allmy_vms = yaml_utils.getfull_OS_vms(os.path.join(ctx.path,
                                                                        'provision'),
                                                           '001')
+    else:
+        return 0
     if returncode > 0:
         ctx.logger.error("Couldn't get the vms from the vagrant.yaml.")
         sys.exit(1)

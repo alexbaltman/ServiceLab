@@ -10,7 +10,9 @@ from servicelab.utils import yaml_utils
 
 def _search_env(path, env):
     lst = []
-    sites = ccsdata_utils.list_envs_or_sites(path)
+    ret_code, sites = ccsdata_utils.list_envs_or_sites(path)
+    if ret_code > 0:
+        return lst
     for site, envs in sites.iteritems():
         if env in envs.keys():
             lst.append((site, env))

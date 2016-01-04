@@ -174,7 +174,9 @@ def gather_env_info(path):
     print "Here are the existing sites in ccs-data with which you can inject " \
           "a new tenant cloud environment on top of. Select the number of the " \
           "site to get started. "
-    our_sites = ccsdata_utils.list_envs_or_sites(path)
+    ret_code, our_sites = ccsdata_utils.list_envs_or_sites(path)
+    if ret_code > 0:
+        return(1, {})
     all_sites = []
     path_to_ccs_data = os.path.join(path, "services", "ccs-data")
     if not os.path.isdir(path_to_ccs_data):

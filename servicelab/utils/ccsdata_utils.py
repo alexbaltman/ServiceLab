@@ -5,12 +5,14 @@ import ordered_yaml
 import yaml
 
 from servicelab.utils import tc_vm_yaml_create
+from servicelab.stack import Context
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
 #       to import the one in stack.py properly.
 service_utils_logger = logging.getLogger('click_application')
 logging.basicConfig()
+ctx = Context()
 
 
 def get_environment_yaml_file(path, site, env):
@@ -105,11 +107,15 @@ def list_envs_or_sites(path):
     """
     # TODO: JIC we want to list services in the future.
     services = []
+    our_sites = {}
     os.listdir(path)
     # TODO: Add error handling and possibly return code
     ccsdata_reporoot = os.path.join(path, "services", "ccs-data")
+    if not os.path.isdir(ccsdata_reporoot):
+        ctx.logger.error('The ccs-data repo could not be found.  '
+                         'Please try "stack workon ccs-data"')
+        return(1, our_sites)
     ccsdata_sitedir = os.path.join(ccsdata_reporoot, "sites")
-    our_sites = {}
     our_sites = {x: None for x in os.listdir(ccsdata_sitedir)}
     for key in our_sites:
         # Note: os.walk provides dirpath, dirnames, and files,
@@ -140,14 +146,13 @@ def list_envs_or_sites(path):
                                                     dirs, "data.d")):
                 pass
 
-    return our_sites
+    return(0, our_sites)
 
 
-def get_site_from_env(our_sites, env):
+def get_site_from_env(env):
     """Given our_sites data structure find the parent site to the given environment.
 
     Args:
-    our_sites (dict of dict of list):
     env (string):
 
     Returns:
@@ -156,10 +161,16 @@ def get_site_from_env(our_sites, env):
     Example Usage:
         >>>
     """
+    ret_code, our_sites = (list_envs_or_sites(ctx.path))
+    if ret_code > 0:
+        return(1, 'invalid')
     for k in our_sites:
         for x in our_sites[k]:
             if x == env:
-                return k
+                return(0, k)
+    ctx.logger.error('%s is an invalid env. Please select one from stack list envs'
+                     % env_name)
+    return(1, 'invalid')
 
 
 def get_flavors_from_site(site_env_path):

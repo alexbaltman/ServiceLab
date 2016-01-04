@@ -47,7 +47,10 @@ def list_sites(ctx):
     '''
     try:
         val_lst = []
-        for keys in ccsdata_utils.list_envs_or_sites(ctx.path):
+        ret_code, sites = ccsdata_utils.list_envs_or_sites(ctx.path)
+        if ret_code > 0:
+            return 1
+        for keys in sites:
             val_lst.append(keys)
         val_lst.sort()
         for site in val_lst:
@@ -65,7 +68,9 @@ def list_envs(ctx):
     '''
     try:
         val_lst = []
-        data = ccsdata_utils.list_envs_or_sites(ctx.path)
+        ret_code, data = ccsdata_utils.list_envs_or_sites(ctx.path)
+        if ret_code > 0:
+            return 1
         for _, values in data.iteritems():
             for val in values:
                 val_lst.append(val)
@@ -85,7 +90,9 @@ def list_hosts(ctx):
     Here we list all the hosts using the git submodule ccs-data.
     '''
     try:
-        data = ccsdata_utils.list_envs_or_sites(ctx.path)
+        ret_code, data = ccsdata_utils.list_envs_or_sites(ctx.path)
+        if ret_code > 0:
+            return 1
         for _, values in data.iteritems():
             for _, l2_values in values.iteritems():
                 click.echo(l2_values)

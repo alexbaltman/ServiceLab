@@ -101,11 +101,8 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
     """
     groups = ''
     ccs_datapath = os.path.join(ctx.path, 'services', 'ccs-data')
-    our_sites = ccsdata_utils.list_envs_or_sites(ctx.path)
-    site = ccsdata_utils.get_site_from_env(our_sites, env_name)
-    if site is None:
-        click.echo("%s is an invalid env. Please select one from "
-                   "stack list envs" % env_name)
+    ret_code, site = ccsdata_utils.get_site_from_env(our_sites, env_name)
+    if ret_code > 0:
         return 1
     if template:
         env_path = os.path.join(ccs_datapath, 'sites', site, 'environments', env_name)
