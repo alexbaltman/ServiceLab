@@ -348,7 +348,7 @@ def getfull_OS_vms(pathto_yaml, vmname_ending_in):
         return 1, host_list
 
 
-def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
+def host_add_vagrantyaml(path, file_name, hostname, site, cpus=2, memory=2,
                          box='http://cis-kickstart.cisco.com/ccs-rhel-7.box',
                          role='none', profile=None, domain=1, storage=0,
                          mac_nocolon=None, ip=None):
@@ -364,6 +364,7 @@ def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
         hostname (str): The name of the host you would like added to the
                         yaml file.
         site (str): The name of site to lookup the ips.
+        cpus (int): Number of CPUs to use
         memory (int): Memory is given as an integer 1, 2, 3, etc. and multiplied
                       by 512. The default is 2, which results in 2*512 = 1024.
         box (str): The default box is from cis-kickstart called ccs-rhel-7. You can
@@ -424,6 +425,7 @@ def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
             profile: None
             ip: 192.168.100.30
             mac: "000027000030"
+            cpus: 2
             memory: 1024
             box: "http://cis-kickstart.cisco.com/ccs-rhel-7.box"
 
@@ -466,6 +468,7 @@ def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
                                                   'profile': profile,
                                                   'ip': ip,
                                                   'mac': mac_nocolon,
+                                                  'cpus': cpus,
                                                   'memory': memory,
                                                   'box': box,
                                                   }
@@ -475,6 +478,7 @@ def host_add_vagrantyaml(path, file_name, hostname, site, memory=2,
                                                 'profile': profile,
                                                 'ip': ip,
                                                 'mac': mac_nocolon,
+                                                'cpus': cpus,
                                                 'memory': memory,
                                                 'box': box
                                                 }

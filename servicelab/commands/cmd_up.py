@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from subprocess import CalledProcessError
 
@@ -68,13 +69,21 @@ from servicelab.utils import ccsdata_utils
 @click.option('-e',
               '--env',
               help='Choose an environment from ccs-data.  For use with --existing-vm option')
+@click.option('--flavor',
+              default='2cpu.4ram.20sas',
+              help='Choose the flavor for the VM to use')
+@click.option('--image',
+              default='slab-RHEL7.1v8',
+              help='Choose the image for the VM to use')
 @click.group('up',
              invoke_without_command=True,
              short_help="Boot VM(s).")
 @pass_context
 def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, data_branch,
-        service_branch, username, interactive, existing_vm, env):
+        service_branch, username, interactive, existing_vm, env, flavor, image):
 
+    flavor = str(flavor)
+    image = str(image)
     # Things the user Should not do ==================================
     if mini is True and full is True:
         ctx.logger.error("You can not use the mini flag with the full flag.")
@@ -126,9 +135,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
 
     # Setup data and inventory
     if not target and not mini and not full:
+        match = re.search('^(\d+)cpu\.(\d+)ram', flavor)
+        if match:
+            cpus = int(match.group(1))
+            memory = int(match.group(2)) * 2
         yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
-                                        "ccs-dev-1")
-        yaml_utils.write_dev_hostyaml_out(ctx.path, hostname)
+                                        "ccs-dev-1", memory=memory, cpus=cpus)
+        yaml_utils.write_dev_hostyaml_out(ctx.path, hostname, flavor=flavor, image=image)
         if service:
             retc, myinfo = service_utils.build_data(ctx.path)
             if retc > 0:

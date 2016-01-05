@@ -141,6 +141,19 @@ class TestYamlUtils(unittest.TestCase):
                 TestYamlUtils.ADD_HOSTNAME,
                 self.temp_dir),
             0)
+        yaml_file = os.path.join(self.temp_dir, self.VAGRANT_YAML_FILE)
+        ret_code = yaml_utils.host_add_vagrantyaml(
+                      self.temp_dir,
+                      yaml_file,
+                      'my_test_host',
+                      self.SITE_NAME,
+                      cpus=3,
+                      memory=4)
+        self.assertEquals(0, ret_code)
+        ret_code, yaml_data = yaml_utils.open_yaml_file(yaml_file)
+        self.assertEquals(3, yaml_data['hosts']['my_test_host']['cpus'])
+        self.assertEquals(2048, yaml_data['hosts']['my_test_host']['memory'])
+        self.ctx.logger.info('vagrant.yaml contained the expected data for custom flavor')
 
     def test_host_del_vagrantyaml(self):
         """ Tests deleting host to vagrant yaml.
