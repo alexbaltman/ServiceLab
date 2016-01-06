@@ -34,8 +34,10 @@ class TestCCsDataUtils(unittest.TestCase):
 
         """
         self.site_env_path = os.path.join(self.tempdir, 'environments')
+        self.site_to_check = "svl-svc-1"
         self.hostsd_path = os.path.join(self.site_env_path, 'test_env', 'hosts.d')
-        os.makedirs(self.hostsd_path)
+        if not os.path.exists(self.hostsd_path):
+            os.makedirs(self.hostsd_path)
         self.flavors_list = []
         for i in range(1, 11):
             flavor = 'fake-flavor-' + str(i).zfill(3)
@@ -51,7 +53,6 @@ class TestCCsDataUtils(unittest.TestCase):
                 output_file.write(yaml.dump(host_data, default_flow_style=False))
         self.flavors_list.sort()
 
-    @unittest.skip("skipping becos of jenkins env issue with ccs-data")
     def test_ccs_site_exist(self):
         """ The test_ccs_site_exist is a test case to check if
         site_to_check is available amongs the sites which we get
@@ -59,10 +60,9 @@ class TestCCsDataUtils(unittest.TestCase):
 
         If the assertion fails then test fails.
         """
-        sites = ccsdata_utils.list_envs_or_sites(self.ctx.path)
-        self.assertIn(self.site_to_check, sites)
+        return_code, sites = ccsdata_utils.list_envs_or_sites(self.ctx.path)
+        self.assertIsNotNone(sites[self.site_to_check])
 
-    @unittest.skip("Waiting on fix for Jenkins env w/ ccs-data.")
     def test_ccs_site_env_exist(self):
         """ The test_ccs_site_env_exist is a test case to check if
         environment for site_to_check is available amongs the sites
@@ -78,8 +78,8 @@ class TestCCsDataUtils(unittest.TestCase):
         3. If the data exist but is not in the directory as
            supplied by (path, site, environemt).
         """
-        sites = ccsdata_utils.list_envs_or_sites(self.ctx.path)
-        self.assertIn(self.site_to_check, sites)
+        return_code, sites = ccsdata_utils.list_envs_or_sites(self.ctx.path)
+        self.assertIsNotNone(sites[self.site_to_check])
 
         envs = sites[self.site_to_check]
         self.assertIsNotNone(envs)

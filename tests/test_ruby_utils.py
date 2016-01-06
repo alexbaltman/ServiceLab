@@ -3,6 +3,7 @@ import unittest
 from servicelab.stack import Context
 from servicelab.utils import ruby_utils
 from servicelab.utils import service_utils
+from distutils.version import StrictVersion
 
 
 class TestRubyUtils(unittest.TestCase):
@@ -83,22 +84,23 @@ class TestRubyUtils(unittest.TestCase):
             with open(os.path.join(path_to_reporoot,
                                    TestRubyUtils.CCS_GEMFILE)) as f:
                 self.gems = self.gems + self._list_of_gems(f)
-        except IOError, e:
-            self.Fail(1, 0, "Setup FAILS b/c can't access ruby-version, ccs-data/Gemfile.")
+        except IOError as e:
+            self.Fail(
+                1, 0,
+                "Setup FAILS b/c can't access ruby-version, ccs-data/Gemfile.")
 
     def tearDown(self):
         for gem in self.gems:
             ruby_utils.uninstall_gem(gem)
 
-    @unittest.skip("Waiting on Jenkins env fix w/ ccs-data.")
     def test_ruby_installed(self):
-        """ Test for ruby version check.
+        """ Test for ruby version check if its above 2.0
 
         """
-        self.assertEqual(self.ruby_version, ruby_utils.get_ruby_version())
+        self.assertTrue(
+            StrictVersion(
+                ruby_utils.get_ruby_version()) >= StrictVersion("2.0.0"))
 
-    @unittest.skip("Waiting on Jenkins env fix w/ ccs-data.")
-    @unittest.skipIf(not ruby_utils.check_devenv(), "ruby dev env is absent")
     def test_list_of_gems(self):
         """ Test installed gems match all gems in servicelab root and ccs.
 

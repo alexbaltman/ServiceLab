@@ -47,7 +47,8 @@ cd osx
 cd ..
 fi
 
-
+gem install bundler
+bundle
 sudo pip install -r requirements.txt
 sudo pip install -r test-requirements.txt
 sudo pip install -e .
