@@ -19,7 +19,7 @@ def show_repo_status(path):
     """
     service_dir = os.path.join(path, SERVICE_DIR)
 
-    if os.path.isdir(service_dir) == True and os.walk(service_dir).next()[1]:
+    if os.path.isdir(service_dir) is True and os.walk(service_dir).next()[1]:
         click.echo('\nShowing git repo status of services :')
         Gitcheckutils().git_check(service_dir)
     else:
