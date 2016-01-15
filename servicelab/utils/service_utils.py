@@ -4,9 +4,14 @@ Stack utility functions.
 import os
 import re
 import shutil
-import subprocess32 as subprocess
+import platform
+import reconfigure
 
 import logging
+import subprocess32 as subprocess
+from reconfigure.configs import ExportsConfig
+
+import service_utils
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -538,3 +543,74 @@ def installed(service, path):
         SERVICE_UTILS_LOGGER.error(ex)
         return False
     return True
+
+
+def export_for_nfs(rootpasswd, path, ip):
+    def __darwin_check_option(existing_opt):
+        flag = False
+        entry = existing_opt.clients
+        for opt in entry:
+            if opt.name == ip:
+                flag = True
+                break
+
+        if not flag:
+            return flag
+
+        # now we check other options including userid, gid
+        flag = False
+        for opt in entry:
+            if opt.name == "-alldirs":
+                flag = True
+                break
+
+        if not flag:
+            return flag
+
+        cstr = "-mapall={}:{}".format(os.getuid(), os.getgid())
+        flag = False
+        for opt in entry:
+            if opt.name == cstr:
+                flag = True
+                break
+        return flag
+
+    def __darwin_update():
+        cmd = "echo {} | sudo -S chmod o+w /etc/exports".format(rootpasswd)
+        ret_code, ret_info = service_utils.run_this(cmd)
+        if ret_code != 0:
+            return 1
+
+        line = '\\"{}\\" {} -alldirs -mapall={}:{}'.format(path,
+                                                           ip,
+                                                           os.getuid(),
+                                                           os.getgid())
+        cmd = 'echo \"{}\" >> /etc/exports'.format(line)
+        ret_code, ret_info = service_utils.run_this(cmd)
+        if ret_code != 0:
+            return 1
+
+        cmd = "echo {} | sudo -S chmod o-w /etc/exports".format(rootpasswd)
+        ret_code, ret_info = service_utils.run_this(cmd)
+        if ret_code != 0:
+            return 1
+
+        cmd = "echo {} | sudo -S nfsd update".format(rootpasswd)
+        ret_code, ret_info = service_utils.run_this(cmd)
+        if ret_code != 0:
+            return 1
+        return 0
+
+    if platform.system() != 'Darwin':
+        print "servicelab support nfs mount for mac only"
+        return 1
+
+    # check if the ip exist with the options
+    exp_list = ExportsConfig(path="/etc/exports")
+    exp_list.load()
+    for opt in exp_list.tree.exports:
+        if opt.name == path and __darwin_check_option(opt) is True:
+            return 0
+
+    # add the mount
+    return __darwin_update()

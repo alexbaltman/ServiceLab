@@ -283,7 +283,7 @@ def vm_isrunning(hostname, path):
     return 3, False
 
 
-def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
+def infra_ensure_up(mynets, float_net, my_security_groups, nfs, rootpassword, path=None):
     '''Best effort to ensure infra-001 or -002 will be booted in correct env.
 
     Args:
@@ -384,7 +384,7 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
         except CalledProcessError:
             return 1, hostname
     else:
-        thisvfile.add_virtualbox_vm(host_dict)
+        thisvfile.add_virtualbox_vm(host_dict, path, nfs, rootpassword)
         try:
             infra_connection.v.up(vm_name=hostname)
             return 0, hostname

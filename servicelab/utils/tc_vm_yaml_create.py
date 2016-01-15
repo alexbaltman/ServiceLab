@@ -113,7 +113,7 @@ def find_ip(env_path, vlan):
     del all_ips[0:4]
 
     # check if path exists if not exist
-    if os.path.exists(env_path) == False:
+    if os.path.exists(env_path) is False:
         click.echo("Cannot perform the current operation since this "
                    "path : %s is not found. Most likely you need to"
                    " perform : stack workon <service-name>" % (env_path))

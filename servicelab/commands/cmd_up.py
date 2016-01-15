@@ -75,12 +75,20 @@ from servicelab.utils import ccsdata_utils
 @click.option('--image',
               default='slab-RHEL7.1v8',
               help='Choose the image for the VM to use')
+@click.option('--nfs',
+              default=False,
+              help="Instead of mounting .stack/services folder as shared folder, "
+                   "it will be mounted as nfs mount")
+@click.option('--rootpassword',
+              default="",
+              help='This is required if mounting .stack/services as nfs mount')
 @click.group('up',
              invoke_without_command=True,
              short_help="Boot VM(s).")
 @pass_context
 def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, data_branch,
-        service_branch, username, interactive, existing_vm, env, flavor, image):
+        service_branch, username, interactive, existing_vm, env, flavor, image,
+        nfs, rootpassword):
 
     flavor = str(flavor)
     image = str(image)
@@ -92,6 +100,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     # Gather as many requirements as possible for the user ===========
     if not username:
         username = ctx.get_username()
+
+    if nfs and rootpassword == "":
+        ctx.logger.error("cannot update the /etc/exports file")
+        sys.exit(1)
 
     if not any([full, mini, rhel7, target, service, existing_vm]):
         try:
@@ -172,7 +184,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             if returncode > 0:
                 ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
                 sys.exit(1)
-            myvfile.add_virtualbox_vm(host_dict)
+            if myvfile.add_virtualbox_vm(host_dict, ctx.path, nfs, rootpassword) != 0:
+                ctx.logger.error('Unable to create a local virtual box vm')
+                sys.exit(1)
 
         # Get vm running
         myvag_env.v.up(vm_name=hostname)
@@ -198,12 +212,17 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             returncode, infra_name = v_utils.infra_ensure_up(mynets,
                                                              float_net,
                                                              my_sec_grps,
+                                                             nfs,
+                                                             rootpassword,
                                                              path=ctx.path)
             if returncode == 1:
                 ctx.logger.error("Could not boot a remote infra node")
                 sys.exit(1)
         else:
-            returncode, infra_name = v_utils.infra_ensure_up(None, None, None, path=ctx.path)
+            returncode, infra_name = v_utils.infra_ensure_up(None, None,
+                                                             None, nfs,
+                                                             rootpassword,
+                                                             path=ctx.path)
             if returncode == 1:
                 ctx.logger.error("Could not boot a local infra node")
                 sys.exit(1)
@@ -440,8 +459,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                 myvfile.add_openstack_vm(vhosts[0])
                 a.v.up(vm_name=curhost, provider='openstack')
             else:
-                myvfile.add_virtualbox_vm(vhosts[0])
+                myvfile.add_virtualbox_vm(vhosts[0], ctx.path, nfs, rootpassword)
                 a.v.up(vm_name=curhost)
+
     except IOError as e:
         ctx.logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
         sys.exit(1)

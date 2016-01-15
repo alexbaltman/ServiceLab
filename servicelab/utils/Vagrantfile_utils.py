@@ -1,6 +1,8 @@
-import logging
-import yaml
 import os
+import yaml
+import logging
+
+import service_utils
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -59,16 +61,16 @@ class SlabVagrantfile(object):
                 None
 
             Returns:
-                h1 {str}:  Always the same data
-                h2 {str}:  Always the same data
+                line {str}:  Always the same data
+                line {str}:  Always the same data
                 req_plugin {str}:  Always the same data
 
             Example Usage:
                 h1, h2, req_plugin = _set_header()
             """
-            h1 = ("# -*- mode: ruby -*-\n"
-                  "# vi: set ft=ruby :\n")
-            h2 = "VAGRANTFILE_API_VERSION = \"2\"\n"
+            line1 = ("# -*- mode: ruby -*-\n"
+                     "# vi: set ft=ruby :\n")
+            line2 = "VAGRANTFILE_API_VERSION = \"2\"\n"
             req_plugin = ("required_plugins = %w( vagrant-hostmanager ",
                           "vagrant-openstack-provider )\n",
                           "required_plugins.each do |plugin|\n",
@@ -76,7 +78,7 @@ class SlabVagrantfile(object):
                           "Vagrant.has_plugin? plugin\n",
                           "end\n")
 
-            return h1, h2, req_plugin
+            return line1, line2, req_plugin
 
         def _beg_vm_config():
             """
@@ -94,10 +96,10 @@ class SlabVagrantfile(object):
             startvms = "Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|\n"
             return startvms
 
-        h1, h2, req_plugin = _set_header()
+        line1, line2, req_plugin = _set_header()
         startvms = _beg_vm_config()
         # Note: until write_it is fixed, have to move list out from middle
-        self.write_it(h1, h2, req_plugin, startvms)
+        self.write_it(line1, line2, req_plugin, startvms)
         self.set_header = True
 
     def write_it(self, *text):
@@ -115,16 +117,16 @@ class SlabVagrantfile(object):
         """
         # Note: Doesn't close the vagrant loop w/ an 'end'. Use append_it for that.
         mystr = ''
-        with open(os.path.join(self.path, "Vagrantfile"), 'w') as f:
+        with open(os.path.join(self.path, "Vagrantfile"), 'w') as vfile:
             for i in text:
                 if isinstance(i, (list, tuple)):
-                    for x in i:
-                        mystr += x
+                    for item in i:
+                        mystr += item
                 else:
                     mystr += i
-            f.write(mystr)
+            vfile.write(mystr)
             # Note: This buffers us from append_it function
-            f.write("\n")
+            vfile.write("\n")
 
     def append_it(self, *text):
         """
@@ -140,25 +142,25 @@ class SlabVagrantfile(object):
             my_class_var.append_it(text_var_1, text_var_2, ... text_var_n)
         """
         lines = ''
-        with open(os.path.join(self.path, "Vagrantfile"), 'r') as f:
-            lines = f.readlines()
+        with open(os.path.join(self.path, "Vagrantfile"), 'r') as vfile:
+            lines = vfile.readlines()
             # Note: Remove the last line always so we get rid of the 'end' and
             #       add our own.
             lines = lines[:-1]
-        with open(os.path.join(self.path, "Vagrantfile"), 'w') as f:
+        with open(os.path.join(self.path, "Vagrantfile"), 'w') as vfile:
             for line in lines:
-                f.write(line)
+                vfile.write(line)
             for i in text:
                 try:
-                    f.write(text)
+                    vfile.write(text)
                 except TypeError:
-                    for x in i:
-                        f.write(x)
-            f.write('end\n')
-            f.write('end')
-            f.write('\n')
+                    for item in i:
+                        vfile.write(item)
+            vfile.write('end\n')
+            vfile.write('end')
+            vfile.write('\n')
 
-    def add_virtualbox_vm(self, host_dict):
+    def add_virtualbox_vm(self, host_dict, path="", nfs=False, rootpassword=""):
         """
         Adds a virtual box to Vagrantfile
 
@@ -173,6 +175,8 @@ class SlabVagrantfile(object):
                               'memory': '1024'
                               }
                  }
+             nfs(boolean): True if we are nfs mounting the service subdirectory in the path
+             rootpassword: Root password to use to sudo update /etc/exports dircetory
 
         Returns:
             0 or 1 for success or failure.  Also calls append_it to add data to Vagrantfile
@@ -191,31 +195,42 @@ class SlabVagrantfile(object):
                        "  config.vm.box = \"" + self.host_dict[self.hostname]['box'] + "\"\n"
                        "  config.vm.provider :virtualbox do |vb, override|\n")
 
-            for k, v in host_dict[self.hostname].iteritems():
+            for key, val in host_dict[self.hostname].iteritems():
                 # TODO: incorporate the storage and storage controller here too.
-                if k in ['memory', 'cpus']:
+                if key in ['memory', 'cpus']:
                     try:
                         setitup += ("    vb.customize [\"modifyvm\", :id, \"--{0}\", \"" +
-                                    str(v) + "\"]\n").format(k)
-                    except KeyError as e:
+                                    str(val) + "\"]\n").format(key)
+                    except KeyError as ex:
                         Vagrantfile_utils_logger.debug('Non-fatal - may not be set')
-                        Vagrantfile_utils_logger.debug('Failed to set vm attribute: ' + e)
+                        Vagrantfile_utils_logger.debug('Failed to set vm attribute: ' + ex)
             setitup += '  end\n'
-            setitup += "  config.vm.hostname = \"" + self.hostname + "\"\n"
+            setitup += '  config.vm.hostname = "' + self.hostname + '"\n'
             try:
-                setitup += "  config.vm.network :private_network, ip: \"" + ip
-                setitup += "\", mac: \"" + host_dict[self.hostname]['mac'] + "\"\n"
+                setitup += '  config.vm.network :private_network, ip: "' + ip
+                setitup += '", mac: "' + host_dict[self.hostname]['mac'] + '"\n'
             except KeyError:
-                setitup += "  config.vm.network :private_network, ip: \"" + ip + "\"\n"
-            setitup += "  config.vm.provision \"shell\", path: \"provision/infra.sh\"\n"
-            setitup += "  config.vm.provision \"shell\", path: \"provision/node.sh\"\n"
-            setitup += ("  config.vm.provision \"file\", source: " +
-                        "\"provision/ssh-config\"," +
-                        "destination:\"/home/vagrant/.ssh/config\"\n")
-            setitup += ("  config.vm.provision \"file\", source: \"hosts\", " +
-                        "destination: \"/etc/hosts\"\n")
-            setitup += ("  config.vm.synced_folder \"services\", " +
-                        "\"/opt/ccs/services/\"\n")
+                setitup += '  config.vm.network :private_network, ip: "' + ip + '"\n'
+            setitup += '  config.vm.provision "shell", path: "provision/infra.sh"\n'
+            setitup += '  config.vm.provision "shell", path: "provision/node.sh"\n'
+            setitup += ('  config.vm.provision "file", source: ' +
+                        '"provision/ssh-config",' +
+                        'destination:"/home/vagrant/.ssh/config"\n')
+            setitup += ('  config.vm.provision "file", source: "hosts", ' +
+                        'destination: "/etc/hosts"\n')
+
+            if nfs:
+                if service_utils.export_for_nfs(rootpassword,
+                                                os.path.join(path, "services"),
+                                                ip) != 0:
+                    Vagrantfile_utils_logger.error('unable to setup nfs mount for ' +
+                                                   os.path.join(path, "services"))
+                    return 1
+                setitup += ('  config.vm.synced_folder "services", "/opt/ccs/services", '
+                            'type: "nfs", nfs_export: false\n')
+            else:
+                setitup += ('  config.vm.synced_folder "services", "/opt/ccs/services"\n')
+
             self.append_it(setitup)
             return 0
         except KeyError:
@@ -345,7 +360,7 @@ class SlabVagrantfile(object):
         self.env_vars['security_groups'] = security_groups
         openstack_network_url = None
         openstack_image_url = None
-        if (self.env_vars.get('openstack_auth_url')):
+        if self.env_vars.get('openstack_auth_url'):
             proto, baseurl, port = self.env_vars.get('openstack_auth_url').split(':')
             openstack_network_url = proto + ':' + baseurl + ":9696/v2.0"
             openstack_image_url = proto + ':' + baseurl + ":9292/v2/"
@@ -431,9 +446,9 @@ class SlabVagrantfile(object):
             my_class_var.set_host_image_flavors(self.ctx.path)
         """
         relpath_toyaml = 'services/ccs-data/sites/ccs-dev-1/environments/dev-tenant/hosts.d/'
-        if (os.path.exists(path)):
+        if os.path.exists(path):
             path = os.path.join(path, relpath_toyaml)
-            if (os.path.exists(path)):
+            if os.path.exists(path):
                 path = os.path.join(path, self.hostname.lower() + '.yaml')
                 if os.path.exists(path):
                     try:

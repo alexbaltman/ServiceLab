@@ -144,7 +144,7 @@ class TestVagrantFileUtils(unittest.TestCase):
                            'destination:"/home/vagrant/.ssh/config"\n'
                            '  config.vm.provision "file", source: "hosts", destination: '
                            '"/etc/hosts"\n'
-                           '  config.vm.synced_folder "services", "/opt/ccs/services/"\n'
+                           '  config.vm.synced_folder "services", "/opt/ccs/services"\n'
                            'end\nend\n'
                            )
         with open(self.vagrant_file, 'w') as f:

@@ -46,7 +46,7 @@ def display_vm_status(ctx):
         "has occurred. Most probably this file does not "\
         "exist : %s . Please, run : stack workon <project name>"\
         " to fix the issue." % (vagrant_file_path)
-    if os.path.isfile(vagrant_file_path) == False:
+    if not os.path.isfile(vagrant_file_path):
         click.echo(error_message)
         sys.exit(1)
     else:
