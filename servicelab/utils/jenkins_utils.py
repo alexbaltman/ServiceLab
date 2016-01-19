@@ -41,7 +41,7 @@ def get_build_status(job_name, user, password, ip_address):
     if not server:
         # this should be an exception
         print "unable to get server instance"
-        return ""
+        return False
 
     status = server[job_name].get_last_build().name
     if server[job_name].get_last_build().get_status():
@@ -57,7 +57,7 @@ def get_build_log(job_name, user, password, ip_address):
     if not server:
         # this should be an exception
         print "unable to get server instance"
-        return
+        return False
 
     log = server[job_name].get_last_build().name
     if server[job_name].get_last_build().get_status():
@@ -85,7 +85,7 @@ def run_build(job_name, user, password, ip_address, ctx):
     if not server:
         # this should be an exception
         click.echo("unable to get server instance")
-        return
+        return False
 
     if server[job_name].get_last_build():
         build_number = server[job_name].get_last_build().get_number()
@@ -100,7 +100,7 @@ def run_build(job_name, user, password, ip_address, ctx):
             ctx.logger.error("Could not connect to jenkins server. Please,"
                              " check url {0}".format(ip_address))
             ctx.logger.error(str(ex))
-            return
+            return False
     else:
         click.echo("Starting Build : %s " % (job_name))
         server.build_job(job_name)
@@ -138,10 +138,10 @@ def process_response(res, ctx):
     """
     if res.status_code == 404:
         ctx.logger.error("Incorrect jenkins url supplied... exiting")
-        return
+        return False
     if res.status_code == 401:
         ctx.logger.error("Authentication failed... exiting")
-        return
+        return False
     if res.status_code == 400:
         ctx.logger.error("Incorrect information supplied... exiting")
-        return
+        return False
