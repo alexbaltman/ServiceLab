@@ -4,11 +4,12 @@ Utility functions for go
 import sys
 import time
 import copy
+import json
+import xml.etree.ElementTree as ET
 
 import logging
 import click
 import requests
-import xml.etree.ElementTree as ET
 from requests.auth import HTTPBasicAuth
 from bs4 import BeautifulSoup
 
@@ -69,6 +70,156 @@ def push_config(config_xmlurl, md5, xmlfile, auth=None):
         click.echo(req.status_code, req.text)
         sys.exit(1)
     time.sleep(1)
+
+
+def get_current_pipeline_counter(pipeline_name, ip_address, auth=None):
+    """
+    Get current pipeline counter
+
+    Attributes:
+        pipeline_name
+    """
+    url = "http://%s/go/api/pipelines/%s/history/0" % (
+        ip_address, pipeline_name)
+
+    if auth:
+        req = requests.get(url, auth=auth)
+    else:
+        req = requests.get(url)
+    if req.status_code != 200:
+        click.echo(req.status_code, req.text)
+        return -1, None
+    pipeline_history = json.loads(req.text)
+    if pipeline_history['pipelines'] and len(
+            pipeline_history['pipelines']) > 0:
+        pipeline_counter = pipeline_history['pipelines'][0]['counter']
+    else:
+        pipeline_counter = None
+    return 0, pipeline_counter
+
+
+def process_all_stages(pipeline_name, pipeline_counter, ip_address, auth=None):
+    """
+    Process all stages with needing manual intervention
+
+    Attributes:
+        pipeline_name
+    """
+    wait_for_pipeline(pipeline_name, ip_address, auth)
+    return_code, pipeline_instance = get_pipeline_instance(
+        pipeline_name, pipeline_counter, ip_address, auth)
+    if return_code != 0:
+        click.echo("Error occurred. Exiting")
+        return
+
+    i = 0
+    if pipeline_instance['stages']:
+        for stage in pipeline_instance['stages']:
+            return_code, current_pipeline_instance = get_pipeline_instance(
+                pipeline_name, pipeline_counter, ip_address, auth)
+            matching_stage = current_pipeline_instance['stages'][i]
+            if return_code != 0:
+                click.echo("Error occurred. Exiting")
+                return
+
+            if 'result' in matching_stage:
+                click.echo(
+                    "Stage : %s  has %s " %
+                    (matching_stage['name'],
+                     matching_stage['result']))
+                if matching_stage['result'] == "Failed":
+                    click.echo("Exiting.")
+                    return
+            else:
+                click.echo("Scheduling Stage : %s " % (stage['name']))
+                url = "http://%s/go/run/%s/%s/%s" % (
+                    ip_address, pipeline_name, pipeline_counter, stage['name'])
+                req = requests.post(url, auth=auth, data="")
+                if req.status_code != 200:
+                    click.echo(req.status_code, req.text)
+                    return -1, None
+                time.sleep(10)
+                wait_for_stage(
+                    pipeline_name,
+                    ip_address,
+                    stage['name'],
+                    pipeline_counter,
+                    auth=auth)
+                return_code, current_pipeline_instance = get_pipeline_instance(
+                    pipeline_name, pipeline_counter, ip_address, auth)
+                matching_stage = current_pipeline_instance['stages'][i]
+                click.echo(
+                    "Stage : %s  has %s " %
+                    (matching_stage['name'],
+                     matching_stage['result']))
+
+            i += 1
+
+
+def get_pipeline_instance(
+        pipeline_name,
+        pipeline_counter,
+        ip_address,
+        auth=None):
+    """
+    Gets a pipeline instance
+    """
+    url = "http://%s/go/api/pipelines/%s/instance/%s" % (
+        ip_address, pipeline_name, pipeline_counter)
+    if auth:
+        req = requests.get(url, auth=auth)
+    else:
+        req = requests.get(url)
+    if req.status_code != 200:
+        click.echo(req.status_code, req.text)
+        return -1, None
+    pipeline_instance = json.loads(req.text)
+    return 0, pipeline_instance
+
+
+def wait_for_pipeline(pipeline_name, ip_address, auth=None):
+    """
+    Wait for pipeline.
+    """
+    server_url = "http://{0}/go/api/pipelines/{1}/status".format(
+        ip_address, pipeline_name)
+    schedulable = False
+
+    while not schedulable:
+        res = requests.get(server_url, auth=auth)
+        status = json.loads(res.content)
+        if status:
+            schedulable = status['schedulable']
+        else:
+            return
+        if not status['schedulable']:
+            click.echo("Pipeline is running. Waiting for it to finish.")
+            time.sleep(10)
+
+
+def wait_for_stage(
+        pipeline_name,
+        ip_address,
+        stage_name,
+        pipeline_counter,
+        auth=None):
+    """
+    Wait for stage.
+    """
+    server_url = "http://{0}/go/api/stages/{1}/{2}/instance/{3}/1".format(
+        ip_address, pipeline_name, stage_name, pipeline_counter)
+    stopped = False
+
+    while not stopped:
+        res = requests.get(server_url, auth=auth)
+        stage = json.loads(res.content)
+        if stage['result'] != "Unknown":
+            stopped = True
+        else:
+            click.echo(
+                "Stage %s is running. Waiting for it to finish." %
+                (stage['name']))
+            time.sleep(10)
 
 
 def create_pipeline(root, name, new_name):

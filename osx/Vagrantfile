@@ -6,6 +6,10 @@
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure(2) do |config|
+config.vm.provider "virtualbox" do |v|
+  v.memory = 2048
+  v.cpus = 4
+end
   # The most common configuration options are documented and commented below.
   # For a complete reference, please see the online documentation at
   # https://docs.vagrantup.com.
@@ -132,5 +136,12 @@ sudo cp /vagrant_data/pulp-admin.conf  /etc/pulp/admin/admin.conf
 sudo pulp-admin login -u admin -p admin
 sudo pulp-admin rpm repo create --repo-id=CentOS-7-x86_64 --feed=http://mirror.centos.org/centos/7/os/x86_64/
 sudo pulp-admin rpm repo list
+sudo yum install -y java-1.7.0-openjdk*
+wget https://archive.apache.org/dist/ant/binaries/apache-ant-1.9.2-bin.tar.gz
+sudo mkdir /opt
+sudo tar xvfvz apache-ant-1.9.2-bin.tar.gz -C /opt
+sudo sh -c 'echo ANT_HOME=/opt/ant >> /etc/environment'
+sudo ln -s /opt/apache-ant-1.9.2/bin/ant  /usr/bin/ant
+ant -v
    SHELL
 end

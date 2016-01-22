@@ -34,9 +34,16 @@
                 <runif status="passed" />
               </ant>
             </tasks>
-            <artifacts>
-              <artifact src="test" dest="reports" />
-            </artifacts>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="secondStage">
+        <approval type="manual" />
+        <jobs>
+          <job name="secondJob">
+            <tasks>
+              <ant buildfile="build.xml" target="main" />
+            </tasks>
           </job>
         </jobs>
       </stage>
@@ -44,5 +51,6 @@
   </pipelines>
   <agents>
     <agent hostname="localhost.localdomain" ipaddress="10.0.2.15" uuid="445c8658-1fc8-4d4d-8883-80764ce7def2" />
+    <agent hostname="localhost.localdomain" ipaddress="10.0.2.15" uuid="9148e148-60a3-40d6-b379-55544e66d4a8" />
   </agents>
 </cruise>

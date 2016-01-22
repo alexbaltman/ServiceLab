@@ -38,6 +38,11 @@ sudo make all
 sudo make install
 cd ..
 git --version
+sudo yum install -y java-1.7.0-openjdk*
+wget https://archive.apache.org/dist/ant/binaries/apache-ant-1.9.2-bin.tar.gz
+sudo tar xvfvz apache-ant-1.9.2-bin.tar.gz -C /opt
+sudo sh -c 'echo ANT_HOME=/opt/ant >> /etc/environment'
+sudo ln -s /opt/apache-ant-1.9.2/bin/ant  /usr/bin/ant
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]
