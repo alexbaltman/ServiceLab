@@ -5,13 +5,10 @@ import os
 import re
 import shutil
 import platform
-import reconfigure
 
-import logging
 import subprocess32 as subprocess
 from reconfigure.configs import ExportsConfig
-
-import service_utils
+import logging
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -588,29 +585,77 @@ def export_for_nfs(rootpasswd, path, ip):
         cmd = 'echo \"{}\" >> /etc/exports'.format(line)
         ret_code, ret_info = service_utils.run_this(cmd)
         if ret_code != 0:
+            SERVICE_UTILS_LOGGER.error(ret_info)
             return 1
 
         cmd = "echo {} | sudo -S chmod o-w /etc/exports".format(rootpasswd)
         ret_code, ret_info = service_utils.run_this(cmd)
         if ret_code != 0:
+            SERVICE_UTILS_LOGGER.error(ret_info)
             return 1
 
         cmd = "echo {} | sudo -S nfsd update".format(rootpasswd)
         ret_code, ret_info = service_utils.run_this(cmd)
         if ret_code != 0:
+            SERVICE_UTILS_LOGGER.error(ret_info)
             return 1
         return 0
 
-    if platform.system() != 'Darwin':
-        print "servicelab support nfs mount for mac only"
+    def __linux_check_option(existing_opt):
+        flag = False
+        entry = existing_opt.clients
+        for opt in entry:
+            if opt.name == ip:
+                flag = True
+                break
+        if not flag:
+            return flag
+
+    def __linux_update():
+        cmd = "echo {} | sudo -S chmod o+w /etc/exports".format(rootpasswd)
+        ret_code, ret_info = service_utils.run_this(cmd)
+        if ret_code != 0:
+            return 1
+
+        line = '(rw,no_subtree_check,all_squash,anonuid={},anongid={},fsid=1777472711)'
+        line = '\\"{}\\" {}'+line
+        line = line.format(path, ip, os.getuid(), os.getgid())
+        cmd = 'echo \"{}\" >> /etc/exports'.format(line)
+        ret_code, ret_info = service_utils.run_this(cmd)
+        if ret_code != 0:
+            SERVICE_UTILS_LOGGER.error(ret_info)
+            return 1
+
+        cmd = "echo {} | sudo -S chmod o-w /etc/exports".format(rootpasswd)
+        ret_code, ret_info = service_utils.run_this(cmd)
+        if ret_code != 0:
+            SERVICE_UTILS_LOGGER.error(ret_info)
+            return 1
+
+        cmd = "echo {} | sudo exportfs -ra".format(rootpasswd)
+        ret_code, ret_info = service_utils.run_this(cmd)
+        if ret_code != 0:
+            SERVICE_UTILS_LOGGER.error(ret_info)
+            return 1
+        return 0
+
+    if platform.system() == 'Darwin':
+        __check = __darwin_check_option
+        __update = __darwin_update
+    elif platform.system() == 'Linux':
+        __check = __linux_check_option
+        __update = __linux_update
+    else:
+        ret_info = "servicelab support nfs mount for mac os or redhat/linux only"
+        SERVICE_UTILS_LOGGER.error(ret_info)
         return 1
 
     # check if the ip exist with the options
     exp_list = ExportsConfig(path="/etc/exports")
     exp_list.load()
     for opt in exp_list.tree.exports:
-        if opt.name == path and __darwin_check_option(opt) is True:
+        if opt.name == path and __check(opt) is True:
             return 0
 
     # add the mount
-    return __darwin_update()
+    return __update()
