@@ -137,7 +137,7 @@ class Repo(object):
         # please see https://code.google.com/p/gerrit/issues/detail?id=1013
         # for -no-checkout option.
         cmd = "git clone --no-checkout --depth=1 "
-        cmd += "ssh://{}@{}:{}/{} /tmp/{}".format(self.username,
+        cmd += "ssh://{}@{}:{}/{} {}/.tmp".format(self.username,
                                                   hostname,
                                                   port,
                                                   self.get_reponame(),
@@ -145,10 +145,10 @@ class Repo(object):
         ret_code, ret_str = service_utils.run_this(cmd)
         assert ret_code == 0, "unable to clone the project:" + ret_str
 
-        os.rename("/tmp/" + self.get_reponame() + "/.git", self.get_reponame() + "/.git")
-        shutil.rmtree("/tmp/" + self.get_reponame())
+        os.rename(os.path.join(self.get_reponame(), ".tmp", ".git"),
+                  os.path.join(self.get_reponame(), ".git"))
+        shutil.rmtree(os.path.join(self.get_reponame(), ".tmp"))
 
-        # now get the template repo
         return ret_code
 
     def releasenote(self, rtype):
