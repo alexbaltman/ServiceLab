@@ -107,12 +107,17 @@ def list_hosts(ctx):
               '--inc/--out',
               help='List the incoming or outgoing reviews.',
               default=True)
+@click.option('-u',
+              '--username',
+              help='Provide gerrit username',
+              default="")
 @pass_context
-def list_reviews(ctx, inout):
+def list_reviews(ctx, inout, username):
     """
     Lists reviews using Gerrit's API.
     """
-    username = ctx.get_username()
+    if not username:
+        username = ctx.get_username()
     gfn = gerrit_functions.GerritFns(username, "", ctx)
     if inout:
         gfn.print_gerrit(pformat="summary", number=None, owner=username,
@@ -123,12 +128,17 @@ def list_reviews(ctx, inout):
 
 
 @cli.command('repos', short_help='List all repositories in Gerrit.')
+@click.option('-u',
+              '--username',
+              help='Provide gerrit username',
+              default="")
 @pass_context
-def list_repos(ctx):
+def list_repos(ctx, username):
     """
     Lists repos using Gerrit's API.
     """
-    username = ctx.get_username()
+    if not username:
+        username = ctx.get_username()
     gfn = gerrit_functions.GerritFns(username, "", ctx)
     gfn.print_list()
 
