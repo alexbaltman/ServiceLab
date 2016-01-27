@@ -1,6 +1,7 @@
 """
 gerrit functions
 """
+import os
 import datetime
 
 import click
@@ -126,6 +127,16 @@ class GerritFns(object):
         self.hostname = ctx.get_gerrit_server()['hostname']
         self.port = ctx.get_gerrit_server()['port']
 
+    def getkey(self):
+        """ get the ssh key-credential of the user."""
+        key = os.path.expanduser(os.path.join("~" + self.user,
+                                              ".ssh",
+                                              "id_rsa"))
+        if not os.access(key, os.F_OK | os.R_OK):
+            raise GerritFnException("unable to access "
+                                    "user {} ssh key".format(self.user))
+        return key
+
     def change_review(self, number, rev_number, verify_number, msg=""):
         """ Change the review and verify numbers for a gerrit review number
 
@@ -145,11 +156,12 @@ class GerritFns(object):
         project.add_items('project', [self.prjname])
         other = filters.Items()
         other.add_items('change', number)
-        query = reviews.Query(self.hostname)
+        key = self.getkey()
+        query = reviews.Query(self.hostname, self.port, self.user, key)
 
         for review in query.filter(project, other):
             revision = review["currentPatchSet"]["revision"]
-            rev = reviews.Review(revision, self.hostname)
+            rev = reviews.Review(revision, self.hostname, self.port, self.user, key)
             rev.review(rev_number)
             rev.verify(verify_number)
             if not msg:
@@ -180,13 +192,14 @@ class GerritFns(object):
         project.add_items('project', [self.prjname])
         other = filters.Items()
         other.add_items('change', number)
-        query = reviews.Query(self.hostname)
+        key = self.getkey()
+        query = reviews.Query(self.hostname, self.port, self.user, key)
         if state not in ['abandon', 'restore', 'delete']:
             raise GerritFnException("unknown state for change " + number)
 
         for review in query.filter(project, other):
             revision = review["currentPatchSet"]["revision"]
-            rev = reviews.Review(revision, self.hostname)
+            rev = reviews.Review(revision, self.hostname, self.port, self.user, key)
             rev.status(state)
             if not msg:
                 msg = click.prompt(Format.message(0, 0, Format.bld, "Message? "),
@@ -211,10 +224,11 @@ class GerritFns(object):
         project.add_items('project', [self.prjname])
         other = filters.Items()
         other.add_items('change', number)
-        query = reviews.Query(self.hostname)
+        key = self.getkey()
+        query = reviews.Query(self.hostname, self.port, self.user, key)
 
         for review in query.filter(project, other):
-            if review['type'] == 'error':
+            if 'type' in review.keys() and review['type'] == 'error':
                 raise GerritFnException(review['message'])
 
             ref = review["currentPatchSet"]["ref"]
@@ -224,14 +238,19 @@ class GerritFns(object):
 
             # now do a git clone without checkout
             cmd = "rm -rf {};".format(tdir)
-            cmd += "git clone --no-checkout ssh://{}@{}/{} {};".format(self.user,
-                                                                       host,
-                                                                       self.prjname,
-                                                                       tdir)
+            pkey = "GIT_SSH_COMMAND=\"ssh -i {}\"".format(key)
+            cmd += "{} git clone --no-checkout ssh://{}@{}/{} {};".format(pkey,
+                                                                          self.user,
+                                                                          host,
+                                                                          self.prjname,
+                                                                          tdir)
             cmd += "cd {};".format(tdir)
-            cmd += "git fetch ssh://{}@{}/{} {}".format(user, host, self.prjname, ref)
-            cmd += " && git format-patch -1 --stdout FETCH_HEAD"
-
+            cmd += "{} git fetch ssh://{}@{}/{} {}".format(pkey,
+                                                           user,
+                                                           host,
+                                                           self.prjname,
+                                                           ref)
+            cmd += " && {} git format-patch -1 --stdout FETCH_HEAD".format(pkey)
             # now run the command and get output
             ret_code, ret_str = service_utils.run_this(cmd)
             if not ret_code:
@@ -241,9 +260,11 @@ class GerritFns(object):
 
     def repo_list(self):
         """ Generate list of all repos on gerrit server."""
-        cmd = "ssh -p {} {}@{} gerrit ls-projects".format(self.port,
-                                                          self.user,
-                                                          self.hostname)
+        key = self.getkey()
+        cmd = "ssh -i {} -p {} {}@{} gerrit ls-projects".format(key,
+                                                                self.port,
+                                                                self.user,
+                                                                self.hostname)
 
         # now run the command and get output
         ret_code, ret_str = service_utils.run_this(cmd)
@@ -285,7 +306,8 @@ class GerritFns(object):
             else:
                 raise ValueError("Invalid Status supplied")
 
-        query = reviews.Query(self.hostname)
+        key = self.getkey()
+        query = reviews.Query(self.hostname, self.port, self.user, key)
         for review in query.filter(other):
             if GerritFns.instrument_code:
                 # if instrumenting code we only need to check the first review
