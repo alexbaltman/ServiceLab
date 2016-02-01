@@ -117,6 +117,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     elif target:
         hostname = target
     elif existing_vm:
+        hostname = existing_vm
         ret_code, site = ccsdata_utils.get_site_from_env(env)
         if ret_code > 0:
             ctx.logger.error("Could not find parent site for {}".format(env))
@@ -125,21 +126,38 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                 'environments', env)
         ret_code, yaml_data = yaml_utils.read_host_yaml(existing_vm, env_path)
         if ret_code > 0:
-            ctx.logger.error("Could not find host in site {0} env {1}".format(site, env))
             sys.exit(1)
+        flavor = yaml_data['deploy_args']['flavor']
         service_groups = []
+        groups = []
         try:
             for group in yaml_data['groups']:
                 if group != 'virtual':
+                    groups.append(group)
                     service_group = 'service-' + group.replace('_', '-')
-                    if not os.path.isdir(os.path.join(ctx.path, 'services', service_group)):
-                        ctx.logger.error('Unable to find %s repo.  Try "stack workon %s"'
-                                         % (service_group, service_group))
-                        sys.exit(1)
-                    service_groups.append(service_group)
+                    if os.path.isdir(os.path.join(ctx.path, 'services', service_group)):
+                        service_groups.append(service_group)
         except KeyError:
             pass  # can pass, vm has no groups
-        hostname = existing_vm
+        if groups:
+            click.echo('\nThe following groups were found within %s yaml file: ' % hostname)
+            for group in groups:
+                click.echo(group)
+            if not service_groups:
+                click.echo('\nNo service groups were found locally installed')
+            else:
+                click.echo('\nThe following service groups were found installed locally:')
+                for service in service_groups:
+                    click.echo(service)
+            input_display = ('\nAre the locally installed service groups the expected '
+                             'groups to be installed on %s? y/n: ' % hostname)
+            if not re.search('^[Yy][Ee]*[Ss]*', raw_input(input_display)):
+                click.echo('Try "stack workon service-<group>" for each to be installed '
+                           'and rerun the "stack up --existing-vm" command')
+                sys.exit(0)
+        else:
+            ctx.logger.warning('No groups were found for %s.  Continuing to build the VM.'
+                               % hostname)
 
     # Setup data and inventory
     if not target and not mini and not full:
