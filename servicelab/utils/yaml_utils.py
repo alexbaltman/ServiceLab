@@ -97,10 +97,13 @@ def host_exists_vagrantyaml(hostname, pathto_yaml):
                 return 1
             for d in doc:
                 # EXP: x = hostname for vagrantyaml
-                for x in doc[d]:
-                    if hostname == x:
-                        yaml_utils_logger.debug("Found host:" + hostname)
-                        return 0
+                try:
+                    for x in doc[d]:
+                        if hostname == x:
+                            yaml_utils_logger.debug("Found host:" + hostname)
+                            return 0
+                except TypeError:
+                    return 1
             return 1
     except IOError as error:
         yaml_utils_logger.error('File error: ' + str(error))
@@ -461,7 +464,7 @@ def host_add_vagrantyaml(path, file_name, hostname, site, cpus=2, memory=2,
                         yaml_utils_logger.error("Couldn't write file\
                                                 because no ip provided.")
                         return 1
-                if doc is not None:
+                if doc is not None and doc['hosts']:
                     for d in doc:
                         doc["hosts"][hostname] = {'role': role,
                                                   'domain': domain,
