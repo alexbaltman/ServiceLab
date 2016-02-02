@@ -780,7 +780,7 @@ def gen_mac_from_ip(ip):
 
 def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
                            env="dev-tenant", flavor='2cpu.4ram.20sas',
-                           image='slab-RHEL7.1v8'):
+                           image='slab-RHEL7.1v8', groups=[]):
     """Given an ip address generate a mac address.
 
     Mac will be in form: 02:00:27:00:0x:xx where the Xs will depend
@@ -831,6 +831,8 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
         image (str): The servicelab default image is slab-rhel7.1V7, you may
                      pass to the function whichever flavor is available in
                      your environment though.
+        groups (list): Any extra groups that you need to specify beyond what the
+                       the default template provides (which is just virtual).
 
     Returns:
         returncode (int): 0 - Success, 1 - Failure
@@ -861,6 +863,9 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
               management_pass: cisco
               management_type: cimc
             hostname: db-001
+            groups:
+            - virtual
+            - etc.
             interfaces:
               eth0:
                 gateway: 192.168.100.2
@@ -888,6 +893,8 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
         doc['hostname'] = hostname
         doc['interfaces']['eth0']['ip_address'] = ip
         doc['role'] = role
+        groups = [i.split('service-')[1] for i in groups]  # remove leading service-
+        doc['groups'].append(groups)
         match = re.search('^(?:cs[lmsx]-\w\d?-)?(service-)?([\w-]+)-\d+$', hostname)
         if match:
             # All hostnames starting with 'service-' use the remaining text for sec group

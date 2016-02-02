@@ -140,7 +140,7 @@ class TestStatusUtils(unittest.TestCase):
         """
         click.echo('Cleaning up all the VMs :')
         ctx = Context()
-        vm_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra001",
+        vm_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra-001",
                                                          path=ctx.path)
         try:
             statuses = vm_connection.v.status()
