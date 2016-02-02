@@ -73,7 +73,7 @@ from servicelab.utils import ccsdata_utils
               default='2cpu.4ram.20sas',
               help='Choose the flavor for the VM to use')
 @click.option('--image',
-              default='slab-RHEL7.1v8',
+              default='slab-RHEL7.1v9',
               help='Choose the image for the VM to use')
 @click.group('up',
              invoke_without_command=True,
