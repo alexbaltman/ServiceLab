@@ -2,6 +2,7 @@
     TestClass to test various go cd functions.
 """
 import time
+import sys
 
 import unittest
 import requests
@@ -38,7 +39,7 @@ class TestGoCdUtils(unittest.TestCase):
     SHOW_PIPELINE_NAME = "deploy-sdu-test-tempest"
     T_SCHED = "{\"locked\":false,\"paused\":false,\"schedulable\":true}"
     F_SCHED = "{\"locked\":false,\"paused\":false,\"schedulable\":false}"
-    REMOTE_STATUS = "{\"paused\":false,\"schedulable\":true,\"locked\":false}"
+    REMOTE_STATUS = "schedulable"
     ENDING_LOG = "End of job log for pipeline"
     ALL_STAGES_OUT = "Stage : secondStage  has Passed"
 
@@ -201,6 +202,8 @@ class TestGoCdUtils(unittest.TestCase):
         time.sleep(25)
         self.assertTrue(TestGoCdUtils.ENDING_LOG in result.output.strip())
 
+    @unittest.skipUnless(sys.platform == "darwin",
+                         "Mac only since prod Gocd can break jenkins")
     def test_cmd_show(self):
         """ Tests show command.
         """
@@ -209,7 +212,7 @@ class TestGoCdUtils(unittest.TestCase):
                                           TestGoCdUtils.GOCD_REMOTE_USER,
                                           TestGoCdUtils.GOCD_REMOTE_PASS,
                                           context_utils.get_gocd_ip())
-        self.assertTrue(TestGoCdUtils.REMOTE_STATUS in result)
+        self.assertTrue(TestGoCdUtils.REMOTE_STATUS in result.output)
 
 
 if __name__ == '__main__':

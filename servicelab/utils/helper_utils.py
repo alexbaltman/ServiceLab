@@ -5,6 +5,8 @@ import logging
 import fnmatch
 import getpass
 
+import click
+
 import servicelab.utils.yaml_utils
 
 # create logger
@@ -197,10 +199,14 @@ def destroy_files(paths_to_files):
         if os.path.exists(mypath):
             try:
                 os.remove(mypath)
+                click.echo("File destroyed successfully: {0}".format(mypath))
             except OSError as ex:
+                click.echo("File was not destroyed: {0}".format(mypath))
                 helper_utils_logger.debug('Caught error: ')
                 helper_utils_logger.debug(ex)
                 return 1
+        else:
+            click.echo("File does not exist : {0}".format(mypath))
     return 0
 
 
@@ -224,8 +230,12 @@ def destroy_dirs(paths):
             helper_utils_logger.debug("Destroying {0}".format(path))
             try:
                 shutil.rmtree(path)
+                click.echo("Directory destroyed successfully : {0}".format(path))
             except OSError as ex:
+                click.echo("Directory was not destroyed : {0}".format(path))
                 helper_utils_logger.debug('Caught error: ')
                 helper_utils_logger.debug(ex)
                 return 1
+        else:
+            click.echo("Directory does not exist : {0}".format(path))
     return 0
