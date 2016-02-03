@@ -242,7 +242,7 @@ class TestVagrantFileUtils(unittest.TestCase):
         """
         Test the set_host_image_flavors method
         """
-        compare_data = {'image': 'slab-RHEL7.1v8', 'flavor': '2cpu.4ram.20sas'}
+        compare_data = {'image': 'slab-RHEL7.1v9', 'flavor': '2cpu.4ram.20sas'}
         self.vf_utils.hostname = self.test_host
         self.vf_utils.set_host_image_flavors(self.ctx.path)
         self.assertEqual(self.vf_utils.host_vars, compare_data)
