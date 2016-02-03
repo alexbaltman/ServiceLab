@@ -3,13 +3,15 @@ Set of utility functions for Jenkins server
 """
 import sys
 import time
-
 import requests
 import click
 
 from bs4 import BeautifulSoup
 from jenkinsapi.jenkins import Jenkins
 from requests.auth import HTTPBasicAuth
+from servicelab.stack import Logger
+
+ctx = Logger()
 
 
 START_LOG = "-------- Printing job log for build %s--------\n"

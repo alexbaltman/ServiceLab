@@ -37,6 +37,7 @@ def review_inc(ctx, project, username, detail, interactive):
     """
     Searches through Gerrit's API for incoming reviews for your username.
     """
+    ctx.logger.info('Searching gerrit for incoming review')
     try:
         if not username:
             username = ctx.get_username()
@@ -72,8 +73,8 @@ def review_out(ctx, project, username, detail, interactive):
     """
     Searches through Gerrit's API for outgoing reviews for your username.
     """
+    ctx.logger.info('Searching gerrit for outgoing reviews')
     try:
-        click.echo('Grabbing outgoing reviews from Gerrit')
         if not username:
             username = ctx.get_username()
 
@@ -108,6 +109,7 @@ def review_plustwo(ctx, gerrit_change_id, project, username, message, interactiv
     """
     Approves and merges a gerrit change set.
     """
+    ctx.logger.info('Approving gerrit change %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -142,6 +144,7 @@ def review_plusone(ctx, gerrit_change_id, project, username, message, interactiv
     Approves, but does not merge a gerrit change set, which means change set
     requires another approver.
     """
+    ctx.logger.info('Adding +1 to gerrit change %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -175,6 +178,7 @@ def review_minusone(ctx, gerrit_change_id, project, username, message, interacti
     """
     Prefer the code is not submitted.
     """
+    ctx.logger.info('Applying -1 to gerrit change %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -241,6 +245,7 @@ def review_abandon(ctx, gerrit_change_id, project, username, message, interactiv
     """
     Abandon a gerrit change set.
     """
+    ctx.logger.info('Abadoning change %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -273,6 +278,7 @@ def review_show(ctx, gerrit_change_id, project, username, interactive):
     """
     Display the review
     """
+    ctx.logger.info('Displaying review for %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -303,6 +309,7 @@ def review_code(ctx, gerrit_change_id, project, username, interactive):
     """
     Display the review
     """
+    ctx.logger.info('Displaying code for review %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()

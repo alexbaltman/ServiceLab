@@ -15,10 +15,11 @@ def cli(ctx, text_to_enc):
     """
     Encrypt a text string to be put into ccs-data.
     """
+    ctx.logger.info('Encrypting %s for ccs-data input' % text_to_enc)
     pkey_fname = ctx.pkey_fname()
     ret_val, ret_code = encrypt_utils.encrypt(pkey_fname, text_to_enc)
     if not ret_val:
-        click.echo("{} : ENC[{}]".format(text_to_enc, ret_code))
+        ctx.logger.info("{} : ENC[{}]".format(text_to_enc, ret_code))
     else:
-        click.echo("unable to encrypt data[{}]".format(text_to_enc))
-        click.echo("error:\n{}".format(ret_code))
+        ctx.logger.error("unable to encrypt data[{}]".format(text_to_enc))
+        ctx.logger.error("error:\n{}".format(ret_code))

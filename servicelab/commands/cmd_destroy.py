@@ -41,7 +41,7 @@ def destroy_vm(ctx, force, vm_name):
     2. Delete from Vagrantfile (?)
     3. Remove from dev-tenant in ccs-data (?)
     """
-    ctx.logger.debug("Destroying {0}".format(vm_name))
+    ctx.logger.info("Destroying {0}".format(vm_name))
     # What if it's an ospvm from stack list ospvms --> redhouse vms.
     # TODO: IN that case need to attach to different path.
     myvag_env = vagrant_utils.Connect_to_vagrant(vm_name=vm_name,
@@ -68,6 +68,7 @@ def destroy_min(ctx, force):
     4. .stack/services/service-redhouse-tenant/.vagrant/machines
     5. .stack/services/service-redhouse-tenant/settings.yaml
     """
+    ctx.logger.info('Destroying all vagrant files')
     directories = ['services/service-redhouse-tenant/.vagrant/machines',
                    'services/service-redhouse-tenant/settings.yaml',
                    '.vagrant/machines']
@@ -116,6 +117,7 @@ def destroy_more(ctx, force):
     4. .stack/services/service-redhouse-tenant/
     5. .stack/services/ccs-data/
     """
+    ctx.logger.info('Destroying vagrant files, ccs-data and service-redhouse-tenant repos')
     directories = ['services/service-redhouse-tenant',
                    'services/ccs-data',
                    '.vagrant/machines']
@@ -156,7 +158,7 @@ def destory_gerritrepo(ctx, repo_name):
     Destroys an artifact in Artifactory.
     """
     ctx.logger.warning('This command requires admin privledges')
-    click.echo('Destroying repo %s in Gerrit' % repo_name)
+    ctx.logger.info('Destroying repo %s in Gerrit' % repo_name)
 
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'
@@ -170,17 +172,18 @@ def destroy_os_networks(ctx, force):
     interfaces. networks, subnets. This requires having the openstack credentials sourced,
     as well as no VMs to be existing presently.
     """
+    ctx.logger.info('Destroying all Openstack networking components')
     # Can abstract to servicelab/utils/openstack_utils and leverage that code.
     returncode, running_vm = openstack_utils.os_check_vms(ctx.path)
     if returncode == 0:
         if not running_vm:
             openstack_utils.os_delete_networks(ctx.path, force)
         else:
-            click.echo(
+            ctx.logger.error(
                 "The above VMs need to be deleted before you can run this command.")
     else:
-        click.echo("Error occurred connecting to Vagrant. To debug try running : vagrant up"
-                   " in %s " % (ctx.path))
+        ctx.logger.error("Error occurred connecting to Vagrant. To debug try running : "
+                         "vagrant up in %s " % (ctx.path))
 
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'

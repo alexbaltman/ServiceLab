@@ -59,6 +59,7 @@ def show_build(ctx, build_number):
     """
     Shows the details of a build in Jekins.
     """
+    ctx.logger.info('Displaying build details for %s' % build_number)
     username = ctx.get_username()
     servername = context_utils.get_jenkins_url()
     password = click.prompt("password", hide_input=True, type=str)
@@ -90,6 +91,7 @@ def show_artifact(ctx, username, password, url, interactive):
     """
     Show the details of an artifact using Artifactory's API.
     """
+    ctx.logger.info('Displaying artifact details for %s' % url)
     if not username:
         username = ctx.get_username()
     if not password:
@@ -124,6 +126,7 @@ def show_pipe(ctx, pipeline_name, username, password, ip_address, interactive):
     """
     Show the details of a deployment pipline using GO's API.
     """
+    ctx.logger.info('Displaying details of pipeline %s' % pipeline_name)
     if not username:
         username = ctx.get_username()
     if not password:

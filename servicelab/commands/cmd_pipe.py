@@ -59,14 +59,15 @@ def display_pipeline_log(ctx,
     """
     Displays a pipeline log.
     """
+    ctx.logger.info('Displaying %s log' % pipeline_name)
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     stages_url = "http://{0}/go/api/pipelines/{1}/stages.xml"
     # Find latest run info
@@ -77,8 +78,8 @@ def display_pipeline_log(ctx,
         latest_job_info_url = soup.findAll(
             'entry')[0].findAll('link')[0]['href']
     except Exception as ex:
-        click.echo("Internal error occurred. Please, check arguments supplied.")
-        click.echo("Error details : %s " % (ex))
+        ctx.logger.error("Internal error occurred. Please, check arguments supplied.")
+        ctx.logger.error("Error details : %s " % (ex))
         sys.exit(1)
 
     # Find all the job info for that run
@@ -136,14 +137,15 @@ def display_pipeline_status(ctx,
     """
     Displays a pipeline status.
     """
+    ctx.logger.info('Displaying status of %s' % pipeline_name)
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     server_url = "http://{0}/go/api/pipelines/{1}/status"
     res = requests.get(server_url.format(ip_address, pipeline_name),
@@ -192,14 +194,15 @@ def trigger_pipeline(ctx,
     """
     Runs a pipeline.
     """
+    ctx.logger.info('Running pipeline %s' % pipeline_name)
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     server_url = "http://{0}/go/api/pipelines/{1}/schedule"
     env_data = None
@@ -265,14 +268,15 @@ def clone_pipeline(ctx,
     """
     Clones a pipeline and assigns it the new name.
     """
+    ctx.logger.info('Cloning %s to %s' % (pipeline_name, new_pipeline_name))
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     config_xmlurl = "http://{0}/go/api/admin/config/current.xml".format(
         ip_address)
