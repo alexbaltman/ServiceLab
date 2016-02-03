@@ -26,6 +26,7 @@ def cli(ctx, branch, data_branch, username, service_name):
     """
     Creates a service user wants to work on.
     """
+    ctx.logger.info('Cloning service %s' % service_name)
     current = ""
     if not username:
         username = ctx.get_username()
@@ -42,7 +43,7 @@ def cli(ctx, branch, data_branch, username, service_name):
         elif current == any([None, ""]) and (service_name != "current"):
             returncode = service_utils.check_service(ctx.path, service_name)
             if returncode > 0:
-                ctx.logger.debug("Service repo does not exist")
+                ctx.logger.error("Service repo does not exist")
                 sys.exit(1)
 
             service_utils.sync_service(ctx.path, branch, username,
@@ -55,7 +56,7 @@ def cli(ctx, branch, data_branch, username, service_name):
         elif service_name != current and service_name != "current":
             returncode = service_utils.check_service(ctx.path, service_name)
             if returncode > 0:
-                ctx.logger.debug("Service repo does not exist")
+                ctx.logger.error("Service repo does not exist")
                 sys.exit(1)
 
             service_utils.clean(ctx.path)
@@ -69,7 +70,7 @@ def cli(ctx, branch, data_branch, username, service_name):
             # Note: notice we're passing the variable current not service_name.
             returncode = service_utils.check_service(ctx.path, service_name)
             if returncode > 0:
-                ctx.logger.debug("Service repo does not exist")
+                ctx.logger.error("Service repo does not exist")
                 sys.exit(1)
 
             service_utils.sync_service(ctx.path, branch, username, current)
@@ -80,7 +81,7 @@ def cli(ctx, branch, data_branch, username, service_name):
     else:
         returncode = service_utils.check_service(ctx.path, service_name)
         if returncode > 0:
-            ctx.logger.debug("Service repo does not exist")
+            ctx.logger.error("Service repo does not exist")
             sys.exit(1)
         service_utils.sync_service(ctx.path, branch, username, service_name)
         service_utils.sync_service(ctx.path, data_branch, username,

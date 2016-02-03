@@ -3,12 +3,15 @@ import re
 import yaml
 from random import randint
 from fabric.api import run
-from servicelab.stack import pass_context
+from servicelab.stack import Context
 from servicelab.utils import ccsdata_utils
 from servicelab.utils import yaml_utils
 
+ctx = Context()
+
 
 def _search_env(path, env):
+    ctx.logger.debug('Searching for %s in ccs-data sites' % env)
     lst = []
     ret_code, sites = ccsdata_utils.list_envs_or_sites(path)
     if ret_code > 0:
@@ -35,6 +38,7 @@ def generate_env_for_site(path, env):
         This returns {'site':site, 'env': env_settings}  dictionary.
 
     """
+    ctx.logger.debug('Generating site and env dictionary')
     site_env_lst = _search_env(path, 'dev')
 
     for site, env in site_env_lst:
@@ -127,6 +131,7 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
             }
         }
     """
+    ctx.logger.debug('Generating data for proxy node')
 
     def _get_server_ip_name(complete_dict, ipslst, interactive):
         data = {}

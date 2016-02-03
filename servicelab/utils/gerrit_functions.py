@@ -2,10 +2,8 @@
 gerrit functions
 """
 import os
-import datetime
-
 import click
-import logging
+import datetime
 
 from gerrit import filters
 from gerrit import reviews
@@ -13,8 +11,7 @@ from gerrit import reviews
 from servicelab.stack import Context
 from servicelab.utils import service_utils
 
-LOGGER = logging.getLogger('click_application')
-logging.basicConfig()
+ctx = Context()
 
 
 class Format(object):
@@ -48,6 +45,7 @@ class Format(object):
         Args:
             sec           -- number of seconds
         """
+        ctx.logger.debug('Determining current date / time')
         dat = datetime.datetime.fromtimestamp(sec)
         return dat.strftime("%c")
 
@@ -69,6 +67,7 @@ class Format(object):
                                     Format.fail  - makes the text red
             pstr              -- Input text string
         """
+        ctx.logger.debug('Formatting message')
         prompt_format = "{}"
         if width:
             prompt_format = "{:%d}" % (width)
@@ -129,6 +128,7 @@ class GerritFns(object):
 
     def getkey(self):
         """ get the ssh key-credential of the user."""
+        ctx.logger.debug('Extracting ssh key for %s' % self.user)
         key = os.path.expanduser(os.path.join("~" + self.user,
                                               ".ssh",
                                               "id_rsa"))
@@ -151,7 +151,7 @@ class GerritFns(object):
             Raises:
                GerritFnException        -- If Unable to find the gerrit review number.
          """
-
+        ctx.logger.debug('Changing review for gerrit review %i' % number)
         project = filters.OrFilter()
         project.add_items('project', [self.prjname])
         other = filters.Items()
@@ -188,6 +188,7 @@ class GerritFns(object):
             Raises:
                GerritFnException        -- If Unable to find the gerrit review number.
          """
+        ctx.logger.debug('Changing the state of gerrit review to %i' % number)
         project = filters.OrFilter()
         project.add_items('project', [self.prjname])
         other = filters.Items()
@@ -219,7 +220,7 @@ class GerritFns(object):
             Raises:
                GerritFnException        -- If Unable to find the gerrit review number.
         """
-
+        ctx.logger.debug('Pulling gerrit review %i for code review' % number)
         project = filters.OrFilter()
         project.add_items('project', [self.prjname])
         other = filters.Items()
@@ -260,6 +261,7 @@ class GerritFns(object):
 
     def repo_list(self):
         """ Generate list of all repos on gerrit server."""
+        ctx.logger.debug('Generating list of all repos on gerrit')
         key = self.getkey()
         cmd = "ssh -i {} -p {} {}@{} gerrit ls-projects".format(key,
                                                                 self.port,
@@ -290,6 +292,7 @@ class GerritFns(object):
                 reviewer              -- The reviewer.
                 status                -- Any valid gerrit status.
         """
+        ctx.logger.debug('Extracting details of gerrit review(s)')
         other = filters.Items()
         if number:
             other.add_items('change', number)
@@ -330,6 +333,7 @@ class GerritFns(object):
             Args:
                 review             -- The review number
         """
+        ctx.logger.debug('Displaying summary review for gerrit review')
         pstl = Format.bld
         click.echo(Format.message(32, 0, pstl, "For Number " + review["number"]))
         click.echo(Format.message(32, 0, pstl, "Id") + review['id'])
@@ -341,6 +345,7 @@ class GerritFns(object):
     @classmethod
     def detail(cls, review):
         """ Print the complete review information for a given review."""
+        ctx.logger.debug('Displaying full information for gerrit review')
         pstl = Format.bld
         click.echo(Format.message(24, 0, pstl, "Branch")+review['branch'])
         click.echo(Format.message(24, 0, pstl, "Created On") +

@@ -6,13 +6,9 @@ import re
 import shutil
 import subprocess32 as subprocess
 
-import logging
+from servicelab.stack import Logger
 
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
-SERVICE_UTILS_LOGGER = logging.getLogger('click_application')
-logging.basicConfig()
+ctx = Logger()
 
 
 def sync_service(path, branch, username, service_name):
@@ -45,11 +41,11 @@ def sync_service(path, branch, username, service_name):
         Service has been sync'ed
         True
     """
-
+    ctx.logger.log(15, 'Synchronizing %s in servicelab/.stack/services' % service_name)
     # Note: Branch defaults to master in the click application
     check_for_git_output, myinfo = _check_for_git()
     if not check_for_git_output == 0:
-        SERVICE_UTILS_LOGGER.error("Could not find git executable.")
+        ctx.logger.error("Could not find git executable.")
         return False
     else:
         # TODO: refactor this back in -->or os.listdir(os.path.join(path,
@@ -57,23 +53,23 @@ def sync_service(path, branch, username, service_name):
         #       we'll want to rm the dir if it's there but empty b/c this
         #       isn't handling that.
         if os.path.isdir(os.path.join(path, "services", service_name)):
-            SERVICE_UTILS_LOGGER.debug("Sync'ing service.")
-            SERVICE_UTILS_LOGGER.debug("Fast Forward Pull.")
+            ctx.logger.debug("Sync'ing service.")
+            ctx.logger.debug("Fast Forward Pull.")
             returncode, myinfo = _git_pull_ff(path, branch, service_name)
             if returncode != 0:
-                SERVICE_UTILS_LOGGER.error(myinfo)
+                ctx.logger.error(myinfo)
                 return False
             else:
-                SERVICE_UTILS_LOGGER.debug("Service has been sync'ed.")
+                ctx.logger.debug("Service has been sync'ed.")
                 return True
         else:
-            SERVICE_UTILS_LOGGER.debug("Trying clone.")
+            ctx.logger.debug("Trying clone.")
             returncode, myinfo = _git_clone(path, branch, username, service_name)
             if returncode != 0:
-                SERVICE_UTILS_LOGGER.error(myinfo)
+                ctx.logger.error(myinfo)
                 return False
             else:
-                SERVICE_UTILS_LOGGER.debug("Clone successful.")
+                ctx.logger.debug("Clone successful.")
                 return True
 
 
@@ -98,14 +94,15 @@ def build_data(path):
         (0,"")
 
     """
+    ctx.logger.log(15, 'Building ccs-dev-1 site in ccs-data')
     from servicelab.utils import yaml_utils
     if yaml_utils.decrypt_set(path) != 0:
         return(1, "unable to decrypt the pulp password")
 
     data_reponame = "ccs-data"
-    SERVICE_UTILS_LOGGER.debug("Building the data.")
+    ctx.logger.debug("Building the data.")
     returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml '
-                                  '--site ccs-dev-1 && cd ..',
+                                  '--site ccs-dev-1 && cd .',
                                   cwd=os.path.join(path, "services",
                                                    data_reponame))
     return(returncode, myinfo)
@@ -124,7 +121,7 @@ def copy_certs(frompath, topath):
     Example Usage:
         returncode = service_utils.copy_certs(ctx.reporoot_path(),puppet_path)
     """
-
+    ctx.logger.log(15, 'Copying certs to ccs puppet module')
     certdir = os.path.join(topath, "modules", "ccs", "files", "certs", "dev-csi-a")
     if not os.path.exists(certdir):
         os.mkdir(certdir)
@@ -162,6 +159,7 @@ def _git_clone(path, branch, username, service_name):
         (0, "")
 
     """
+    ctx.logger.log(15, 'Cloning %s into servicelab/.stack/services' % service_name)
     # Note: Branch defaults to master in the click application
     # DEBUG: print "Executing subprocess for git clone"
     # DEBUG: print 'git clone -b %s ssh://%s@cis-gerrit.cisco.com:29418/%s
@@ -214,6 +212,7 @@ def _git_pull_ff(path, branch, service_name):
         (0, "")
 
     """
+    ctx.logger.log(15, 'Fast forward only pull of %s branch %s' % (service_name, branch))
     # Note: Branch defaults to master in the click application
     service_path = os.path.join(path, "services", service_name)
     # TODO: Do more error checking here --> after debugging, definitely
@@ -243,6 +242,7 @@ def _submodule_pull_ff(path, branch):
                                      .stack", "master")
         (0, "")
     """
+    ctx.logger.log(15, 'Fast forward pull of all ccs-data submodules')
     # Note: Branch defaults to master in the click application
     # TODO: Do more error checking here --> after debugging, definitely
     # TODO: checkout a branch ifexists in origin only--> not replacing git
@@ -266,6 +266,7 @@ def _check_for_git():
         >>> print _check_for_git()
         (0, "")
     """
+    ctx.logger.log(15, 'Checking if git is installed')
     # Note: Using type git here to establish if posix system has a binary
     #       called git instead of which git b/c which often doesn't return
     #       proper 0 or 1 exit status' and type does. Which blah on many
@@ -289,6 +290,7 @@ def _check_for_libpup():
         >>> print _check_for_libpup()
         (0, "")
     """
+    ctx.logger.log(15, 'Checking for librarian-puppet')
     # Note: Using 'type' here to establish if posix system has a binary
     #       called librarian-puppet instead of 'which' b/c which often doesn't return
     #       proper 0 or 1 exit status' and type does. Which blah on many
@@ -325,6 +327,7 @@ def setup_vagrant_sshkeys(path):
                                   "master", "ccs-data")
         (0, "")
     """
+    ctx.logger.log(15, 'Checking for Vagrant ssh keys in the .stack directory')
     if not os.path.isfile(os.path.join(path, "id_rsa")):
         returncode, myinfo = run_this('ssh-keygen -q -t rsa -N "" -f %s/id_rsa' % (path))
         return (returncode, myinfo)
@@ -352,13 +355,14 @@ def link(path, service_name, branch, username):
         >>> print link("/Users/aaltman/Git/servicelab/servicelab/.stack", "ccs-data",
                        "master", "aaltman"")
     """
+    ctx.logger.log(15, 'Setting the current service to %s' % service_name)
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
             currentf = open(os.path.join(path, "current"), 'r')
             currentf.seek(0)
             service_name = currentf.readline()
         else:
-            SERVICE_UTILS_LOGGER.error("Current file doesn't exist\
+            ctx.logger.error("Current file doesn't exist\
                                         and service set to current\
                                         . Please enter a service to\
                                         work on.")
@@ -375,18 +379,18 @@ def link(path, service_name, branch, username):
             os.symlink(os.path.join(path, "services", service_name),
                        os.path.join(path, "current_service"))
         else:
-            SERVICE_UTILS_LOGGER.debug("Could not find source for symlink.\
+            ctx.logger.debug("Could not find source for symlink.\
                                        Attempting re-clone of source.")
             sync_service(path, branch, username, service_name)
             if os.path.isdir(os.path.join(path, "services", service_name)):
                 os.symlink(os.path.join(path, "services", service_name),
                            os.path.join(path, "current_service"))
             else:
-                SERVICE_UTILS_LOGGER.error("Failed to find source for symlink: " +
-                                           os.path.join(path, "services", service_name))
+                ctx.logger.error("Failed to find source for symlink: " +
+                                 os.path.join(path, "services", service_name))
                 return 1
     else:
-        SERVICE_UTILS_LOGGER.debug("Link already exists.")
+        ctx.logger.debug("Link already exists.")
 
     hostf = open(os.path.join(path, "hosts"), 'w+')
     hostf.seek(0)
@@ -412,6 +416,7 @@ def clean(path):
     Example Usage:
         >>> print clean("/Users/aaltman/Git/servicelab/servicelab/.stack")
     """
+    ctx.logger.log(15, 'Cleaning up services and services symlinks')
     run_this('vagrant destroy -f')
     os.remove(os.path.join(path, "current"))
     if os.path.islink(os.path.join(path, "current_service")):
@@ -438,16 +443,15 @@ def check_service(path, service_name):
         >>> check_service("/Users/aaltman/Git/servicelab/servicelab/.stack", "ccs-data")
         0
     """
+    ctx.logger.log(15, 'Checking gerrit for %s' % service_name)
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
             cfile = open(os.path.join(path, "current"), 'r')
             cfile.seek(0)
             service_name = cfile.readline()
         else:
-            SERVICE_UTILS_LOGGER.error("Current file doesn't exist\
-                                        and service set to current\
-                                        . Please enter a service to\
-                                        work on.")
+            ctx.logger.error("Current file doesn't exist and service set to current\
+                                        . Please enter a service to work on.")
             return 1
 
     if os.path.exists(os.path.join(path, "cache")):
@@ -470,7 +474,7 @@ def check_service(path, service_name):
                     return 0
 
             # Note: We didn't succeed in finding a match.
-            SERVICE_UTILS_LOGGER.error("Could not find repo in ccs-gerrit.")
+            ctx.logger.error("Could not find repo in ccs-gerrit.")
             return 1
     else:
         os.makedirs(os.path.join(path, "cache"))
@@ -491,7 +495,7 @@ def check_service(path, service_name):
                 return 0
 
         # Note: We didn't succeed in finding a match.
-        SERVICE_UTILS_LOGGER.error("Could not find repo in ccs-gerrit.")
+        ctx.logger.error("Could not find repo in ccs-gerrit.")
         return 1
 
 
@@ -514,6 +518,7 @@ def run_this(command_to_run, cwd=os.getcwd()):
         echo a
         a
     """
+    ctx.logger.log(15, 'Running shell command "%s"' % command_to_run)
     try:
         output = subprocess.Popen(command_to_run, shell=True,
                                   stdin=subprocess.PIPE,
@@ -525,7 +530,7 @@ def run_this(command_to_run, cwd=os.getcwd()):
         myinfo.strip()
         return(output.returncode, myinfo)
     except OSError, ex:
-        SERVICE_UTILS_LOGGER.error(ex)
+        ctx.logger.error(ex)
         return (1, str(ex))
 
 
@@ -542,6 +547,7 @@ def installed(service, path):
         in the service dircetory
 
     """
+    ctx.logger.log(15, 'Checks if %s is installed in the stack' % service)
     # check if the current is set to correct service
     try:
         with open(os.path.join(path, "current"), 'r') as currentf:
@@ -557,6 +563,6 @@ def installed(service, path):
         if not os.path.samefile(input_path, current_path):
             return False
     except Exception as ex:
-        SERVICE_UTILS_LOGGER.error(ex)
+        ctx.logger.error(ex)
         return False
     return True

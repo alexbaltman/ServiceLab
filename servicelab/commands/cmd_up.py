@@ -86,14 +86,16 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     image = str(image)
     # Things the user Should not do ==================================
     if mini is True and full is True:
-        ctx.logger.error("You can not use the mini flag with the full flag.")
+        ctx.logger.error('You can not use the mini flag with the full flag.')
         sys.exit(1)
 
     # Gather as many requirements as possible for the user ===========
     if not username:
+        ctx.logger.log(15, 'Extracting username')
         username = ctx.get_username()
 
     if not any([full, mini, rhel7, target, service, existing_vm]):
+        ctx.logger.info("Booting vm from most recently installed service")
         try:
             returncode, service = helper_utils.get_current_service(ctx.path)
         except TypeError:
@@ -101,9 +103,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             ctx.logger.error("Try: stack workon service-myservice")
             sys.exit(1)
         if returncode > 0:
-            ctx.logger.debug("Failed to get the current service")
+            ctx.logger.error("Failed to get the current service")
             sys.exit(1)
 
+    ctx.logger.log(15, 'Determining vm hostname')
     hostname = ''
     if rhel7:
         hostname = str(helper_utils.name_vm("rhel7", ctx.path))
@@ -165,6 +168,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
 
     # Setup data and inventory
     if not target and not mini and not full:
+        ctx.logger.info('Building data for %s.' % hostname)
         match = re.search('^(\d+)cpu\.(\d+)ram', flavor)
         if match:
             cpus = int(match.group(1))
@@ -194,7 +198,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         if remote:
             returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
             if returncode > 0:
-                ctx.logger.debug("No OS_ environment variables found")
+                ctx.logger.error("No OS_ environment variables found")
                 sys.exit(1)
             myvfile.set_env_vars(float_net, mynets, my_sec_grps)
             returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
@@ -229,6 +233,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
 
     # SERVICE VM remaining workflow  =================================
     if service or existing_vm:
+        ctx.logger.info('Booting service and infra_node vms')
         if remote:
             returncode, infra_name = v_utils.infra_ensure_up(mynets,
                                                              float_net,
@@ -282,12 +287,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                     sys.exit(1)
             sys.exit(0)
     elif target:
+        ctx.logger.info('Booting target service vm')
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
         service_utils.sync_service(ctx.path, redhouse_branch,
                                    username, "service-redhouse-tenant")
         puppet_path = os.path.join(redhouse_ten_path, "puppet")
         if not os.path.exists(os.path.join(puppet_path, "modules", "glance")):
-            ctx.logger.info('Updating sub repo.s under service-redhouse-tenant')
+            ctx.logger.info('Updating sub repos under service-redhouse-tenant')
             ctx.logger.info('This may take a few minutes.')
             returncode, myinfo = service_utils.run_this(
                     "USER={0} librarian-puppet install".format(username),
@@ -368,8 +374,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                "service-redhouse-tenant")
 
     if mini:
+        ctx.logger.info('Booting vms for mini OSP deployment')
         returncode, allmy_vms = yaml_utils.getmin_OS_vms(ctx.path)
     elif full:
+        ctx.logger.info('Booting vms for full OSP deployment')
         returncode, allmy_vms = yaml_utils.getfull_OS_vms(os.path.join(ctx.path,
                                                                        'provision'),
                                                           '001')
@@ -401,7 +409,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             myvfile.init_vagrantfile()
         puppet_path = os.path.join(redhouse_ten_path, "puppet")
         if not os.path.exists(os.path.join(puppet_path, "modules", "glance")):
-            ctx.logger.info('Updating sub repo.s under service-redhouse-tenant')
+            ctx.logger.info('Updating sub repos under service-redhouse-tenant')
             ctx.logger.info('This may take a few minutes.')
             returncode, myinfo = service_utils.run_this(
                                     "USER={0} librarian-puppet install".format(username),

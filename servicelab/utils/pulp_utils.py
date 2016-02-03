@@ -2,15 +2,10 @@
 Utility functions for pulp
 """
 import sys
+import click
 import logging
 import requests
 from requests.auth import HTTPBasicAuth
-
-import click
-
-# create logger
-PULP_UTILS_LOGGER = logging.getLogger('click_application')
-logging.basicConfig()
 
 
 def validate_pulp_ip_cb(ctx, param, value):
@@ -29,7 +24,7 @@ def validate_pulp_ip_cb(ctx, param, value):
     Example Usage:
         >>> print validate_pulp_ip_cb(ctx, param, "localhost")
     """
-
+    ctx.logger.log(15, 'Validating pulp server IP address')
     if not value:
         value = ctx.obj.get_pulp_info()['url']
     return value
@@ -56,6 +51,7 @@ def put(url, ip_address, ctx, username, password,
         >>> print put("/pulp/api/v2/repositories", "http://localhost/", ctx, "admin",
                       "admin", {"criteria":{"filters":{"repo_id":{"$eq": "test_repo"}}}})
     """
+    ctx.logger.log(15, 'Sending put request to %s' % ip_address)
     requests.packages.urllib3.disable_warnings()
     headers = {"Accept": "application/json",
                "Content-Type": "multipart/form-data"}
@@ -94,6 +90,7 @@ def post(url, ip_address, ctx, username, password, payload):
         >>> print post("/pulp/api/v2/repositories", "http://localhost/", ctx, "admin",
                       "admin", {"criteria":{"filters":{"repo_id":{"$eq": "test_repo"}}}})
     """
+    ctx.logger.log(15, 'Sending post request to %s' % ip_address)
     requests.packages.urllib3.disable_warnings()
     headers = {"Accept": "application/json"}
     try:
@@ -130,6 +127,7 @@ def get(url, ip_address, ctx, username, password):
         >>> print get("/pulp/api/v2/repositories", "http://localhost/", ctx, "admin",
                       "admin")
     """
+    ctx.logger.log(15, 'Sending get request to %s' % ip_address)
     requests.packages.urllib3.disable_warnings()
     headers = {"Accept": "application/json"}
     try:
@@ -162,6 +160,7 @@ def process_response(res, ctx):
     Example Usage:
         >>> print process_response(res, ctx)
     """
+    ctx.logger.log(15, 'Processing REST API response')
     if res.status_code == 404:
         ctx.logger.error("Incorrect pulp repo id supplied... exiting")
         sys.exit(1)

@@ -48,6 +48,7 @@ def display_build_status(ctx,
     """
     Displays a build status.
     """
+    ctx.logger.info('Displaying build status')
     if not username:
         username = ctx.get_username()
     if not password:
@@ -81,6 +82,7 @@ def display_build_log(ctx, job_name, username, password, ip_address, interactive
     """
     Displays a build log.
     """
+    ctx.logger.info('Displaying build log')
     if not username:
         username = ctx.get_username()
     if not password:
@@ -111,6 +113,7 @@ def run_build(ctx, job_name, username, password, ip_address, interactive):
     """
     Displays a build status.
     """
+    ctx.logger.info('Displaying build status')
     if not username:
         username = ctx.get_username()
     if not password:
