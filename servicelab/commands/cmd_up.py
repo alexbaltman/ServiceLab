@@ -108,6 +108,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     if rhel7:
         hostname = str(helper_utils.name_vm("rhel7", ctx.path))
     elif service:
+        service_groups = []
         if not service_utils.installed(service, ctx.path):
             ctx.logger.error("{0} is not in the .stack/services/ directory.\n"
                              "Try: stack workon {0}".format(service))
