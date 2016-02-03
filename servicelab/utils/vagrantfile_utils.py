@@ -1,6 +1,5 @@
 import os
 import yaml
-import logging
 
 from servicelab.stack import Logger
 
