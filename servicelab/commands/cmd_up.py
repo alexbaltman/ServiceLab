@@ -11,7 +11,7 @@ from servicelab.utils import vagrant_utils as v_utils
 from servicelab.utils import helper_utils
 from servicelab.stack import pass_context
 from servicelab.utils import yaml_utils
-from servicelab.utils import Vagrantfile_utils as Vf_utils
+from servicelab.utils import vagrantfile_utils as Vf_utils
 from servicelab.utils import ccsdata_utils
 
 

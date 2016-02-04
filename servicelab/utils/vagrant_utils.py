@@ -12,7 +12,7 @@ from subprocess import CalledProcessError
 import yaml_utils
 import service_utils
 import vagrant_utils
-import Vagrantfile_utils
+import vagrantfile_utils
 
 
 # create logger
@@ -338,7 +338,7 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
         return 0, hostname
 
     # Shared code b/w remote and local vbox
-    thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
+    thisvfile = vagrantfile_utils.SlabVagrantfile(path=path)
 
     # vagrant_utils.vm_isrunning currently doesn't manage these alternative states
     # so we fail

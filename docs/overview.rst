@@ -73,7 +73,7 @@ Current structure of servicelab with inline comments::
     │       ├── public_key.pkcs7.pem        #
     │       ├── ruby_utils.py               #
     │       ├── service_utils.py            # Main util for cmd_workon
-    │       ├── Vagrantfile_utils.py        # Manipulates the Vagrant file
+    │       ├── vagrantfile_utils.py        # Manipulates the Vagrant file
     │       ├── vagrant_plugins.yaml        # List of plugins
     │       ├── vagrant_utils.py            # Python wrapper for executing Vagrant tasks
     │       ├── vagrant.yaml                # Vagrant Yaml (* Important)

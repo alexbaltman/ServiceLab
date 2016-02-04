@@ -82,10 +82,10 @@ vagrant_utils module
     :undoc-members:
     :show-inheritance:
 
-Vagrantfile_utils module
+vagrantfile_utils module
 ------------------------
 
-.. automodule:: servicelab.utils.Vagrantfile_utils
+.. automodule:: servicelab.utils.vagrantfile_utils
     :members:
     :undoc-members:
     :show-inheritance:

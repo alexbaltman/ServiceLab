@@ -10,7 +10,7 @@ import helper_utils
 import service_utils
 import openstack_utils as os_utils
 import tc_vm_yaml_create
-import Vagrantfile_utils
+import vagrantfile_utils
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -1070,7 +1070,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
     for security_group in my_security_groups:
         sgrparry.append(str(security_group['name']))
 
-    a = Vagrantfile_utils.SlabVagrantfile(path)
+    a = vagrantfile_utils.SlabVagrantfile(path)
     # Note: setup host_vars under instance of class
     a.hostname = hostname
     a.set_host_image_flavors(path)

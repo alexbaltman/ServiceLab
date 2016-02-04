@@ -1,10 +1,7 @@
-import logging
-import yaml
 import os
+import yaml
+import logging
 
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
 Vagrantfile_utils_logger = logging.getLogger('click_application')
 logging.basicConfig()
 
@@ -20,8 +17,8 @@ class SlabVagrantfile(object):
         Varies per method.  See method docstrings for details
 
     Example Usage:
-        from servicelab.utils import Vagrantfile_utils
-        my_class_var = Vagrantfile_utils.SlabVagrantfile('/path/to/use/for/vagrant/')
+        from servicelab.utils import vagrantfile_utils
+        my_class_var = vagrantfile_utils.SlabVagrantfile('/path/to/use/for/vagrant/')
         my_class_var.<method_name>(args)
     """
 
