@@ -175,6 +175,17 @@ def _git_clone(path, branch, username, service_name):
                                   "%s/services/%s" % (branch, username,
                                                       service_name, path,
                                                       service_name))
+    if returncode != 0:
+        # check if failure because of unresolved references
+        pstr = "fatal: pack has [0-9]+ unresolved deltas\nfatal: index-pack failed"
+        ptrn = re.compile(pstr)
+        if ptrn.search(myinfo):
+            # we are going to ignore any unresolved references as we are doing only
+            # shallow copy with depth 1
+            SERVICE_UTILS_LOGGER.info("Ignoring unresolved references as "
+                                      "slab does a shallow clone of the "
+                                      "service repo")
+            returncode = 0
     return(returncode, myinfo)
 
 
