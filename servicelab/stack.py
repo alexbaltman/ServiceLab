@@ -87,9 +87,13 @@ class Context(object):
             {"url": "https://ccs-jenkins.cisco.com"}
         self.__pulp_info = \
             {"url": "https://ccs-mirror.cisco.com"}
-        self.username = helper_utils.get_username(self.path)
-        self.password = None
 
+        # set the user name according to this defined hierarchy
+        returncode, self.username = helper_utils.get_gitusername(self.path)
+        if returncode > 0:
+            helper_utils.get_loginusername()
+
+        self.password = None
         if os.getenv("OS_USERNAME"):
             self.username = os.getenv("OS_USERNAME")
             self.password = os.getenv("OS_PASSWORD")
@@ -153,6 +157,12 @@ class Context(object):
         """
         username
         """
+        if not self.username:
+            self.logger.error("servicelab: username is unavailable from git config,"
+                              " os, or environments OS_USERNAME, STX_USERNAMRE. "
+                              "Please set it through any of the given "
+                              "mechanism and run the command again.")
+            sys.exit(1)
         return self.username
 
     def get_password(self, interactive=False):

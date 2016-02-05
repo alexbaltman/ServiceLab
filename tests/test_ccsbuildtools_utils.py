@@ -34,10 +34,11 @@ class TestCCsBuildToolsUtils(unittest.TestCase):
         """setUp function for context attribute <> clone latest ccsbuildtools
         """
         self.ctx = Context()
-        username = helper_utils.get_username(self.ctx.path)
+        returncode, username = helper_utils.get_gitusername(self.ctx.path)
+        if returncode > 0:
+            helper_utils.get_loginusername()
         service_utils.sync_service(self.ctx.path, "master", username,
-                                   "ccs-build-tools"
-                                   )
+                                   "ccs-build-tools")
 
     def TearDown(self):
         """tear down <> remove cloned repo

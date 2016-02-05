@@ -122,7 +122,9 @@ class TestYamlUtils(unittest.TestCase):
         """ Tests adding host to vagrant yaml. Adds a host to vagrant
             file and checks for its presence.
         """
-        username = helper_utils.get_username(self.ctx.path)
+        returncode, username = helper_utils.get_gitusername(TestYamlUtils.ctx.path)
+        if returncode > 0:
+            helper_utils.get_loginusername()
         service_utils._git_clone(
             os.path.join(self.temp_dir),
             "master",
@@ -160,7 +162,9 @@ class TestYamlUtils(unittest.TestCase):
             Adds a hosts, deletes a hosts, checks for absence of host
             in vagrantfile
         """
-        username = helper_utils.get_username(self.ctx.path)
+        returncode, username = helper_utils.get_gitusername(TestYamlUtils.ctx.path)
+        if returncode > 0:
+            helper_utils.get_loginusername()
         service_utils._git_clone(
             os.path.join(self.temp_dir),
             "master",
@@ -210,7 +214,9 @@ class TestYamlUtils(unittest.TestCase):
     def test_get_allips_foryaml(self):
         """ Tests getting all ips for yamls.
         """
-        username = helper_utils.get_username(self.ctx.path)
+        returncode, username = helper_utils.get_gitusername(TestYamlUtils.ctx.path)
+        if returncode > 0:
+            helper_utils.get_loginusername()
         service_utils._git_clone(
             os.path.join(self.temp_dir),
             "master",

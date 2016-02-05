@@ -967,7 +967,7 @@ def get_dev_hostyaml(path, hostname, site='ccs-dev-1', env='dev-tenant'):
     myhost = {}
     if not os.path.exists(os.path.join(path, 'services', 'ccs-data')):
         yaml_utils_logger.debug("Cloning ccs-data. on master branch.")
-        returncode, username = helper_utils.set_user(path)
+        returncode, username = helper_utils.get_gitusername(path)
         if returncode > 0:
             yaml_utils_logger.error('could not set username for clone of ccs-data.')
             return 1, myhost

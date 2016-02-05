@@ -135,7 +135,7 @@ def setup_ruby(username=None):
         if username:
             pass
         else:
-            returncode, username = helper_utils.set_user(ctx.path)
+            returncode, username = helper_utils.get_gitusername(ctx.path)
             if returncode > 0:
                 ruby_utils_logger.error("Couldn't set user.")
     # Add user(s) to rvm group

@@ -57,7 +57,7 @@ def find_all_yaml_recurs(full_path):
         return 1, matches
 
 
-def set_user(path):
+def get_gitusername(path):
     """Sets user to whoever clone the git repo from gerrit.
 
     Args:
@@ -72,7 +72,7 @@ def set_user(path):
     Example Usage:
         >>> print path
         /Users/aaltman/Git/servicelab/servicelab/.stack
-        >>> print set_user(path)
+        >>> print get_gitusername(path)
         (0, aaltman)
     """
     matches = None
@@ -88,8 +88,23 @@ def set_user(path):
             matches = re.search(regex, line)
             if matches:
                 username = matches.group(1)
+                if not username:
+                    return 1, username
                 return 0, username
     return 1, username
+
+
+def get_loginusername():
+    """Gets the login  user name.
+
+    Returns:
+        username(str): login name
+
+    Example Usage:
+    >>> print get_loginusername()
+    aaltman
+    """
+    return getpass.getuser()
 
 
 def get_current_service(path):
@@ -145,15 +160,6 @@ def get_path_to_utils(path):
     split_path = os.path.split(path)
     path_to_utils = os.path.join(split_path[0], "utils")
     return path_to_utils
-
-
-def get_username(path):
-    returncode, username = set_user(path)
-    if returncode > 0:
-        username = getpass.getuser()
-        if not username:
-            raise Exception("Still couldn't set username. Exiting.")
-    return username
 
 
 def name_vm(name, path):
