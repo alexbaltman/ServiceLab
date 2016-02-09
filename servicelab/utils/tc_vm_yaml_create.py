@@ -6,9 +6,9 @@ import ipaddress
 import sys
 import click
 
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 def open_yaml(filename):

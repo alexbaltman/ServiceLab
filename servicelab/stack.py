@@ -12,44 +12,7 @@ import click
 # auto envvar prefix will take in any env vars that are prefixed with STK
 # short for stack.
 CONTEXT_SETTINGS = dict(auto_envvar_prefix='STK')
-
-
-class Logger(object):
-    """
-    Setup class context object to handle logging for all commands and utils
-
-    Attributes
-        verbose (boolean)
-        vverbose (boolean)
-        debug (boolean)
-        logger (logger)
-
-        file_handler       - Create filehandler that logs everything.
-        formatter          - Create formatter and add it to the handlers
-
-    """
-    def __init__(self):
-        self.path = os.path.join(os.path.dirname(__file__), '.stack')
-        # Setup Logging
-        self.branch = "master"
-        self.verbose = False
-        self.vverbose = False
-        self.debug = False
-        self.logger = logging.getLogger('stack')
-        logging.addLevelName(15, 'DETAIL')
-
-        # Create filehandler that logs everything.
-        self.file_handler = logging.FileHandler(os.path.join(self.path,
-                                                             'stack.log'))
-        self.file_handler.setLevel(logging.DEBUG)
-
-        # Create formatter and add it to the handlers
-        self.formatter = logging.Formatter("%(asctime)s - %(name)s - "
-                                           "%(levelname)s - %(message)s")
-        self.file_handler.setFormatter(self.formatter)
-
-        # Add handlers to the logger
-        self.logger.addHandler(self.file_handler)
+loggers = {}
 
 
 class Context(object):
@@ -74,10 +37,10 @@ class Context(object):
     from servicelab.utils import helper_utils
 
     def __init__(self):
-        self.logger = Logger().logger
+        # self.logger = SLAB_Logger().logger
+        self.branch = "master"
         self.path = os.path.join(os.path.dirname(__file__), '.stack')
-        self.config = os.path.join(os.path.dirname(__file__),
-                                   '.stack/stack.conf')
+        self.config = os.path.join(os.path.dirname(__file__), '.stack/stack.conf')
 
         self.pkey_name = "servicelab/utils/public_key.pkcs7.pem"
 
@@ -217,6 +180,38 @@ class ComplexCLI(click.MultiCommand):
         return mod.cli
 
 
+@pass_context
+def SLAB_Logger(ctx, name='stack'):
+    global loggers
+
+    if loggers.get(name):
+        return loggers.get(name)
+    else:
+        logger = logging.getLogger(name)
+        logger.setLevel(logging.DEBUG)
+        logging.addLevelName(15, 'DETAIL')
+
+        # Create filehandler that logs everything.
+        file_handler = logging.FileHandler(os.path.join(ctx.path, 'stack.log'))
+        file_handler.setLevel(logging.DEBUG)
+
+        # Create formatter and add it to the handlers
+        formatter = logging.Formatter("%(asctime)s - %(name)s - "
+                                      "%(levelname)s - %(message)s")
+        file_handler.setFormatter(self.formatter)
+
+        # Add handlers to the logger
+        logger.addHandler(self.file_handler)
+
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(ctx.verbosity)
+        logger.addHandler(console_handler)
+        
+        loggers.update(dict(name=logger))
+
+        return logger
+
+
 @click.command(cls=ComplexCLI, context_settings=CONTEXT_SETTINGS)
 @click.option('--username', '-u', help="user")
 @click.option('--password', '-p', help="password")
@@ -224,22 +219,23 @@ class ComplexCLI(click.MultiCommand):
 @pass_context
 def cli(ctx, username, password, verbose):
     """A CLI for Cisco Cloud Services."""
-
     if username:
         ctx.username = username
     if password:
         ctx.password = password
+
     if verbose:
         if verbose == 1:
-            ctx.verbose = True
-            ctx.logger.setLevel(logging.INFO)
-            verbosity = 'verbose (INFO)'
+        #    logger.logger.setLevel(logging.INFO)
+            ctx.verbosity = logging.INFO
+            message = 'verbose (INFO)'
         elif verbose == 2:
-            ctx.vverbose = True
-            ctx.logger.setLevel(15)
-            verbosity = 'very verbose (DETAIL)'
+        #    ctx.logger.setLevel(15)
+            ctx.verbosity = 15
+            message = 'very verbose (DETAIL)'
         elif verbose >= 3:
-            ctx.debug = True
-            ctx.logger.setLevel(logging.DEBUG)
-            verbosity = 'debug (DEBUG)'
-        click.echo('Verbosity set to %s\n' % verbosity)
+        #    ctx.logger.setLevel(logging.DEBUG)
+            ctx.verbosity = logging.DEBUG
+            message = 'debug (DEBUG)'
+        click.echo('Verbosity set to %s\n' % message)
+        ctx.logger = Setup_Logger()

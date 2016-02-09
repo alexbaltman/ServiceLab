@@ -12,12 +12,12 @@ from keystoneclient.exceptions import AuthorizationFailure, Unauthorized
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client
 from neutronclient.common.exceptions import NotFound
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
 import helper_utils
 import vagrant_utils
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 class SLab_OS(object):

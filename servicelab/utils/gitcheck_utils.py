@@ -11,9 +11,9 @@ from subprocess import PIPE
 import shlex
 import click
 
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 # Global vars

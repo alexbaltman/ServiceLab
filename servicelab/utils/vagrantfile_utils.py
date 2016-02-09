@@ -1,9 +1,9 @@
 import os
 import yaml
 
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 class SlabVagrantfile(object):

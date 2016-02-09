@@ -6,9 +6,9 @@ import re
 import shutil
 import subprocess32 as subprocess
 
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 def sync_service(path, branch, username, service_name):
