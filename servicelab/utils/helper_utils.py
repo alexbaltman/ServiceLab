@@ -6,9 +6,9 @@ import fnmatch
 import getpass
 
 from servicelab.utils.yaml_utils import host_exists_vagrantyaml
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 def find_all_yaml_recurs(full_path):

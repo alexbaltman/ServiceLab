@@ -7,9 +7,9 @@ import click
 from subprocess import CalledProcessError
 from servicelab.utils.gitcheck_utils import Gitcheckutils
 from servicelab.utils import vagrant_utils
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 SERVICE_DIR = "services"
 VM_NAME = "infra001"
 

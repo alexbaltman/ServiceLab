@@ -10,9 +10,9 @@ import openstack_utils as os_utils
 import tc_vm_yaml_create
 import vagrantfile_utils
 
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 def validate_syntax(file_name):

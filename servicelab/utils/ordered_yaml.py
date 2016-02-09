@@ -1,9 +1,9 @@
 import re
 import yaml
 from collections import OrderedDict
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 """
 based on the stack overflow discussin

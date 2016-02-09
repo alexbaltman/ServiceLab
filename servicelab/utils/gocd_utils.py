@@ -11,9 +11,9 @@ import requests
 
 from requests.auth import HTTPBasicAuth
 from bs4 import BeautifulSoup
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 def get_config(config_xmlurl, auth=None):

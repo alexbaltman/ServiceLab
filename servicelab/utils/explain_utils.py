@@ -16,9 +16,9 @@ from bs4 import BeautifulSoup
 
 from servicelab.utils import service_utils
 from servicelab.utils import ccsbuildtools_utils
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 def compile_man_page(path, user, password):

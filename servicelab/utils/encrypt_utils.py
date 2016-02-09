@@ -2,9 +2,9 @@
 Help fuctions for public key encrytption and decryption.
 """
 from servicelab.utils import service_utils
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 def public_key(fname):
@@ -62,7 +62,7 @@ def encrypt(pub_fname, data):
 
     cmd_returncode, cmd_info = service_utils.run_this(cmd)
     if cmd_returncode > 0:
-        ctx.logger..error(cmd_info)
+        ctx.logger.error(cmd_info)
     return (cmd_returncode, cmd_info)
 
 

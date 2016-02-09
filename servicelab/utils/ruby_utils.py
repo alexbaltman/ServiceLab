@@ -4,9 +4,9 @@ import logging
 import os
 import re
 
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 ctx.logger. = logging.getLogger('click_application')
 

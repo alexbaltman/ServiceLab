@@ -13,9 +13,9 @@ import service_utils
 import vagrant_utils
 import vagrantfile_utils
 
-from servicelab.stack import Logger
+from servicelab.stack import SLAB_Logger
 
-ctx = Logger()
+ctx = SLAB_Logger()
 
 
 class Connect_to_vagrant(object):
