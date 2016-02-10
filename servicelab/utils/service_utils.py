@@ -1,5 +1,5 @@
 """
-Stack utility functions.
+Stack utility functions
 """
 import os
 import re
@@ -458,8 +458,13 @@ def check_service(path, service_name):
                 if re.search(service_name, line):
                     return 0
 
-            run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects">\
-                     %s' % (os.path.join(path, "cache", "projects")))
+            ret_val, ret_str = run_this('ssh -p 29418 ccs-gerrit.cisco.com '
+                                        '"gerrit ls-projects" > %s'
+                                        % (os.path.join(path, "cache", "projects")))
+            if ret_val != 0:
+                SERVICE_UTILS_LOGGER.error("Unable to fetch project list from gerrit")
+                SERVICE_UTILS_LOGGER.error("error {}".format(ret_str))
+                return 1
             for line in open(os.path.join(path, "cache", "projects"), 'r'):
                 if re.search(service_name, line):
                     return 0
@@ -473,8 +478,14 @@ def check_service(path, service_name):
         # Note: We close right away b/c we're just trying to
         #       create the file.
         cachef.close()
-        run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
-                 % (os.path.join(path, "cache", "projects")))
+        ret_val, ret_str = run_this('ssh -p 29418 ccs-gerrit.cisco.com '
+                                    '"gerrit ls-projects" > %s'
+                                    % (os.path.join(path, "cache", "projects")))
+        if ret_val != 0:
+            SERVICE_UTILS_LOGGER.error("Unable to fetch project list from gerrit")
+            SERVICE_UTILS_LOGGER.error("error {}".format(ret_str))
+            return 1
+
         for line in open(os.path.join(path, "cache", "projects"), 'r'):
             if re.search(service_name, line):
                 return 0
