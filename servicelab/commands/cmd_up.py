@@ -127,7 +127,11 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         ret_code, yaml_data = yaml_utils.read_host_yaml(existing_vm, env_path)
         if ret_code > 0:
             sys.exit(1)
-        flavor = yaml_data['deploy_args']['flavor']
+        try:
+            flavor = yaml_data['deploy_args']['flavor']
+        except KeyError:
+            ctx.logger.warning('Unable to find flavor for %s, using default flavor'
+                               % hostname)
         service_groups = []
         groups = []
         try:
