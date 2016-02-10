@@ -26,6 +26,7 @@ def cmd_repo_status(ctx):
     """
     Shows the details of git repos.
     """
+    ctx.logger.info('Displaying git repos details')
     status_utils.show_repo_status(ctx.path)
 
 
@@ -35,6 +36,7 @@ def cmd_vm_status(ctx):
     """
     Shows the vm status
     """
+    ctx.logger.info('Displaying status of Servicelab VMs')
     display_vm_status(ctx)
 
 
@@ -48,12 +50,12 @@ def display_vm_status(ctx):
         "exist : %s . Please, run : stack workon <project name>"\
         " to fix the issue." % (vagrant_file_path)
     if not os.path.isfile(vagrant_file_path):
-        click.echo(error_message)
+        ctx.logger.error(error_message)
         sys.exit(1)
     else:
         returncode, _ = status_utils.show_vm_status(ctx.path)
         if returncode == 2:
-            click.echo(error_message)
+            ctx.logger.error(error_message)
             sys.exit(1)
 
 
@@ -63,5 +65,7 @@ def show_all_status(ctx):
     """
     Shows the Vm status.
     """
+    ctx.logger.info('Displaying status of git repos')
     status_utils.show_repo_status(ctx.path)
+    ctx.logger.info('Displaying status of Servicelab VMs')
     display_vm_status(ctx)

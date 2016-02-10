@@ -9,8 +9,11 @@ import re
 import subprocess
 from subprocess import PIPE
 import shlex
-
 import click
+
+from servicelab.stack import SLAB_Logger
+
+ctx = SLAB_Logger()
 
 
 # Global vars
@@ -29,6 +32,7 @@ class Gitcheckutils(object):
         """
         searches repositories
         """
+        ctx.logger.log(15, 'Searching for git repos')
         if srch_dir is not None and srch_dir[-1:] == '/':
             srch_dir = srch_dir[:-1]
         curdir = os.path.abspath(os.getcwd()) if srch_dir is None else srch_dir
@@ -47,6 +51,7 @@ class Gitcheckutils(object):
         """
         Gets all branches to be pushed
         """
+        ctx.logger.log(15, 'Determining branches to be pushed')
         topush = ""
         for remote in remotes:
             count = len(Gitcheckutils.get_local_to_push(rep, remote, branch))
@@ -63,6 +68,7 @@ class Gitcheckutils(object):
         """
         Get all branches to be pulled
         """
+        ctx.logger.log(15, 'Determining branches to be pulled')
         topull = ""
         for remote in remotes:
             count = len(Gitcheckutils.get_remote_to_pull(rep, remote, branch))
@@ -79,6 +85,7 @@ class Gitcheckutils(object):
         """
         Displays all display_reviews
         """
+        ctx.logger.log(15, 'Displaying all reviews')
         for remote in remotes:
             commits = Gitcheckutils.get_local_to_push(rep, remote, branch)
             if len(commits) > 0:
@@ -96,6 +103,7 @@ class Gitcheckutils(object):
         """
         Displays all display_pulls
         """
+        ctx.logger.log(15, 'Displaying all pulls')
         for remote in remotes:
             commits = Gitcheckutils.get_remote_to_pull(rep, remote, branch)
             if len(commits) > 0:
@@ -113,6 +121,7 @@ class Gitcheckutils(object):
         """
         Gets the repository name
         """
+        ctx.logger.log(15, 'Determining repo name')
         # Remove trailing slash from repository/directory name
         if rep[-1:] == '/':
             rep = rep[:-1]
@@ -138,6 +147,7 @@ class Gitcheckutils(object):
         """
         Checks repository
         """
+        ctx.logger.log(15, 'Checking repo')
         branch = Gitcheckutils.get_default_branch(rep)
         if re.match(self.ignoreBranch, branch):
             return False
@@ -189,6 +199,7 @@ class Gitcheckutils(object):
         """
         Gets changed files
         """
+        ctx.logger.lob(15, 'Determining changed files')
         files = []
         snbchange = re.compile(r'^(.{2}) (.*)')
         only_tracked_arg = ""
@@ -206,6 +217,7 @@ class Gitcheckutils(object):
         """
         checks for remote branch
         """
+        ctx.logger.log(15, 'Checking for remote branch')
         result = Gitcheckutils.git_exec(rep, 'branch -r')
         return '%s/%s' % (remote, branch) in result
 
@@ -214,6 +226,7 @@ class Gitcheckutils(object):
         """
         checks if local exists for push
         """
+        ctx.logger.log(15, 'Checking for branch on local repo')
         if not Gitcheckutils.has_remote_branch(rep, remote, branch):
             return []
         result = Gitcheckutils.git_exec(rep, "log %(remote)s/%(branch)s..HEAD \
@@ -226,6 +239,7 @@ class Gitcheckutils(object):
         """
         checks if remote exists for pull
         """
+        ctx.logger.log(15, 'Checking for branch on remote repo')
         if not Gitcheckutils.has_remote_branch(rep, remote, branch):
             return []
         result = Gitcheckutils.git_exec(rep, "log HEAD..%(remote)s/%(branch)s \
@@ -238,6 +252,7 @@ class Gitcheckutils(object):
         """
         gets default branch
         """
+        ctx.logger.log(15, 'Determining default branch')
         sbranch = re.compile(r'^\* (.*)', flags=re.MULTILINE)
         gitbranch = Gitcheckutils.git_exec(rep, "branch" % locals())
 
@@ -253,6 +268,7 @@ class Gitcheckutils(object):
         """
         gets remote repo
         """
+        ctx.logger.log(15, 'Determining remote repos')
         result = Gitcheckutils.git_exec(rep, "remote" % locals())
 
         remotes = [x for x in result.split('\n') if x]
@@ -263,12 +279,13 @@ class Gitcheckutils(object):
         """
         executes git command
         """
+        ctx.logger.log(15, 'Executing git command %s' % cmd)
         command_to_execute = "git %s" % (cmd)
         cmdargs = shlex.split(command_to_execute)
         prog = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE, cwd=path)
         output, errors = prog.communicate()
         if prog.returncode:
-            click.echo('Failed running %s' % command_to_execute)
+            ctx.logger.error('Failed running %s' % command_to_execute)
             raise Exception(errors)
         return output.decode('utf-8')
 
@@ -277,6 +294,7 @@ class Gitcheckutils(object):
         """
         Does git check
         """
+        ctx.logger.log(15, 'Checking all git repos')
         repos = Gitcheckutils.search_repositories(srch_dir)
 
         for repo in repos:

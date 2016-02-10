@@ -24,4 +24,5 @@ def validate_yaml(_, file_name):
     """
     This cmd function takes the yaml file and validates its syntax.
     """
+    ctx.logger.info('Validating syntax of %s' % file_name)
     yaml_utils.validate_syntax(file_name)

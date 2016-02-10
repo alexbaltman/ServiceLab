@@ -41,6 +41,7 @@ def find_repo(ctx, search_term):
     """
     Searches through Gerrit's API for a repo using your search term.
     """
+    ctx.logger.info('Searching Gerrit for repos matching %s' % search_term)
     username = ctx.get_username()
     gfn = gerrit_functions.GerritFns(username, "", ctx)
     repo_list = gfn.repo_list()
@@ -83,18 +84,19 @@ def find_artifact(ctx, search_term, ip_address,
     """
     Searches through Artifactory's API for artifacts using your search term.
     """
+    ctx.logger.info('Determining artifactory details')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     if ip_address is None:
         ip_address = ctx.get_artifactory_info()
-    click.echo('Searching for %s artifact in Artifactory' % search_term)
+    ctx.logger.info('Searching for %s artifact in Artifactory' % search_term)
     find_url = ip_address + "/api/search/artifact?name=" + search_term
     requests.packages.urllib3.disable_warnings()
     res = requests.get(find_url, auth=HTTPBasicAuth(username, password))
@@ -102,7 +104,7 @@ def find_artifact(ctx, search_term, ip_address,
         for val in json.loads(res.content)["results"]:
             click.echo(val["uri"])
     else:
-        click.echo("No results found.")
+        ctx.logger.error("No results found.")
         sys.exit(1)
 
 
@@ -150,6 +152,7 @@ def find_pipe(ctx, search_term, localrepo, username,
         internal function returns a list of the pipeline
         strings from the go server
         """
+        ctx.logger.info('Finding pipelines from the go server')
         server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
         res = requests.get(server_url, auth=HTTPBasicAuth(username, password))
         soup = BeautifulSoup(res.content, "html.parser")
@@ -160,6 +163,7 @@ def find_pipe(ctx, search_term, localrepo, username,
         """
         find the match in the pipeline for services and other projects
         """
+        ctx.logger.info('Searching for matching pipeline')
         try:
             search_string = pipeline['href']
             split_string = search_string.split('/')
@@ -185,9 +189,9 @@ def find_pipe(ctx, search_term, localrepo, username,
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
@@ -198,9 +202,9 @@ def find_pipe(ctx, search_term, localrepo, username,
     for pipeline in pipelines:
         match_str, return_code = _get_match(pipeline)
         if return_code == 1:
-            click.echo("Internal error occurred. The regular "
-                       "expression supplied seems to be invalid. "
-                       "Please, retry with a correct regular expression.")
+            ctx.logger.error("Internal error occurred. The regular "
+                             "expression supplied seems to be invalid. "
+                             "Please, retry with a correct regular expression.")
             sys.exit(1)
         else:
             if match_str:
@@ -239,14 +243,15 @@ def find_build(ctx, search_term, username, password, ip_address, interactive):
     """
     Searches through the build search term.
     """
+    ctx.logger.info('Searching Jenkins for the specified build')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
 
     server = jenkins_utils.get_server_instance(ip_address, username, password)
@@ -282,14 +287,15 @@ def find_pulp_repos(ctx, repo_name, ip_address, username, password, interactive)
     """
     Lists rpms using Pulp Server API.
     """
+    ctx.logger.info('Searching for rps on Pulp server')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     url = "/pulp/api/v2/repositories/search/"
     payload = '{ "criteria": { "filters" : { "display_name" : {"$regex" : "%s"}}\
@@ -304,4 +310,4 @@ def find_pulp_repos(ctx, repo_name, ip_address, username, password, interactive)
             click.echo("Repo Name    : %s" % repo["display_name"])
             click.echo("Repo path    : %s" % repo["_href"] + "\n")
     else:
-        click.echo("No matching repositories found on this pulp server.")
+        ctx.logger.error("No matching repositories found on this pulp server.")

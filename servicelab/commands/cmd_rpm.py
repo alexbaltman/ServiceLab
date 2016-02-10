@@ -61,14 +61,15 @@ def display_rpm_status(ctx,
     """
     Displays rpm stats.
     """
+    ctx.logger.info('Displaying rpm status')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     url = "/pulp/api/v2/repositories/%s/search/units/" % (pulp_repo)
     payload = '{ "criteria": { "filters" : { "unit" : { "name" : "%s"}},'\
@@ -114,14 +115,15 @@ def download_rpm(ctx, username,
     """
     Download the artifact.
     """
+    ctx.logger.info('Downloading rpm from pulp repo')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     url = "/pulp/api/v2/distributors/search/"
     payload = '{"criteria":{"filters":{"repo_id":{"$eq": "%s"}}}}' % (pulp_repo)
@@ -154,7 +156,7 @@ def download_rpm(ctx, username,
             click.echo("\nDownload complete.")
             return
         else:
-            click.echo(
+            ctx.logger.error(
                 "Rpm %s could not be download since it was"
                 " not found in repo : %s" % (rpm, pulp_repo))
     else:
@@ -201,14 +203,15 @@ def upload_rpm(ctx, ip_address,
     """
     Upload the rpm.
     """
+    ctx.logger.info('Uploading rpm to pulp repo')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     click.echo("Starting upload of {0}".format(filepath))
     url = "/pulp/api/v2/content/uploads/"

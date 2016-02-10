@@ -51,9 +51,9 @@ def display_artifact_status(ctx,
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
         sys.exit(1)
     requests.packages.urllib3.disable_warnings()
     res = requests.get(url, auth=HTTPBasicAuth(username, password))
@@ -95,21 +95,21 @@ def download_artifact(ctx,
     download_uri = json.loads(res.content)["downloadUri"]
 
     file_name = download_uri.split('/')[-1]
-    click.echo("Starting download of {0} to {1}. It might "
-               "take a few minutes.".format(download_uri,
-                                            destination))
+    ctx.logger.info("Starting download of {0} to {1}. It might "
+                    "take a few minutes.".format(download_uri,
+                                                 destination))
     with open(os.path.join(destination, file_name), 'wb') as handle:
         response = requests.get(download_uri,
                                 stream=True,
                                 auth=HTTPBasicAuth(username, password))
 
         if not response.ok:
-            click.echo("Error occured during downloading")
+            ctx.logger.error("Error occured during downloading")
             return
 
         handle.write(response.content)
 
-    click.echo("Download Complete")
+    ctx.logger.info("Download Complete")
 
 
 @cli.command('upload', short_help='Upload an artifact to Artifactory.')
@@ -143,10 +143,10 @@ def upload_artifact(ctx,
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
-    click.echo("Starting upload of {0} to {1}".format(filepath, url))
+        ctx.logger.error("Username is %s and password is %s. "
+                         "Please, set the correct value for both and retry." %
+                         (username, password))
+    ctx.logger.info("Starting upload of {0} to {1}".format(filepath, url))
     subprocess.call(['curl',
                      '-X',
                      'PUT',
@@ -155,3 +155,4 @@ def upload_artifact(ctx,
                      url,
                      '-u',
                      "{0}:{1}".format(username, password)])
+    ctx.logger.info('Completed upload')

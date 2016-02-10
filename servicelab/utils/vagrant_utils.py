@@ -1,5 +1,4 @@
 import os
-import logging
 
 # Note: from here --> python-vagrant fabric cuisine pyvbox
 import cuisine
@@ -12,14 +11,11 @@ from subprocess import CalledProcessError
 import yaml_utils
 import service_utils
 import vagrant_utils
-import Vagrantfile_utils
+import vagrantfile_utils
 
+from servicelab.stack import SLAB_Logger
 
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
-vagrant_utils_logger = logging.getLogger('click_application')
-logging.basicConfig()
+ctx = SLAB_Logger()
 
 
 class Connect_to_vagrant(object):
@@ -85,6 +81,7 @@ class Connect_to_vagrant(object):
             self -- self-referencing pointer
 
         """
+        ctx.logger.log(15, 'Adding virtualbox to the Vagrant environment')
         v = self.v
         if not os.path.exists(v.root):
             os.makedirs(v.root)
@@ -113,6 +110,7 @@ class Connect_to_vagrant(object):
                                    is the path to the root of the servicelab repository.
 
         """
+        ctx.logger.log(15, 'Creating Vagrantfile in %s' % self.v.root)
         # EXP: Check for vagrant file, otherwise init, and insert box into file
         # RFI: Create Vagrantfile in Current_Services?
         v = self.v
@@ -135,6 +133,7 @@ class Connect_to_vagrant(object):
                        this looks like ./servicelab/servicelab/.stack where "."
                        is the path to the root of the servicelab repository.
         """
+        ctx.logger.log(15, 'Making a backup of Vagrantfile in %s' % path)
         vagrant_file = os.path.join(
             path, "services", "current_service", "Vagrantfile")
         # EXP: Create backup
@@ -153,6 +152,7 @@ class Connect_to_vagrant(object):
             vagrant_file    -- Path to the existing Vagrantfile.
             vm_name          -- new name to assign to VM
         """
+        ctx.logger.log(15, 'Renaming Vagrantfile vm to %s' % vm_name)
         # EXP: Execute a touch of ruby to rename vm to vname
         with open(vagrant_file, 'w') as vfile:
             with open(vagrant_file+'.bak', 'r') as bfile:
@@ -174,6 +174,7 @@ class Connect_to_vagrant(object):
         Args:
             vm_name  --  name to assign to VM
         """
+        ctx.logger.log(15, 'Setting up vm %s' % vm_name)
         env.hosts = [v.user_hostname_port(vm_name='%s' % (vm_name))]
         env.key_filename = v.keyfile(vm_name='%s' % (vm_name))
         env.disable_known_hosts = True
@@ -189,6 +190,7 @@ class Connect_to_vagrant(object):
         Args:
             pkg  --  name of package to be installed
         """
+        ctx.logger.log(15, 'Installing yum package %s on the VM' % pkg)
         cuisine.package_ensure_yum(pkg)
 
     @staticmethod
@@ -197,6 +199,7 @@ class Connect_to_vagrant(object):
         """
         Configures cloud-init.
         """
+        ctx.logger.log(15, 'Configuring cloud-init')
         sed('/etc/cloud/cloud.cfg', 'user:', 'user: vagrant\n#')
 
 # execute(install_pkg_on_vm("cloud-init"))
@@ -213,6 +216,7 @@ def export_vm(path, vm_name):
                   is the path to the root of the servicelab repository.
         vm_name  --  name of virtualmachine
     """
+    ctx.logger.log(15, 'Exporting %s to Virtualbox' % vm_name)
     vbox = virtualbox.VirtualBox()
     machines = [machine for machine
                 in vbox.machines
@@ -253,6 +257,7 @@ def vm_isrunning(hostname, path):
                                      provision=None, provision_with=None)
 
     '''
+    ctx.logger.log(15, 'Determining the running state of %s' % hostname)
     vm_connection = Connect_to_vagrant(vm_name=hostname,
                                        path=path)
     try:
@@ -307,20 +312,21 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
     Misc.:
         CalledProcessError --> subprocess exit 1 triggers this exception
     '''
+    ctx.logger.log(15, 'Ensuring that an infra node is booted in the correct environment')
     hostname = 'infra-001'
     if mynets and float_net:
         remote = True
     else:
         remote = False
 
-    vagrant_utils_logger.debug("Checking for an existing {}"
-                               "infra node.".format("remote " if remote else ""))
+    ctx.logger.debug("Checking for an existing {}"
+                     "infra node.".format("remote " if remote else ""))
     ispoweron, isremote = vagrant_utils.vm_isrunning(hostname=hostname, path=path)
     infra_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
                                                         path=path)
 
     # Note: Ensure 001 is in inventory even if we're using 002.
-    vagrant_utils_logger.debug("Adding {} to local inventory.".format(hostname))
+    ctx.logger.debug("Adding {} to local inventory.".format(hostname))
     if yaml_utils.addto_inventory(hostname, path) > 0:
         return 1, hostname
 
@@ -338,7 +344,7 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
         return 0, hostname
 
     # Shared code b/w remote and local vbox
-    thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
+    thisvfile = vagrantfile_utils.SlabVagrantfile(path=path)
 
     # vagrant_utils.vm_isrunning currently doesn't manage these alternative states
     # so we fail
@@ -393,6 +399,8 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
 
 
 def check_vm_is_available(path):
+    ctx.logger.log(15, 'Checking vm availablity')
+
     def fn(vagrant_folder, vm_name):
         try:
             if not os.path.isfile(os.path.join(vagrant_folder, "Vagrantfile")):
@@ -411,9 +419,9 @@ def check_vm_is_available(path):
 
     # check if they are installed or not
     for folder in map(lambda x: os.path.join(path, x), dir):
-        vagrant_utils_logger.debug("checking {}".format(folder))
+        ctx.logger.debug("checking {}".format(folder))
         for vm in vm_lst:
             if fn(folder, vm):
-                vagrant_utils_logger.debug("VM {} is available".format(vm))
+                ctx.logger.debug("VM {} is available".format(vm))
                 return True
     return False

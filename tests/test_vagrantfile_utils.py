@@ -6,7 +6,7 @@ import tempfile
 
 from tests.helpers import temporary_dir
 from servicelab.stack import Context
-from servicelab.utils import Vagrantfile_utils
+from servicelab.utils import vagrantfile_utils
 
 
 class TestVagrantFileUtils(unittest.TestCase):
@@ -33,7 +33,7 @@ class TestVagrantFileUtils(unittest.TestCase):
                                 'dev-tenant/hosts.d/'
         self.test_yaml_dir = os.path.join(self.host_var_tempdir, self.yaml_nested_path)
         self.vagrant_file = os.path.join(self.host_var_tempdir, 'Vagrantfile')
-        self.vf_utils = Vagrantfile_utils.SlabVagrantfile(self.host_var_tempdir)
+        self.vf_utils = vagrantfile_utils.SlabVagrantfile(self.host_var_tempdir)
         os.makedirs(self.test_yaml_dir)
         self.vagrant_data = ("# -*- mode: ruby -*-\n# vi: set ft=ruby :\n"
                              "VAGRANTFILE_API_VERSION = \"2\"\n"

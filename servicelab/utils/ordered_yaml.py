@@ -1,6 +1,9 @@
 import re
 import yaml
 from collections import OrderedDict
+from servicelab.stack import SLAB_Logger
+
+ctx = SLAB_Logger()
 
 """
 based on the stack overflow discussin
@@ -10,6 +13,8 @@ http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappi
 
 
 def load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
+    ctx.logger.log(15, 'Loading yaml file into ordered dictionary')
+
     class OrderedLoader(Loader):
         pass
 
@@ -25,6 +30,8 @@ def load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
 
 def dump(data, fname, Dumper=yaml.Dumper):
     # this dumps the data as it was read in by load
+    ctx.logger.log(15, 'Writing data as it was read in by load')
+
     class OrderedDumper(Dumper):
         pass
 

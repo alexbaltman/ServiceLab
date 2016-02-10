@@ -63,6 +63,7 @@ def repo_new(ctx, repo_name, repo_type, username, interactive):
 
     Add an interactive mode so they can choose options.
     """
+    ctx.logger.info('Creating new repo %s' % repo_name)
     if not username:
         username = ctx.get_username()
     kinds = dict(project="Project", ansible="Ansible",
@@ -76,35 +77,57 @@ def repo_new(ctx, repo_name, repo_type, username, interactive):
 @cli.command('host', short_help='Create a host in the local ccs-data repository.')
 @click.argument('host_name')
 @click.argument('env_name')
-@click.option('--ip_address', '-ip', default=None, help='Specify the IP address to use.  \
---vlan will be ignored if this option is used')
-@click.option('--vlan', '-v', default="66", help='Choose the vlan to add your vm to or \
-default is set to 66')
-@click.option('--flavor', '-f', default="2cpu.4ram.20-96sas", help='Choose the flavor for \
-the vm.  Default is set to 2cpu.4ram.20-96sas')
-@click.option('--role', '-r', default='none', help='Choose the role of the vm if needed, or \
-the default is "none"')
-@click.option('--group', '-g', help='Choose the group, default is virtual')
-@click.option('--sec-groups', '-s', help='Choose the security groups, comma delimited')
-@click.option('--template', default=None, help='Source file to extract data from.  \
-Needs to be in the same env as the new vm to be created')
+@click.option('--ip-address',
+              '-ip',
+              default=None,
+              help='Specify the IP address to use.  ' +
+                   '--vlan will be ignored if this option is used'
+              )
+@click.option('--vlan',
+              '-v',
+              default="66",
+              help='Choose the vlan to add your vm to or default is set to 66'
+              )
+@click.option('--flavor',
+              '-f',
+              default="2cpu.4ram.20-96sas",
+              help='Choose the flavor for the vm.  Default is set to 2cpu.4ram.20-96sas')
+@click.option('--role',
+              '-r',
+              default='none',
+              help='Choose the role of the vm if needed, or the default is "none"')
+@click.option('--group',
+              '-g',
+              help='Choose the group, default is virtual'
+              )
+@click.option('--sec-groups',
+              '-s',
+              help='Choose the security groups, comma delimited'
+              )
+@click.option('--template',
+              '-t',
+              default=None,
+              help='Source file to extract data from.  ' +
+                   'Needs to be in the same environment as the new vm to be created'
+              )
 @pass_context
 def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, sec_groups,
              template):
     """
-    Creates a host.yaml file in an environment so that a vm can then be
-    booted.\b
+    Creates a host.yaml file in an environment so that a vm can then be booted.
 
     HOST_NAME can be the service name and number - my-service-001
 
     ENV_NAME is the name of the tenant cloud.  Use 'stack list envs' to show all tenants
     """
+    ctx.logger.info('Creating file for %s' % host_name)
     groups = ''
     ccs_datapath = os.path.join(ctx.path, 'services', 'ccs-data')
-    ret_code, site = ccsdata_utils.get_site_from_env(our_sites, env_name)
+    ret_code, site = ccsdata_utils.get_site_from_env(env_name)
     if ret_code > 0:
         return 1
     if template:
+        ctx.logger.log(15, 'Building template data')
         env_path = os.path.join(ccs_datapath, 'sites', site, 'environments', env_name)
         ret_code, yaml_data = yaml_utils.read_host_yaml(template, env_path)
         if ret_code > 0:
@@ -175,31 +198,31 @@ def site_new(ctx, username, cont):
     4) Within ccs-build-tool, a vagrant environment and virtualbox is used to compile all
        of the data into a single site directory, which is copied into ccs-data.
     """
-    click.echo("Creating a new site in ccs-data")
+    ctx.logger.info("Creating a new site in ccs-data")
     if not username:
         username = ctx.get_username()
 
-    click.echo("Retrieving latest ccs-data branch")
+    ctx.logger.log(15, "Retrieving latest ccs-data branch")
     service_utils.sync_service(ctx.path, "master", username, "ccs-data")
 
-    click.echo("Retrieving latest ccs-build-tools branch")
+    ctx.logger.log(15, "Retrieving latest ccs-build-tools branch")
     service_utils.sync_service(ctx.path, "master", username, "ccs-build-tools")
 
-    click.echo("Retreiving user input for new site's data fields...")
+    ctx.logger.log(15, "Retreiving user input for new site's data fields...")
     returncode, site_dictionary = ccsbuildtools_utils.gather_site_info(ctx.path, cont)
     if returncode != 1:
-        click.echo("unable to retrieve site data")
+        ctx.logger.error("unable to retrieve site data")
         return
 
     svc_site_name = site_dictionary['service_cloud']['site_name']
-    click.echo("Building and Exporting %s to ccs-data---" % (svc_site_name))
+    ctx.logger.log(15, "Building and Exporting %s to ccs-data---" % (svc_site_name))
     passed, log = service_utils.run_this('vagrant up; vagrant destroy -f;',
                                          os.path.join(ctx.path, "services",
                                                       "ccs-build-tools"))
     if passed > 0:
-        click.echo("Failed to establish vagrant environment in ccs-build-tools")
-        click.echo("Printing log of vagrant up command in ccs-build-tools")
-        click.echo(log)
+        ctx.logger.error("Failed to establish vagrant environment in ccs-build-tools")
+        ctx.logger.error("Printing log of vagrant up command in ccs-build-tools")
+        ctx.logger.error(log)
         return
 
     # Copying over contents of files generated by ccsbuildtools into ccs-data
@@ -207,13 +230,13 @@ def site_new(ctx, username, cont):
            "rm -rf ccs-build-tools/sites; " % {'svc': svc_site_name}
     passed, log = service_utils.run_this(cmds, os.path.join(ctx.path, "services"))
     if passed > 0:
-        click.echo("Failed to copy site into ccs-data")
-        click.echo("Printing log of directory exports")
-        click.echo(log)
+        ctx.logger.error("Failed to copy site into ccs-data")
+        ctx.logger.error("Printing log of directory exports")
+        ctx.logger.error(log)
         return
 
-    click.echo("Site Data Gathered for %s. Check .stack/services/ccs-data "
-               "for its contents---" % (svc_site_name))
+    ctx.logger.info("Site Data Gathered for %s. Check .stack/services/ccs-data "
+                    "for its contents---" % (svc_site_name))
 
 
 @cli.command('env', short_help='Create a new environment in the local ccs-data repository.')
@@ -256,27 +279,27 @@ def env_new(ctx, username):
     if not username:
         username = ctx.get_username()
 
-    click.echo("Retrieving latest ccs-data branch")
+    ctx.logger.info("Retrieving latest ccs-data branch")
     service_utils.sync_service(ctx.path, "master", username, "ccs-data")
-    click.echo("Retrieving latest ccs-build-tools branch")
+    ctx.logger.info("Retrieving latest ccs-build-tools branch")
     service_utils.sync_service(ctx.path, "master", username, "ccs-build-tools")
 
     # Ensure you have latest ccs-data branch
     returncode, site_dictionary = ccsbuildtools_utils.gather_env_info(ctx.path)
     if returncode > 0:
-        click.echo("unable to get the sites information")
+        ctx.logger.error("unable to get the sites information")
         return
 
     svc_site_name = site_dictionary['service_cloud']['site_name']
     tc_site_name = site_dictionary['tenant_cloud']['site_name']
-    click.echo("Building and Exporting %s to ccs-data---" % (svc_site_name))
+    ctx.logger.log(15, "Building and Exporting %s to ccs-data---" % (svc_site_name))
     passed, log = service_utils.run_this('vagrant up; vagrant destroy -f; ',
                                          os.path.join(ctx.path, "services",
                                                       "ccs-build-tools"))
     if passed > 0:
-        click.echo("Failed to establish vagrant environment in ccs-build-tools")
-        click.echo("Printing log of vagrant up command in ccs-build-tools")
-        click.echo(log)
+        ctx.logger.error("Failed to establish vagrant environment in ccs-build-tools")
+        ctx.logger.error("Printing log of vagrant up command in ccs-build-tools")
+        ctx.logger.error(log)
         return
 
     # Copying over contents of files generated by ccsbuildtools into ccs-data
@@ -286,13 +309,13 @@ def env_new(ctx, username):
                                                'tc': tc_site_name}
     passed, log = service_utils.run_this(cmds, os.path.join(ctx.path, "services"))
     if passed > 0:
-        click.echo("Failed to copy environment into ccs-data")
-        click.echo("Printing log of directory exports")
-        click.echo(log)
+        ctx.logger.error("Failed to copy environment into ccs-data")
+        ctx.logger.error("Printing log of directory exports")
+        ctx.logger.error(log)
         return
 
-    click.echo("Env Data Gathered for %s in site %s. Check .stack/services/ccs-data "
-               "for its contents" % (tc_site_name, svc_site_name))
+    ctx.logger.info("Env Data Gathered for %s in site %s. Check .stack/services/ccs-data "
+                    "for its contents" % (tc_site_name, svc_site_name))
 
 
 def cb_validate_location(ctx, param, value):
@@ -400,5 +423,5 @@ def vip_new(ctx, vip_name, env_name, service_entry, location, ip_address, server
             haproxy.save_ccsdata(ctx.path, sites['site'], env_name, sites['env'])
             flag = True
         if not flag:
-            click.echo("missing %s::haproxy in environment.yaml file for site %s"
-                       % (location, sites['site']))
+            ctx.logger.error("missing %s::haproxy in environment.yaml file for site %s"
+                             % (location, sites['site']))
