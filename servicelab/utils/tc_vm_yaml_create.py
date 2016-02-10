@@ -271,8 +271,6 @@ def create_vm(
             return 1
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
     if not source_data['ip']:
-        tcvm_logger.error('Vlan%s does not have any IP addresses available' %
-                          vlan_id)
         ctx.logger.error(
             'Vlan%s does not have any IP addresses available' %
             vlan_id)
@@ -430,7 +428,7 @@ def extract_env_data(source_data):
         match = re.search('([\w-]+)-keystonectl-001', env_data['keystone_hostnames'][0])
         source_data['tc_region'] = match.group(1)
         if not len(source_data[source_data['vlan_id']]):
-            tcvm_logger.error('Unable to find ServiceLab data in %s' % env_file)
+            ctx.logger.error('Unable to find ServiceLab data in %s' % env_file)
             return 1
     for vlan_key in env_data:
         match = re.search('^vlan(\d{0,2})(6[367])(-sup)?$', vlan_key)

@@ -165,21 +165,6 @@ def get_path_to_utils(path):
     return path_to_utils
 
 
-<<<<<<< HEAD
-=======
-def get_username(path):
-    ctx.logger.log(15, 'Determining username')
-    returncode, username = set_user(path)
-    if returncode > 0:
-        username = getpass.getuser()
-        if not username:
-            ctx.logger.debug("Unable to set username")
-            username
-    ctx.logger.debug('Username was determined to be %s' % username)
-    return username
-
-
->>>>>>> Added verbosity levels for console output
 def name_vm(name, path):
     """This is how we're currently generating a name for arbitrary vms.
 
