@@ -3,17 +3,15 @@ stack
 """
 import os
 import sys
-
-import logging
 import click
+import logging
 
+from servicelab import settings
 
 # Global Variables
 # auto envvar prefix will take in any env vars that are prefixed with STK
 # short for stack.
 CONTEXT_SETTINGS = dict(auto_envvar_prefix='STK')
-loggers = {}
-
 
 class Context(object):
     """
@@ -37,7 +35,6 @@ class Context(object):
     from servicelab.utils import helper_utils
 
     def __init__(self):
-        # self.logger = SLAB_Logger().logger
         self.branch = "master"
         self.path = os.path.join(os.path.dirname(__file__), '.stack')
         self.config = os.path.join(os.path.dirname(__file__), '.stack/stack.conf')
@@ -167,37 +164,12 @@ class ComplexCLI(click.MultiCommand):
             return
         return mod.cli
 
-
-@pass_context
-def SLAB_Logger(ctx, name='stack'):
-    global loggers
-
-    if loggers.get(name):
-        return loggers.get(name)
-    else:
-        logger = logging.getLogger(name)
-        logger.setLevel(logging.DEBUG)
-        logging.addLevelName(15, 'DETAIL')
-
-        # Create filehandler that logs everything.
-        file_handler = logging.FileHandler(os.path.join(ctx.path, 'stack.log'))
-        file_handler.setLevel(logging.DEBUG)
-
-        # Create formatter and add it to the handlers
-        formatter = logging.Formatter("%(asctime)s - %(name)s - "
-                                      "%(levelname)s - %(message)s")
-        file_handler.setFormatter(self.formatter)
-
-        # Add handlers to the logger
-        logger.addHandler(self.file_handler)
-
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(ctx.verbosity)
-        logger.addHandler(console_handler)
-        
-        loggers.update(dict(name=logger))
-
-        return logger
+def write_settings_file():
+    settings_file = os.path.join(os.path.dirname(__file__), 'settings.py')
+    myfile = open(settings_file, 'w')
+    file_data = '# Global variables file\n\nverbosity = %i' % settings.verbosity
+    myfile.write(file_data)
+    myfile.close()
 
 
 @click.command(cls=ComplexCLI, context_settings=CONTEXT_SETTINGS)
@@ -214,16 +186,16 @@ def cli(ctx, username, password, verbose):
 
     if verbose:
         if verbose == 1:
-        #    logger.logger.setLevel(logging.INFO)
-            ctx.verbosity = logging.INFO
+            settings.verbosity = 20
             message = 'verbose (INFO)'
         elif verbose == 2:
-        #    ctx.logger.setLevel(15)
-            ctx.verbosity = 15
+            settings.verbosity = 15
             message = 'very verbose (DETAIL)'
         elif verbose >= 3:
-        #    ctx.logger.setLevel(logging.DEBUG)
-            ctx.verbosity = logging.DEBUG
+            settings.verbosity = 10
             message = 'debug (DEBUG)'
         click.echo('Verbosity set to %s\n' % message)
-        ctx.logger = Setup_Logger()
+    else:
+        settings.verbosity = 30
+    write_settings_file()
+    reload(settings)

@@ -6,9 +6,10 @@ import re
 import shutil
 import subprocess32 as subprocess
 
-from servicelab.stack import SLAB_Logger
+from servicelab.utils import logger_utils
+from servicelab import settings
 
-ctx = SLAB_Logger()
+ctx = logger_utils.setup_logger(settings.verbosity)
 
 
 def sync_service(path, branch, username, service_name):
