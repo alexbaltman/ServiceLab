@@ -1,23 +1,22 @@
 import os
 import yaml
 import time
-import logging
-
-from subprocess import CalledProcessError
-
 import requests
 import click
 
+from subprocess import CalledProcessError
 from keystoneclient.exceptions import AuthorizationFailure, Unauthorized
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client
 from neutronclient.common.exceptions import NotFound
-from servicelab.stack import SLAB_Logger
+from servicelab.utils import logger_utils
+from servicelab import settings
 
 import helper_utils
 import vagrant_utils
 
-ctx = SLAB_Logger()
+reload(settings)
+ctx = logger_utils.setup_logger(settings.verbosity)
 
 
 class SLab_OS(object):

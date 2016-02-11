@@ -46,7 +46,7 @@ def setup_gems(path, ccsdata_repo=0):
     returncode, myinfo = service_utils.run_this("bundle install",
                                                 path_to_reporoot)
     if returncode == 1:
-        ctx.logger..error("Error on bundle install: %s" % (myinfo))
+        ctx.logger.error("Error on bundle install: %s" % (myinfo))
         return(returncode)
     else:
         return(returncode)
@@ -95,13 +95,13 @@ def check_for_gems(gem):
         returncode_b, myinfo_b = service_utils.run_this('gem list | grep -q %s'
                                                         % (gem))
         if returncode_b == 1:
-            ctx.logger..error("Cannot find gem(%s): %s" % (gem, myinfo_b))
+            ctx.logger.error("Cannot find gem(%s): %s" % (gem, myinfo_b))
             return(returncode_b)
         else:
             return(returncode_b)
 
     else:
-        ctx.logger..error("Cannot find gem command: %s" % (myinfo))
+        ctx.logger.error("Cannot find gem command: %s" % (myinfo))
         return(returncode)
 
 
@@ -129,7 +129,7 @@ def setup_ruby(username=None):
               --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3")
     returncode = service_utils.run_this("curl -L get.rvm.io | bash -s stable")
     if returncode > 0:
-        ctx.logger..error("Failed to install RVM.")
+        ctx.logger.error("Failed to install RVM.")
         return(1)
     else:
         if username:
@@ -137,7 +137,7 @@ def setup_ruby(username=None):
         else:
             returncode, username = helper_utils.get_gitusername(ctx.path)
             if returncode > 0:
-                ctx.logger..error("Couldn't set user.")
+                ctx.logger.error("Couldn't set user.")
     # Add user(s) to rvm group
     # Make sure rvm is in path in .bashrc/.zshrc
     # service_utils.run_this("rvm install ruby-2.0.0-p481")
