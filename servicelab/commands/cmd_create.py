@@ -101,7 +101,7 @@ def host_new(ctx, host_name, env_name, ip_address, vlan, flavor, role, group, se
     """
     groups = ''
     ccs_datapath = os.path.join(ctx.path, 'services', 'ccs-data')
-    ret_code, site = ccsdata_utils.get_site_from_env(our_sites, env_name)
+    ret_code, site = ccsdata_utils.get_site_from_env(env_name)
     if ret_code > 0:
         return 1
     if template:

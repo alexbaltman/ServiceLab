@@ -70,7 +70,7 @@ def find_vlan(source_data):
     Args:
        source_data {dict}: Keys needed:
           ip: IP address in standard four octect format, no mask
-          <vlan-ids>: Number of the vlan for the key, subnet with mask for the value
+          <vlan-ids>: Number of the vlan for the keys, subnet with mask for the value
           tc_name: Name of the tenant cloud being worked on.  Used for error message.
 
     Returns:
@@ -79,18 +79,55 @@ def find_vlan(source_data):
     Example Usage:
         vlan_id = find_vlan(source_data)
     """
+    my_ip = ipaddress.IPv4Address(unicode(source_data['ip']))
     for key in source_data:
-        match = re.search('^(\d+)$', key)
-        if match:
+        # Regex search for all keys that are only numbers
+        if re.search('^\d+$', key):
             subnet = ipaddress.IPv4Network(unicode(source_data[key]))
             subnet_ips = list(subnet.hosts())
-            for subnet_ip in subnet_ips:
-                if source_data['ip'] == str(subnet_ip):
-                    return key
+            if my_ip in subnet_ips:
+                return key
 
     tcvm_logger.error('Unable to find the vlan for %s within %s'
                       % (source_data['ip'], source_data['tc_name']))
     return 1
+
+
+def input_vlan(source_data):
+    """Manual input of vlan subnet data for vlans that are not found in the ccs-data
+       environment.yaml for the env
+
+    Args:
+        source_data {dict}: Keys needed:
+            vlan_id {int}: Vlan id number
+            sc_name {str}: Name of the service cloud
+
+    Returns:
+        subnet {str}: Vlan subnet with /mask IE 10.20.30.0/24
+
+    Example Usage:
+        my_dict = {'vlan_id': 7,
+                   'sc_name': 'rtp10-svc-1',}
+        subnet = input_vlan(my_dict)
+        >>> Unable to find data needed for vlan 7.  Please supply the subnet
+        >>> information from a "neutron net-list" run from rtp10-svc-1 infra node
+        >>> Input vlan subnet information: <user_input>
+    """
+    done = False
+    click.echo('Unable to find data needed for vlan %s.  Please supply the subnet\n'
+               'information from a "neutron net-list" run from %s infra node'
+               % (source_data['vlan_id'], source_data['sc_name']))
+    while not done:
+        subnet_input = raw_input('Input vlan subnet information: ')
+        try:
+            subnet = ipaddress.IPv4Network(unicode(subnet_input))
+            if subnet.prefixlen > 28:
+                click.echo('%i is an invalid mask' % subnet.prefixlen)
+            else:
+                done = True
+        except ValueError:
+            click.echo('%s is not a valid subnet.  Please try again' % subnet_input)
+    return str(subnet.with_prefixlen)
 
 
 def find_ip(env_path, vlan):
@@ -113,7 +150,7 @@ def find_ip(env_path, vlan):
     del all_ips[0:4]
 
     # check if path exists if not exist
-    if os.path.exists(env_path) is False:
+    if not os.path.exists(env_path):
         click.echo("Cannot perform the current operation since this "
                    "path : %s is not found. Most likely you need to"
                    " perform : stack workon <service-name>" % (env_path))
@@ -141,9 +178,11 @@ def find_ip(env_path, vlan):
                     except TypeError:
                         tcvm_logger.info('%s did not contain any data for interface %s'
                                          % (hostfile, interface))
+                    except ipaddress.AddressValueError:
+                        tcvm_logger.info('Bad address found in %s' % hostfile)
     for ip in all_ips:
         try:
-            # Host lookup
+            # Host lookup by ip address
             socket.gethostbyaddr(str(ip))
         # socket.herror means there was no DNS reservation found
         except socket.herror:
@@ -205,23 +244,17 @@ def create_vm(
     if source_data == 1:
         return 1
     if not re.search(source_data['tc_region'], source_data['hostname']):
-        source_data['hostname'] = source_data[
-            'tc_region'] + '-' + source_data['hostname']
+        source_data['hostname'] = source_data['tc_region'] + '-' + source_data['hostname']
     source_data['az'] = source_data['sc_region'] + determine_az(hostname)
-    source_data['vlan_id'] = str(
-        source_data['vlan_prefix']) + source_data['vlan_id']
+    source_data['vlan_id'] = str(source_data['vlan_prefix']) + source_data['vlan_id']
     if vlan_id not in source_data:
-        tcvm_logger.error(
-            ('Vlan%s was not found within %s.  Please try a different vlan' %
-             (vlan_id, source_data['tc_name'])))
-        return 1
+        source_data[source_data['vlan_id']] = input_vlan(source_data)
     if not ip_address:
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
         source_data['ip'] = find_ip(source_data['env_path'], vlan)
         if not source_data['ip']:
             if str(vlan_id + '-sup') in source_data:
-                vlan = ipaddress.IPv4Network(
-                    unicode(source_data[str(vlan_id + '-sup')]))
+                vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id + '-sup')]))
                 source_data['ip'] = find_ip(source_data['env_path'], vlan)
                 source_data['sup'] = True
     else:
@@ -231,9 +264,8 @@ def create_vm(
             return 1
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
     if not source_data['ip']:
-        tcvm_logger.error(
-            'Vlan%s does not have any IP addresses available' %
-            vlan_id)
+        tcvm_logger.error('Vlan%s does not have any IP addresses available' %
+                          vlan_id)
         return 1
     yaml_data = build_yaml_data(source_data, vlan)
     if 'sup' in source_data:
@@ -272,8 +304,19 @@ def build_yaml_data(source_data, vlan):
     """Combines the gathered data into a dict used to write to host.yaml file
 
     Args:
-        source_data {dict}: Should have all the data needed when build with extract_env_data
-        vlan {object}: ipaddress module olbject used to extract gateway and netmask
+        source_data {dict}: Should have all the data needed when built with extract_env_data
+            auth_ip {str}: IP address for tenant cloud keystone
+            az {str}: Tenant cloud availability zone, typically csl-a
+            domain {str}: Domain name of the service cloud
+            flavor {str}: Compute flavor of the VM
+            groups {list}: List of groups the VM belongs to
+            hostname {str}: Name of the VM to build
+            ip {str}: IP address of the VM
+            role {str}: VM role, typically 'none'
+            sec_groups {str}: Comma delimited string of security groups
+            tc_name {str}: Name of the tenant cloud
+            vlan_id {str}: Number of the vlan used by the VM
+        vlan {object}: ipaddress module object used to extract gateway and netmask
 
     Returns:
         yaml_data {dict}: Structured data for host.yaml file creation
@@ -299,11 +342,9 @@ def build_yaml_data(source_data, vlan):
         'hostname': fqdn,
         'interfaces': {
             'eth0': {
-                'gateway': str(
-                    vlan.network_address + 1),
+                'gateway': str(vlan.network_address + 1),
                 'ip_address': source_data['ip'],
-                'netmask': str(
-                    vlan.netmask),
+                'netmask': str(vlan.netmask),
             },
         },
         'role': source_data['role'],
@@ -337,7 +378,7 @@ def extract_env_data(source_data):
         source_data['repo_path'],
         'sites',
         source_data['sc_name'],
-        'environments/')
+        'environments')
     source_data['env_path'] = env_path
     sc_path = os.path.join(env_path, source_data['sc_name'])
     source_data['tc_path'] = os.path.join(env_path, source_data['tc_name'])
@@ -372,8 +413,12 @@ def extract_env_data(source_data):
     if 'tc_region' in env_data:
         source_data['tc_region'] = env_data['tc_region']
     else:
-        tcvm_logger.error('Unable to find ServiceLab data in %s' % env_file)
-        return 1
+        source_data[source_data['vlan_id']] = input_vlan(source_data)
+        match = re.search('([\w-]+)-keystonectl-001', env_data['keystone_hostnames'][0])
+        source_data['tc_region'] = match.group(1)
+        if not len(source_data[source_data['vlan_id']]):
+            tcvm_logger.error('Unable to find ServiceLab data in %s' % env_file)
+            return 1
     for vlan_key in env_data:
         match = re.search('^vlan(\d{0,2})(6[367])(-sup)?$', vlan_key)
         if match:
@@ -384,5 +429,7 @@ def extract_env_data(source_data):
             else:
                 source_data[match.group(2)] = env_data[vlan_key]
             source_data['vlan_prefix'] = match.group(1)
+        else:
+            source_data['vlan_prefix'] = ''
 
     return source_data
