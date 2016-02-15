@@ -15,7 +15,7 @@ from servicelab.utils import helper_utils
 from servicelab.utils import openstack_utils
 from servicelab.utils import logger_utils
 from servicelab import settings
-import pdb; pdb.set_trace()
+click.echo('cmd_destory verbosity level is %s' % settings.verbosity)
 slab_logger = logger_utils.setup_logger(settings.verbosity)
 
 
