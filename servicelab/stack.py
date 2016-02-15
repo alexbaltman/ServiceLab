@@ -172,30 +172,48 @@ def write_settings_file():
     myfile.close()
 
 
+def verbosity_option(f):
+    click.echo('Setting verbosity')
+    def callback(ctx, param, value):
+        click.echo('inside callback')
+        if value:
+            if value == 1:
+                settings.verbosity = 20
+                message = 'verbose (INFO)'
+            elif value == 2:
+                settings.verbosity = 15
+                message = 'very verbose (DETAIL)'
+            elif value >= 3:
+                settings.verbosity = 10
+                message = 'debug (DEBUG)'
+            click.echo('Verbosity set to %s\n' % message)
+        else:
+            settings.verbosity = 30
+        write_settings_file()
+        reload(settings)
+        click.echo('Settings.verbosity is %s' %settings.verbosity)
+        return value
+    return click.option('-v', '--verbose', count=True,
+                        expose_value=False,
+                        help='Enables verbosity.',
+                        callback=callback)(f)
+
+
+def common_options(f):
+    f = verbosity_option(f)
+    return f
+
+
+@common_options
 @click.command(cls=ComplexCLI, context_settings=CONTEXT_SETTINGS)
 @click.option('--username', '-u', help="user")
 @click.option('--password', '-p', help="password")
-@click.option('--verbose', '-v', count=True, help='Verbosity level, up to 3 for debug')
+#@click.option('--verbose', '-v', count=True, help='Verbosity level, up to 3 for debug')
 @pass_context
-def cli(ctx, username, password, verbose):
+def cli(ctx, username, password):
     """A CLI for Cisco Cloud Services."""
     if username:
         ctx.username = username
     if password:
         ctx.password = password
 
-    if verbose:
-        if verbose == 1:
-            settings.verbosity = 20
-            message = 'verbose (INFO)'
-        elif verbose == 2:
-            settings.verbosity = 15
-            message = 'very verbose (DETAIL)'
-        elif verbose >= 3:
-            settings.verbosity = 10
-            message = 'debug (DEBUG)'
-        click.echo('Verbosity set to %s\n' % message)
-    else:
-        settings.verbosity = 30
-    write_settings_file()
-    reload(settings)

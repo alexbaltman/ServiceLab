@@ -2,7 +2,8 @@ import os
 import sys
 import logging
 
-def setup_logger(verbosity=os.environ.get('verbosity'), name='stack'):
+def setup_logger(verbosity, name='stack'):
+    print("Logger verbosity is %s" % verbosity)
     logger = logging.getLogger(name)
     if not len(logger.handlers):
         #logger.setLevel(verbosity)                                        
