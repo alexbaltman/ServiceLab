@@ -6,7 +6,6 @@ overlap w/ openstack cli tools.
 """
 import os
 import sys
-
 import click
 
 from servicelab.stack import pass_context
@@ -15,13 +14,15 @@ from servicelab.utils import helper_utils
 from servicelab.utils import openstack_utils
 from servicelab.utils import logger_utils
 from servicelab import settings
-click.echo('cmd_destory verbosity level is %s' % settings.verbosity)
-slab_logger = logger_utils.setup_logger(settings.verbosity)
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.destroy')
 
 
-@click.group('destroy', short_help='Remove local and remote pipeline resources.')
+@click.group('destroy',
+             short_help='Remove local and remote pipeline resources.',
+             add_help_option=True)
 @pass_context
-def cli(ctx):
+def cli(_):
     """
     Destroy things.
     """

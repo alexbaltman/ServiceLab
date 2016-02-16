@@ -4,15 +4,18 @@ Stack rpm commands to
 2.  Displays a rpm stats.
 3.  Upload the rpm.
 """
+import sys
 import json
 import time
-import sys
-
 import click
 import requests
 
 from servicelab.stack import pass_context
 from servicelab.utils import pulp_utils
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.rpm')
 
 
 @click.group('rpm', short_help='RPM to work with.',
@@ -61,13 +64,13 @@ def display_rpm_status(ctx,
     """
     Displays rpm stats.
     """
-    ctx.logger.info('Displaying rpm status')
+    slab_logger.info('Displaying rpm status')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        ctx.logger.error("Username is %s and password is %s. "
+        slab_logger.error("Username is %s and password is %s. "
                          "Please, set the correct value for both and retry." %
                          (username, password))
         sys.exit(1)
@@ -115,13 +118,13 @@ def download_rpm(ctx, username,
     """
     Download the artifact.
     """
-    ctx.logger.info('Downloading rpm from pulp repo')
+    slab_logger.info('Downloading rpm from pulp repo')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        ctx.logger.error("Username is %s and password is %s. "
+        slab_logger.error("Username is %s and password is %s. "
                          "Please, set the correct value for both and retry." %
                          (username, password))
         sys.exit(1)
@@ -156,11 +159,11 @@ def download_rpm(ctx, username,
             click.echo("\nDownload complete.")
             return
         else:
-            ctx.logger.error(
+            slab_logger.error(
                 "Rpm %s could not be download since it was"
                 " not found in repo : %s" % (rpm, pulp_repo))
     else:
-        ctx.logger.error(
+        slab_logger.error(
             "Repo with id %s does not exist. Unable to download the rpm." %
             (pulp_repo))
 
@@ -203,15 +206,15 @@ def upload_rpm(ctx, ip_address,
     """
     Upload the rpm.
     """
-    ctx.logger.info('Uploading rpm to pulp repo')
+    slab_logger.info('Uploading rpm to pulp repo')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        ctx.logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+        slab_logger.error("Username is %s and password is %s. "
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     click.echo("Starting upload of {0}".format(filepath))
     url = "/pulp/api/v2/content/uploads/"

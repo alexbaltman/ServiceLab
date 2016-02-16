@@ -1,9 +1,9 @@
 import os
 import re
 import sys
-from subprocess import CalledProcessError
-
 import click
+
+from subprocess import CalledProcessError
 
 from servicelab.utils import openstack_utils as os_utils
 from servicelab.utils import service_utils
@@ -13,6 +13,10 @@ from servicelab.stack import pass_context
 from servicelab.utils import yaml_utils
 from servicelab.utils import vagrantfile_utils as Vf_utils
 from servicelab.utils import ccsdata_utils
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.up')
 
 
 @click.option('--full',
@@ -84,36 +88,37 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
 
     flavor = str(flavor)
     image = str(image)
+    service_groups = []
     # Things the user Should not do ==================================
     if mini is True and full is True:
-        ctx.logger.error('You can not use the mini flag with the full flag.')
+        slab_logger.error('You can not use the mini flag with the full flag.')
         sys.exit(1)
 
     # Gather as many requirements as possible for the user ===========
     if not username:
-        ctx.logger.log(15, 'Extracting username')
+        slab_logger.log(15, 'Extracting username')
         username = ctx.get_username()
 
     if not any([full, mini, rhel7, target, service, existing_vm]):
-        ctx.logger.info("Booting vm from most recently installed service")
+        slab_logger.info("Booting vm from most recently installed service")
         try:
             returncode, service = helper_utils.get_current_service(ctx.path)
         except TypeError:
-            ctx.logger.error("Could not get the current service.")
-            ctx.logger.error("Try: stack workon service-myservice")
+            slab_logger.error("Could not get the current service.")
+            slab_logger.error("Try: stack workon service-myservice")
             sys.exit(1)
         if returncode > 0:
-            ctx.logger.error("Failed to get the current service")
+            slab_logger.error("Failed to get the current service")
             sys.exit(1)
 
-    ctx.logger.log(15, 'Determining vm hostname')
+    slab_logger.log(15, 'Determining vm hostname')
     hostname = ''
     if rhel7:
         hostname = str(helper_utils.name_vm("rhel7", ctx.path))
     elif service:
         service_groups = []
         if not service_utils.installed(service, ctx.path):
-            ctx.logger.error("{0} is not in the .stack/services/ directory.\n"
+            slab_logger.error("{0} is not in the .stack/services/ directory.\n"
                              "Try: stack workon {0}".format(service))
             sys.exit(1)
         hostname = str(helper_utils.name_vm(service, ctx.path))
@@ -122,21 +127,20 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     elif existing_vm:
         ret_code, site = ccsdata_utils.get_site_from_env(env)
         if ret_code > 0:
-            ctx.logger.error("Could not find parent site for {}".format(env))
+            slab_logger.error("Could not find parent site for {}".format(env))
             sys.exit(1)
         env_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site,
                                 'environments', env)
         ret_code, yaml_data = yaml_utils.read_host_yaml(existing_vm, env_path)
         if ret_code > 0:
-            ctx.logger.error("Could not find host in site {0} env {1}".format(site, env))
+            slab_logger.error("Could not find host in site {0} env {1}".format(site, env))
             sys.exit(1)
-        service_groups = []
         try:
             for group in yaml_data['groups']:
                 if group != 'virtual':
                     service_group = 'service-' + group.replace('_', '-')
                     if not os.path.isdir(os.path.join(ctx.path, 'services', service_group)):
-                        ctx.logger.error('Unable to find %s repo.  Try "stack workon %s"'
+                        slab_logger.error('Unable to find %s repo.  Try "stack workon %s"'
                                          % (service_group, service_group))
                         sys.exit(1)
                     service_groups.append(service_group)
@@ -146,7 +150,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
 
     # Setup data and inventory
     if not target and not mini and not full:
-        ctx.logger.info('Building data for %s.' % hostname)
+        slab_logger.info('Building data for %s.' % hostname)
         match = re.search('^(\d+)cpu\.(\d+)ram', flavor)
         if match:
             cpus = int(match.group(1))
@@ -162,7 +166,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         if service or existing_vm:
             retc, myinfo = service_utils.build_data(ctx.path)
             if retc > 0:
-                ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
+                slab_logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
 
         # Prep class Objects
         myvfile = Vf_utils.SlabVagrantfile(path=ctx.path)
@@ -176,18 +180,18 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         if remote:
             returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
             if returncode > 0:
-                ctx.logger.error("No OS_ environment variables found")
+                slab_logger.error("No OS_ environment variables found")
                 sys.exit(1)
             myvfile.set_env_vars(float_net, mynets, my_sec_grps)
             returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
             if returncode > 0:
-                ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
+                slab_logger.error('Failed to get the requested host from your Vagrant.yaml')
                 sys.exit(1)
             myvfile.add_openstack_vm(host_dict)
         else:
             returncode, host_dict = yaml_utils.gethost_byname(hostname, ctx.path)
             if returncode > 0:
-                ctx.logger.error('Failed to get the requested host from your Vagrant.yaml')
+                slab_logger.error('Failed to get the requested host from your Vagrant.yaml')
                 sys.exit(1)
             myvfile.add_virtualbox_vm(host_dict)
 
@@ -200,9 +204,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                                         '--provider openstack',
                                                         ctx.path)
             if returncode > 0:
-                ctx.logger.error("Could not run vagrant hostmanager because\
+                slab_logger.error("Could not run vagrant hostmanager because\
                                  {0}".format(myinfo))
-                ctx.logger.error("Vagrant hostmanager will fail if you "
+                slab_logger.error("Vagrant hostmanager will fail if you "
                                  "have local vms and remote vms.")
                 sys.exit(1)
         # You can exit safely now if you're just booting a rhel7 vm
@@ -211,19 +215,19 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
 
     # SERVICE VM remaining workflow  =================================
     if service or existing_vm:
-        ctx.logger.info('Booting service and infra_node vms')
+        slab_logger.info('Booting service and infra_node vms')
         if remote:
             returncode, infra_name = v_utils.infra_ensure_up(mynets,
                                                              float_net,
                                                              my_sec_grps,
                                                              path=ctx.path)
             if returncode == 1:
-                ctx.logger.error("Could not boot a remote infra node")
+                slab_logger.error("Could not boot a remote infra node")
                 sys.exit(1)
         else:
             returncode, infra_name = v_utils.infra_ensure_up(None, None, None, path=ctx.path)
             if returncode == 1:
-                ctx.logger.error("Could not boot a local infra node")
+                slab_logger.error("Could not boot a local infra node")
                 sys.exit(1)
 
         returncode, myinfo = service_utils.run_this('vagrant hostmanager', ctx.path)
@@ -232,9 +236,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                                         '--provider openstack',
                                                         ctx.path)
             if returncode > 0:
-                ctx.logger.error("Could not run vagrant hostmanager because\
+                slab_logger.error("Could not run vagrant hostmanager because\
                                  {0}".format(myinfo))
-                ctx.logger.error("Vagrant manager will fail if you have local vms"
+                slab_logger.error("Vagrant manager will fail if you have local vms"
                                  "and remote vms.")
                 sys.exit(1)
 
@@ -245,10 +249,10 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             returncode, myinfo = service_utils.run_this(command.format(infra_name, service),
                                                         ctx.path)
             if returncode > 0:
-                ctx.logger.error("There was a failure during the heighliner deploy phase of "
+                slab_logger.error("There was a failure during the heighliner deploy phase of "
                                  "your service. Please see the following information"
                                  "for debugging: ")
-                ctx.logger.error(myinfo)
+                slab_logger.error(myinfo)
                 sys.exit(1)
             else:
                 sys.exit(0)
@@ -258,31 +262,31 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                                                            service),
                                                             ctx.path)
                 if returncode > 0:
-                    ctx.logger.error("There was a failure during the heighliner deploy "
+                    slab_logger.error("There was a failure during the heighliner deploy "
                                      "phase of your service. Please see the following "
                                      "information for debugging: ")
-                    ctx.logger.error(myinfo)
+                    slab_logger.error(myinfo)
                     sys.exit(1)
             sys.exit(0)
     elif target:
-        ctx.logger.info('Booting target service vm')
+        slab_logger.info('Booting target service vm')
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
         service_utils.sync_service(ctx.path, redhouse_branch,
                                    username, "service-redhouse-tenant")
         puppet_path = os.path.join(redhouse_ten_path, "puppet")
         if not os.path.exists(os.path.join(puppet_path, "modules", "glance")):
-            ctx.logger.info('Updating sub repos under service-redhouse-tenant')
-            ctx.logger.info('This may take a few minutes.')
+            slab_logger.info('Updating sub repos under service-redhouse-tenant')
+            slab_logger.info('This may take a few minutes.')
             returncode, myinfo = service_utils.run_this(
                     "USER={0} librarian-puppet install".format(username),
                     puppet_path)
             if returncode > 0:
-                ctx.logger.error('Failed to retrieve the necessary puppet configurations.')
-                ctx.logger.error(myinfo)
+                slab_logger.error('Failed to retrieve the necessary puppet configurations.')
+                slab_logger.error(myinfo)
                 sys.exit(1)
         a = v_utils.Connect_to_vagrant(vm_name=target, path=redhouse_ten_path)
         if yaml_utils.addto_inventory(target, ctx.path) > 0:
-            ctx.logger.error('Could not add {0} to vagrant.yaml'.format(target))
+            slab_logger.error('Could not add {0} to vagrant.yaml'.format(target))
             sys.exit(1)
 
         if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
@@ -291,13 +295,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data', 'out')):
             returncode, myinfo = service_utils.build_data(ctx.path)
             if returncode > 0:
-                ctx.logger.error('Failed to build ccs-data data b/c ' + myinfo)
+                slab_logger.error('Failed to build ccs-data data b/c ' + myinfo)
                 sys.exit(1)
 
         if not os.path.islink(os.path.join(redhouse_ten_path,
                                            "dev",
                                            "ccs-data")):
-            ctx.logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
+            slab_logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
                                                                 'ccs-data') + "with  " +
                              os.path.join(ctx.path, "services", "ccs-data"))
             # Note: os.symlink(src, dst)
@@ -313,7 +317,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             settingsyaml = {'openstack_provider': True}
             returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml, hostname=target)
             if returncode > 0:
-                ctx.logger.error('Failed to write settings yaml - make sure you have your OS'
+                slab_logger.error('Failed to write settings yaml - make sure you have your OS'
                                  'cred.s sourced and have access to'
                                  'ccs-gerrit.cisco.com and have keys setup.')
                 sys.exit(1)
@@ -322,7 +326,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             settingsyaml = {'openstack_provider': 'false'}
             returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml=settingsyaml)
             if returncode > 0:
-                ctx.logger.error('Failed to write settings yaml - make sure you have your OS'
+                slab_logger.error('Failed to write settings yaml - make sure you have your OS'
                                  'cred.s sourced and have access to'
                                  'ccs-gerrit.cisco.com and have keys setup.')
                 sys.exit(1)
@@ -341,7 +345,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                                             '--provider openstack',
                                                             redhouse_ten_path)
                 if returncode > 0:
-                    ctx.logger.error("Could not run vagrant hostmanager because\
+                    slab_logger.error("Could not run vagrant hostmanager because\
                                      {0}".format(myinfo))
                     sys.exit(1)
         sys.exit(0)
@@ -352,22 +356,22 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                "service-redhouse-tenant")
 
     if mini:
-        ctx.logger.info('Booting vms for mini OSP deployment')
+        slab_logger.info('Booting vms for mini OSP deployment')
         returncode, allmy_vms = yaml_utils.getmin_OS_vms(ctx.path)
     elif full:
-        ctx.logger.info('Booting vms for full OSP deployment')
+        slab_logger.info('Booting vms for full OSP deployment')
         returncode, allmy_vms = yaml_utils.getfull_OS_vms(os.path.join(ctx.path,
                                                                        'provision'),
                                                           '001')
     else:
         return 0
     if returncode > 0:
-        ctx.logger.error("Couldn't get the vms from the vagrant.yaml.")
+        slab_logger.error("Couldn't get the vms from the vagrant.yaml.")
         sys.exit(1)
 
     returncode, order = yaml_utils.get_host_order(os.path.join(ctx.path, 'provision'))
     if returncode > 0:
-        ctx.logger.error("Couldn't get order of vms from order.yaml")
+        slab_logger.error("Couldn't get order of vms from order.yaml")
         sys.exit(1)
     try:
         # Note: not sure if this will work w/ vm_name set to infra-001 arbitrarily
@@ -379,7 +383,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         if remote:
             returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
             if returncode > 0:
-                ctx.logger.error('Failed to get float net and mynets')
+                slab_logger.error('Failed to get float net and mynets')
                 sys.exit(1)
             myvfile.set_env_vars(float_net, mynets, my_sec_grps)
 
@@ -387,20 +391,20 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             myvfile.init_vagrantfile()
         puppet_path = os.path.join(redhouse_ten_path, "puppet")
         if not os.path.exists(os.path.join(puppet_path, "modules", "glance")):
-            ctx.logger.info('Updating sub repos under service-redhouse-tenant')
-            ctx.logger.info('This may take a few minutes.')
+            slab_logger.info('Updating sub repos under service-redhouse-tenant')
+            slab_logger.info('This may take a few minutes.')
             returncode, myinfo = service_utils.run_this(
                                     "USER={0} librarian-puppet install".format(username),
                                     puppet_path)
             if returncode > 0:
-                ctx.logger.error('Failed to retrieve the necessary puppet configurations.')
-                ctx.logger.error(myinfo)
+                slab_logger.error('Failed to retrieve the necessary puppet configurations.')
+                slab_logger.error(myinfo)
             returncode = service_utils.copy_certs(os.path.join(
                                                                ctx.path,
                                                                "provision"),
                                                   puppet_path)
             if returncode > 0:
-                ctx.logger.error('Failed to copy haproxy certs to ccs puppet module.')
+                slab_logger.error('Failed to copy haproxy certs to ccs puppet module.')
                 sys.exit(1)
         if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
             service_utils.sync_service(ctx.path, data_branch, username, 'ccs-data')
@@ -408,13 +412,13 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data', 'out')):
             returncode, myinfo = service_utils.build_data(ctx.path)
             if returncode > 0:
-                ctx.logger.error('Failed to build ccs-data data b/c ' + myinfo)
+                slab_logger.error('Failed to build ccs-data data b/c ' + myinfo)
                 sys.exit(1)
 
         if not os.path.islink(os.path.join(redhouse_ten_path,
                                            "dev",
                                            "ccs-data")):
-            ctx.logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
+            slab_logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
                                                                 'ccs-data') + "with  " +
                              os.path.join(ctx.path, "services", "ccs-data"))
             # Note: os.symlink(src, dst)
@@ -441,7 +445,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                                                                  'provision')
                                                                     )
                 if returncode > 0:
-                    ctx.logger.error("Couldn't get the vm {0} for HA".format(ha_vm))
+                    slab_logger.error("Couldn't get the vm {0} for HA".format(ha_vm))
                     sys.exit(1)
                 else:
                     allmy_vms.append(ha_vm_dicts)
@@ -461,8 +465,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                                               ip=hosts[host]['ip'],
                                                               )
                 if retcode > 0:
-                    ctx.logger.error("Failed to add host" + host)
-                    ctx.logger.error("Continuing despite failure...")
+                    slab_logger.error("Failed to add host" + host)
+                    slab_logger.error("Continuing despite failure...")
             curhost = vhosts[0].keys()[0]
             if remote:
                 settingsyaml = {'openstack_provider': True}
@@ -470,12 +474,12 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                                         settingsyaml,
                                                         hostname=curhost)
                 if returncode > 0:
-                    ctx.logger.error('writing to settings yaml failed on: ' + curhost)
+                    slab_logger.error('writing to settings yaml failed on: ' + curhost)
                 myvfile.add_openstack_vm(vhosts[0])
                 a.v.up(vm_name=curhost, provider='openstack')
             else:
                 myvfile.add_virtualbox_vm(vhosts[0])
                 a.v.up(vm_name=curhost)
     except IOError as e:
-        ctx.logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
+        slab_logger.error("{0} for vagrant.yaml in {1}".format(e, ctx.path))
         sys.exit(1)

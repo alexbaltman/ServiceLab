@@ -4,18 +4,22 @@ Pipe stack command submodule implements
     2. Displays a pipeline status.
     3. Runs a pipeline.
 """
+import sys
 import json
 import copy
-import sys
+import click
+import requests
 import xml.etree.ElementTree as ET
 
-import click
 from bs4 import BeautifulSoup
-import requests
 from requests.auth import HTTPBasicAuth
 
 from servicelab.utils import gocd_utils
 from servicelab.stack import pass_context
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.pipe')
 
 
 @click.group(
@@ -59,13 +63,13 @@ def display_pipeline_log(ctx,
     """
     Displays a pipeline log.
     """
-    ctx.logger.info('Displaying %s log' % pipeline_name)
+    slab_logger.info('Displaying %s log' % pipeline_name)
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        ctx.logger.error("Username is %s and password is %s. "
+        slab_logger.error("Username is %s and password is %s. "
                          "Please, set the correct value for both and retry." %
                          (username, password))
         sys.exit(1)
@@ -78,8 +82,8 @@ def display_pipeline_log(ctx,
         latest_job_info_url = soup.findAll(
             'entry')[0].findAll('link')[0]['href']
     except Exception as ex:
-        ctx.logger.error("Internal error occurred. Please, check arguments supplied.")
-        ctx.logger.error("Error details : %s " % (ex))
+        slab_logger.error("Internal error occurred. Please, check arguments supplied.")
+        slab_logger.error("Error details : %s " % (ex))
         sys.exit(1)
 
     # Find all the job info for that run
@@ -137,13 +141,13 @@ def display_pipeline_status(ctx,
     """
     Displays a pipeline status.
     """
-    ctx.logger.info('Displaying status of %s' % pipeline_name)
+    slab_logger.info('Displaying status of %s' % pipeline_name)
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        ctx.logger.error("Username is %s and password is %s. "
+        slab_logger.error("Username is %s and password is %s. "
                          "Please, set the correct value for both and retry." %
                          (username, password))
         sys.exit(1)
@@ -194,13 +198,13 @@ def trigger_pipeline(ctx,
     """
     Runs a pipeline.
     """
-    ctx.logger.info('Running pipeline %s' % pipeline_name)
+    slab_logger.info('Running pipeline %s' % pipeline_name)
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        ctx.logger.error("Username is %s and password is %s. "
+        slab_logger.error("Username is %s and password is %s. "
                          "Please, set the correct value for both and retry." %
                          (username, password))
         sys.exit(1)
@@ -268,13 +272,13 @@ def clone_pipeline(ctx,
     """
     Clones a pipeline and assigns it the new name.
     """
-    ctx.logger.info('Cloning %s to %s' % (pipeline_name, new_pipeline_name))
+    slab_logger.info('Cloning %s to %s' % (pipeline_name, new_pipeline_name))
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        ctx.logger.error("Username is %s and password is %s. "
+        slab_logger.error("Username is %s and password is %s. "
                          "Please, set the correct value for both and retry." %
                          (username, password))
         sys.exit(1)

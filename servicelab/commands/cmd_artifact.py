@@ -6,13 +6,16 @@ Stack artifact commands to
 """
 import os
 import json
-import subprocess
-
 import click
 import requests
+import subprocess
 
 from requests.auth import HTTPBasicAuth
 from servicelab.stack import pass_context
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.artifact')
 
 
 @click.group('artifact', short_help='Work with artifacts from artifactory with this command'

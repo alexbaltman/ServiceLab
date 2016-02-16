@@ -1,12 +1,15 @@
-from servicelab.utils import yaml_utils
-from servicelab.utils import ccsdata_utils
 import logging
 import os
 import yaml
-from prettytable import PrettyTable
-from servicelab.stack import Context
 
-ctx = Context()
+import yaml_utils
+import ccsdata_utils
+import logger_utils
+
+from prettytable import PrettyTable
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.ccsbuildtools')
 
 
 def gather_site_info(path, cont):
@@ -59,7 +62,7 @@ def gather_site_info(path, cont):
         returncode(int): 0 - success, 1 - failure (no directory to write yaml into)
         site_dictionary: information about the site
     """
-    ctx.logger.debug('Gathering input data to build the answer.yaml needed for ignition')
+    slab_logger.debug('Gathering input data to build the answer.yaml needed for ignition')
     # Set up file to store persistent site data
     path_to_cache = os.path.join(path, "cache")
     if not os.path.exists(path_to_cache):
@@ -169,7 +172,7 @@ def gather_env_info(path):
         returncode(int): 0 - success, 1 - failure
         site_dictionary: information about the site
     """
-    ctx.logger.debug('Gathering data for tenant cloud')
+    slab_logger.debug('Gathering data for tenant cloud')
     tenant_cloud = {}
     print "Here are the existing sites in ccs-data with which you can inject " \
           "a new tenant cloud environment on top of. Select the number of the " \
@@ -272,7 +275,7 @@ def get_input_requirements_for_ccsbuildtools():
 def exit_input(site_dictionary, path_to_dump, exit):
     """exit input
     """
-    ctx.logger.debug('Saving completed data and exiting the stack create command')
+    slab_logger.debug('Saving completed data and exiting the stack create command')
     if exit:
         print "Data input for site terminated. use continue option to resume where you "\
               "left off. If you do another stack create site without the --continue option"\
@@ -296,7 +299,7 @@ def _input_cloud_info(cloud, is_svc):
     Returns:
         site_name (str) : returns the user-defined name of the cloud
     """
-    ctx.logger.debug('Prompting for user input for site data')
+    slab_logger.debug('Prompting for user input for site data')
     cloud_input_fields = ['site_name', 'az', 'domain']
     cloud_input_fields_prompts = ['Site Name', 'Availability Zone', 'Domain Name']
     tc_nodes = ['num_nova1', 'num_nova2', 'num_nova3',
@@ -336,7 +339,7 @@ def _edit_ip_ranges(ip_ranges):
     Args:
         ip_ranges: dictionary mapping vlan numbers to ip ranges
     """
-    ctx.logger.debug('Prompting for user input of vlan data')
+    slab_logger.debug('Prompting for user input of vlan data')
     while True:
         print "Here are your ip ranges. Type c to confirm and use these values, " \
               "or enter the digit of the vlan range you want to modify. "
@@ -378,7 +381,7 @@ def _user_input_for_list(input_fields, prompts, dictionary, is_int):
         dictionary : the dictionary which stores the user inputs
         is_int (bool) : flag which states whether or not receiving ints or strings
     """
-    ctx.logger.debug('Prompting user for input of needed data')
+    slab_logger.debug('Prompting user for input of needed data')
     for i in input_fields:
         if is_int:
             dictionary[i] = get_valid_input_or_option("Enter " +

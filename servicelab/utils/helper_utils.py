@@ -5,12 +5,12 @@ import shutil
 import fnmatch
 import getpass
 
+import logger_utils
+
 from servicelab.utils.yaml_utils import host_exists_vagrantyaml
-from servicelab.utils import logger_utils
 from servicelab import settings
 
-reload(settings)
-slab_logger = logger_utils.setup_logger(settings.verbosity)
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.helper')
 
 
 def find_all_yaml_recurs(full_path):
@@ -52,6 +52,15 @@ def find_all_yaml_recurs(full_path):
     else:
         slab_logger.error("Could not find files in %s" % (full_path))
         return 1, matches
+
+
+def get_username(path):
+    returncode, username = set_user(path)
+    if returncode > 0:
+        username = getpass.getuser()
+        if not username:
+            username
+    return username
 
 
 def set_user(path):
@@ -150,18 +159,6 @@ def get_path_to_utils(path):
     path_to_utils = os.path.join(split_path[0], "utils")
     slab_logger.debug('Utils path is %s' % path_to_utils)
     return path_to_utils
-
-
-def get_username(path):
-    slab_logger.log(15, 'Determining username')
-    returncode, username = set_user(path)
-    if returncode > 0:
-        username = getpass.getuser()
-        if not username:
-            slab_logger.debug("Unable to set username")
-            username
-    slab_logger.debug('Username was determined to be %s' % username)
-    return username
 
 
 def name_vm(name, path):

@@ -4,21 +4,20 @@ Stack explain command
 import os
 import re
 import yaml
-
 import click
 import requests
 import operator
 
-from string import maketrans
+import service_utils
+import ccsbuildtools_utils
+import logger_utils
 
+from string import maketrans
 from prettytable import PrettyTable
 from bs4 import BeautifulSoup
+from servicelab import settings
 
-from servicelab.utils import service_utils
-from servicelab.utils import ccsbuildtools_utils
-from servicelab.stack import SLAB_Logger
-
-ctx = SLAB_Logger()
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.explain')
 
 
 def compile_man_page(path, user, password):
@@ -26,7 +25,7 @@ def compile_man_page(path, user, password):
     Grabs data from confluence pages and servicelab docs and leverages sphinx to
     convert them into a single man page that will be queried for high level info.
     """
-    ctx.logger.log(15, 'Building data for man pages')
+    slab_logger.log(15, 'Building data for man pages')
     path_to_docs = os.path.split(path)[0]
     path_to_docs = os.path.split(path_to_docs)[0]
     path_to_docs = os.path.join(path_to_docs, 'docs')
@@ -46,8 +45,8 @@ def compile_man_page(path, user, password):
         file_title = item.translate(maketrans("+", "-")).lower()[4:]
         content = requests.get(url, auth=(user, password))
         if content.status_code != 200:
-            click.echo("Unable to login to {0} as user {1} "
-                       " with supplied password.".format(url, user))
+            slab_logger.error("Unable to login to %s as user %s with supplied password."
+                              % (url, user))
             return
         with open(os.path.join(path_to_docs, 'man_pages', '%s.rst' % file_title),
                   'w') as manf:
@@ -77,7 +76,7 @@ def navigate_all(path):
     """
     Get all sections...show entire man page
     """
-    ctx.logger.log(15, 'Displaying entire man page\n')
+    slab_logger.log(15, 'Displaying entire man page\n')
     path_to_man_page = _get_path_to_man_page(path)
     cmd_view = "man %s" % path_to_man_page
     os.system(cmd_view)
@@ -90,7 +89,7 @@ def query(path, query_str):
     for sections the user should visit based on the query, but ultimately lets the user
     pick which section to visit.
     """
-    ctx.logger.log(15, 'Displaying sections of man page based on query matches\n')
+    slab_logger.log(15, 'Displaying sections of man page based on query matches\n')
     man_yaml = _load_slabmanyaml(path)
     topic_titles = {}
     for i in man_yaml['confluence_pages']:
@@ -147,7 +146,7 @@ def _get_path_to_man_page(path):
     """
     Get path to man page
     """
-    ctx.logger.log(15, 'Determining path to man page')
+    slab_logger.log(15, 'Determining path to man page')
     path_to_docs = os.path.split(path)[0]
     path_to_docs = os.path.split(path_to_docs)[0]
     path_to_docs = os.path.join(path_to_docs, 'docs')
@@ -158,7 +157,7 @@ def _get_list_of_sections(path_to_man_page):
     """
     Returns a list of all man page sections
     """
-    ctx.logger.log(15, 'Displaying all man page sections\n')
+    slab_logger.log(15, 'Displaying all man page sections\n')
     # Takes advantage of the way man pages are formatted.
     # All headings begin with .SH
     sections = []
@@ -175,7 +174,7 @@ def _view_section(section_name, path_to_man_page):
     """
     View man page section.
     """
-    ctx.logger.log(15, 'Displaying %s\n' % section_name)
+    slab_logger.log(15, 'Displaying %s\n' % section_name)
     section_name1 = section_name.replace(' ', r'\ ')
     section_name2 = "^" + ".*".join(section_name) + "$"
 
@@ -203,7 +202,7 @@ def _get_number_of_matches(section_name, path_to_man_page, query_str):
     """
     Return the number of times query is found in the man page section
     """
-    ctx.logger.log(15, 'Determining number of query matches')
+    slab_logger.log(15, 'Determining number of query matches')
     # Equivalent to _view_section, except for the added grep command which
     # ignores case and outputs matches, which are then counted by wc
     section_name1 = section_name.replace(' ', r'\ ')
@@ -221,7 +220,7 @@ def _load_slabmanyaml(path):
     """
     Load from the yaml file
     """
-    ctx.logger.log(15, 'Loading data from slab_man_data.yaml')
+    slab_logger.log(15, 'Loading data from slab_man_data.yaml')
     path_to_yaml = os.path.split(path)[0]
     path_to_yaml = os.path.join(path_to_yaml, "utils", "slab_man_data.yaml")
     with open(path_to_yaml, 'r') as yaml_file:
@@ -238,7 +237,7 @@ def _parse_confluence_website(html_text, site_title):
     Removes all html tag s and grabs relevant data from a confluence html page -
     converts the content into human-readable format.
     """
-    ctx.logger.log('Extracting data from confluence')
+    slab_logger.log('Extracting data from confluence')
     soup = BeautifulSoup(html_text, 'html.parser')
     title = soup.title.text.split('-')[0]
     header = "\n"
