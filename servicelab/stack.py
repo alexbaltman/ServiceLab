@@ -191,9 +191,7 @@ def write_settings_file(verbosity):
 
 
 def verbosity_option(f):
-    click.echo('Setting verbosity')
     def callback(ctx, param, value):
-        click.echo('inside callback')
         verbosity = 30
         if value:
             if value == 1:
@@ -207,7 +205,6 @@ def verbosity_option(f):
                 message = 'debug (DEBUG)'
             click.echo('Verbosity set to %s\n' % message)
         write_settings_file(verbosity)
-        click.echo('Settings.verbosity is %s' % verbosity)
         return value
     return click.option('-v', '--verbose', count=True,
                         expose_value=False,
