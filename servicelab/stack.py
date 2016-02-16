@@ -5,7 +5,6 @@ import os
 import re
 import sys
 import click
-import logging
 
 # Global Variables
 # auto envvar prefix will take in any env vars that are prefixed with STK
@@ -56,7 +55,6 @@ class Context(object):
         if returncode > 0:
             self.username = getpass.getuser()
         self.password = None
-
         if os.getenv("OS_USERNAME"):
             self.username = os.getenv("OS_USERNAME")
             self.password = os.getenv("OS_PASSWORD")

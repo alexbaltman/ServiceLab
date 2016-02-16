@@ -83,7 +83,7 @@ def host_exists_vagrantyaml(hostname, pathto_yaml):
     """
     slab_logger.log(15, 'Checking for %s within .stack/vagrant.yaml' % hostname)
     if not os.path.isfile(os.path.join(pathto_yaml, "vagrant.yaml")):
-        yaml_utils_logger.debug("vagrant.yaml file is missing")
+        slab_logger.debug("vagrant.yaml file is missing")
         return 1
     retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
     if retcode > 0:
