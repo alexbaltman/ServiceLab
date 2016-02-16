@@ -15,7 +15,7 @@ import vagrantfile_utils
 # create logger
 # TODO: For now warning and error print. Got to figure out how
 #       to import the one in stack.py properly.
-yaml_utils_logger = logging.getLogger('click_application')
+yaml_utils_logger = logging.getLogger('stack')
 logging.basicConfig()
 
 
@@ -83,6 +83,10 @@ def host_exists_vagrantyaml(hostname, pathto_yaml):
                                           "/Users/aaltman/Git/servicelab/servicelab/.stack")
         0
     """
+    if not os.path.isfile(os.path.join(pathto_yaml, "vagrant.yaml")):
+        yaml_utils_logger.info("vagrant.yaml file is missing")
+        return 1
+
     retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
     if retcode > 0:
         yaml_utils_logger.error("Invalid yaml file")
