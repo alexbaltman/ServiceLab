@@ -3,7 +3,6 @@ import sys
 import logging
 
 def setup_logger(verbosity, name='stack'):
-    print("%s Logger verbosity is %s" % (name, verbosity))
     logger = logging.getLogger(name)
     if not len(logger.handlers):
         logging.addLevelName(15, 'DETAIL')
