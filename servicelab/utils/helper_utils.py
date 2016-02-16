@@ -5,12 +5,12 @@ import shutil
 import fnmatch
 import getpass
 
+import logger_utils
+
 from servicelab.utils.yaml_utils import host_exists_vagrantyaml
-from servicelab.utils import logger_utils
 from servicelab import settings
 
-reload(settings)
-slab_logger = logger_utils.setup_logger(settings.verbosity)
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.helper')
 
 
 def find_all_yaml_recurs(full_path):

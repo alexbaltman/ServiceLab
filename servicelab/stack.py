@@ -6,12 +6,13 @@ import sys
 import click
 import logging
 
-from servicelab import settings
+#from servicelab.utils import helper_utils
 
 # Global Variables
 # auto envvar prefix will take in any env vars that are prefixed with STK
 # short for stack.
 CONTEXT_SETTINGS = dict(auto_envvar_prefix='STK')
+
 
 class Context(object):
     """
@@ -26,21 +27,29 @@ class Context(object):
         pkey_name (str)    - servicelab public key
 
         branch (str)
+        verbose (boolean)
+        vverbose (boolean)
+        debug (boolean)
+        logger (logger)
+
+        file_handler       - Create filehandler that logs everything.
+        console_handler    - Create console handler that logs up to error msg.
+        formatter          - Create formatter and add it to the handlers
 
         __gerrit_test_info - Gerrit staging server
         __gerrit_info      - Gerrit server
 
 
     """
-    from servicelab.utils import helper_utils
-
     def __init__(self):
-        self.branch = "master"
         self.path = os.path.join(os.path.dirname(__file__), '.stack')
-        self.config = os.path.join(os.path.dirname(__file__), '.stack/stack.conf')
+        self.config = os.path.join(os.path.dirname(__file__),
+                                   '.stack/stack.conf')
 
         self.pkey_name = "servicelab/utils/public_key.pkcs7.pem"
 
+        # Setup Logging
+        self.branch = "master"
         self.__gerrit_test_info = {"hostname": "ccs-gerrit-stg.cisco.com",
                                    "port": 29418}
         self.__gerrit_info = {"hostname": "ccs-gerrit.cisco.com",
@@ -53,7 +62,7 @@ class Context(object):
             {"url": "https://ccs-jenkins.cisco.com"}
         self.__pulp_info = \
             {"url": "https://ccs-mirror.cisco.com"}
-        self.username = self.helper_utils.get_username(self.path)
+        self.username = 'paketner'
         self.password = None
 
         # set the user name according to this defined hierarchy
@@ -69,10 +78,6 @@ class Context(object):
         if os.getenv("STK_USERNAME"):
             self.username = os.getenv("STK_USERNAME")
             self.password = os.getenv("STK_PASSWORD")
-
-        if not self.username:
-            self.logger.error('Unable to determine username')
-            sys.exit(1)
 
     def get_gerrit_server(self):
         """
@@ -176,10 +181,11 @@ class ComplexCLI(click.MultiCommand):
             return
         return mod.cli
 
-def write_settings_file():
+def write_settings_file(verbosity):
     settings_file = os.path.join(os.path.dirname(__file__), 'settings.py')
     myfile = open(settings_file, 'w')
-    file_data = '# Global variables file\n\nverbosity = %i' % settings.verbosity
+    file_data = ('# Global variables file\n\nverbosity = %i'
+                 % (verbosity))
     myfile.write(file_data)
     myfile.close()
 
@@ -188,26 +194,24 @@ def verbosity_option(f):
     click.echo('Setting verbosity')
     def callback(ctx, param, value):
         click.echo('inside callback')
+        verbosity = 30
         if value:
             if value == 1:
-                settings.verbosity = 20
+                verbosity = 20
                 message = 'verbose (INFO)'
             elif value == 2:
-                settings.verbosity = 15
+                verbosity = 15
                 message = 'very verbose (DETAIL)'
             elif value >= 3:
-                settings.verbosity = 10
+                verbosity = 10
                 message = 'debug (DEBUG)'
             click.echo('Verbosity set to %s\n' % message)
-        else:
-            settings.verbosity = 30
-        write_settings_file()
-        reload(settings)
-        click.echo('Settings.verbosity is %s' %settings.verbosity)
+        write_settings_file(verbosity)
+        click.echo('Settings.verbosity is %s' % verbosity)
         return value
     return click.option('-v', '--verbose', count=True,
                         expose_value=False,
-                        help='Enables verbosity.',
+                        help='Enables verbosity level.',
                         callback=callback)(f)
 
 
@@ -216,16 +220,16 @@ def common_options(f):
     return f
 
 
+
 @common_options
 @click.command(cls=ComplexCLI, context_settings=CONTEXT_SETTINGS)
 @click.option('--username', '-u', help="user")
 @click.option('--password', '-p', help="password")
-#@click.option('--verbose', '-v', count=True, help='Verbosity level, up to 3 for debug')
 @pass_context
 def cli(ctx, username, password):
     """A CLI for Cisco Cloud Services."""
+
     if username:
         ctx.username = username
     if password:
         ctx.password = password
-

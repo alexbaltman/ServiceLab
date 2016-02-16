@@ -15,6 +15,10 @@ from servicelab.utils import jenkins_utils
 from servicelab.utils import context_utils
 from servicelab.utils import artifact_utils
 from servicelab.utils import gocd_utils
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.show')
 
 
 @click.group('show', short_help='Helps you show the details of a'
@@ -59,7 +63,7 @@ def show_build(ctx, build_number):
     """
     Shows the details of a build in Jekins.
     """
-    ctx.logger.info('Displaying build details for %s' % build_number)
+    slab_logger.info('Displaying build details for %s' % build_number)
     username = ctx.get_username()
     servername = context_utils.get_jenkins_url()
     password = click.prompt("password", hide_input=True, type=str)
@@ -91,7 +95,7 @@ def show_artifact(ctx, username, password, url, interactive):
     """
     Show the details of an artifact using Artifactory's API.
     """
-    ctx.logger.info('Displaying artifact details for %s' % url)
+    slab_logger.info('Displaying artifact details for %s' % url)
     if not username:
         username = ctx.get_username()
     if not password:
@@ -126,7 +130,7 @@ def show_pipe(ctx, pipeline_name, username, password, ip_address, interactive):
     """
     Show the details of a deployment pipline using GO's API.
     """
-    ctx.logger.info('Displaying details of pipeline %s' % pipeline_name)
+    slab_logger.info('Displaying details of pipeline %s' % pipeline_name)
     if not username:
         username = ctx.get_username()
     if not password:

@@ -10,9 +10,14 @@ Stack command implementing the following gerrit functionality
     7. Display the code diff
 """
 import click
+
 from servicelab.stack import pass_context
 from servicelab.utils import helper_utils
 from servicelab.utils import gerrit_functions
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.review')
 
 
 @click.group('review', short_help='Helps you work with reviews in Gerrit.')
@@ -37,7 +42,7 @@ def review_inc(ctx, project, username, detail, interactive):
     """
     Searches through Gerrit's API for incoming reviews for your username.
     """
-    ctx.logger.info('Searching gerrit for incoming review')
+    slab_logger.info('Searching gerrit for incoming review')
     try:
         if not username:
             username = ctx.get_username()
@@ -58,7 +63,7 @@ def review_inc(ctx, project, username, detail, interactive):
             gfn.print_gerrit(pformat="summary", number=None, owner="",
                              reviewer=username, status="open")
     except Exception as ex:
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
 
 
 @cli.command('out', short_help='Find outgoing reviews in Gerrit - reviews you have '
@@ -73,7 +78,7 @@ def review_out(ctx, project, username, detail, interactive):
     """
     Searches through Gerrit's API for outgoing reviews for your username.
     """
-    ctx.logger.info('Searching gerrit for outgoing reviews')
+    slab_logger.info('Searching gerrit for outgoing reviews')
     try:
         if not username:
             username = ctx.get_username()
@@ -94,7 +99,7 @@ def review_out(ctx, project, username, detail, interactive):
             gfn.print_gerrit(pformat="summary", number=None, owner=username,
                              reviewer="", status="open")
     except Exception as ex:
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
 
 
 @cli.command('plustwo', short_help='Plus two a Gerrit change set.')
@@ -109,7 +114,7 @@ def review_plustwo(ctx, gerrit_change_id, project, username, message, interactiv
     """
     Approves and merges a gerrit change set.
     """
-    ctx.logger.info('Approving gerrit change %s' % gerrit_change_id)
+    slab_logger.info('Approving gerrit change %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -128,7 +133,7 @@ def review_plustwo(ctx, gerrit_change_id, project, username, message, interactiv
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         gfn.change_review(gerrit_change_id, 2, 1, message)
     except Exception as ex:
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
 
 
 @cli.command('plusone', short_help='Plus one a Gerrit change set - Gerrit admins only.')
@@ -144,7 +149,7 @@ def review_plusone(ctx, gerrit_change_id, project, username, message, interactiv
     Approves, but does not merge a gerrit change set, which means change set
     requires another approver.
     """
-    ctx.logger.info('Adding +1 to gerrit change %s' % gerrit_change_id)
+    slab_logger.info('Adding +1 to gerrit change %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -163,7 +168,7 @@ def review_plusone(ctx, gerrit_change_id, project, username, message, interactiv
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         gfn.change_review(gerrit_change_id, 1, 0, message)
     except Exception as ex:
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
 
 
 @cli.command('minusone', short_help='Minus one a Gerrit change set.')
@@ -178,7 +183,7 @@ def review_minusone(ctx, gerrit_change_id, project, username, message, interacti
     """
     Prefer the code is not submitted.
     """
-    ctx.logger.info('Applying -1 to gerrit change %s' % gerrit_change_id)
+    slab_logger.info('Applying -1 to gerrit change %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -197,7 +202,7 @@ def review_minusone(ctx, gerrit_change_id, project, username, message, interacti
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         gfn.change_review(gerrit_change_id, -1, 0, message)
     except Exception as ex:
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
 
 
 # @cli.command('minustwo', short_help='Minus two gerrit change set.')
@@ -230,7 +235,7 @@ def review_minusone(ctx, gerrit_change_id, project, username, message, interacti
 #         gfn = gerrit_functions.GerritFns(username, project, ctx)
 #         gfn.change_review(gerrit_change_id, -1, 0, message)
 #    except Exception as ex:
-#        ctx.logger.error(str(ex))
+#        slab_logger.error(str(ex))
 
 
 @cli.command('abandon', short_help='Abandon a Gerrit change set.')
@@ -245,7 +250,7 @@ def review_abandon(ctx, gerrit_change_id, project, username, message, interactiv
     """
     Abandon a gerrit change set.
     """
-    ctx.logger.info('Abadoning change %s' % gerrit_change_id)
+    slab_logger.info('Abadoning change %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -264,7 +269,7 @@ def review_abandon(ctx, gerrit_change_id, project, username, message, interactiv
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         gfn.code_state(gerrit_change_id, "abandon", message)
     except Exception as ex:
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
 
 
 @cli.command('show', short_help='Display a specific review by Gerrit change ID')
@@ -278,7 +283,7 @@ def review_show(ctx, gerrit_change_id, project, username, interactive):
     """
     Display the review
     """
-    ctx.logger.info('Displaying review for %s' % gerrit_change_id)
+    slab_logger.info('Displaying review for %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -294,7 +299,7 @@ def review_show(ctx, gerrit_change_id, project, username, interactive):
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         gfn.print_gerrit("detail", gerrit_change_id)
     except Exception as ex:
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
 
 
 @cli.command('filediff', short_help='Display the file diff from a review changeset by '
@@ -309,7 +314,7 @@ def review_code(ctx, gerrit_change_id, project, username, interactive):
     """
     Display the review
     """
-    ctx.logger.info('Displaying code for review %s' % gerrit_change_id)
+    slab_logger.info('Displaying code for review %s' % gerrit_change_id)
     try:
         if not username:
             username = ctx.get_username()
@@ -325,4 +330,4 @@ def review_code(ctx, gerrit_change_id, project, username, interactive):
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         gfn.code_review(gerrit_change_id)
     except Exception as ex:
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))

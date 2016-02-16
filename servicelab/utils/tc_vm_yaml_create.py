@@ -1,16 +1,16 @@
 import os
 import re
+import sys
 import yaml
+import click
 import socket
 import ipaddress
-import sys
-import click
 
-from servicelab.utils import logger_utils
+import logger_utils
+
 from servicelab import settings
 
-reload(settings)
-ctx = logger_utils.setup_logger(settings.verbosity)
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.tc_vm_yaml_create')
 
 
 def open_yaml(filename):
@@ -29,7 +29,7 @@ def open_yaml(filename):
         with open(filename, 'r') as stream:
             return yaml.load(stream)
     except IOError:
-        ctx.logger.error('Unable to open %s' % filename)
+        slab_logger.error('Unable to open %s' % filename)
         return 1
 
 
@@ -50,9 +50,9 @@ def write_file(yaml_data, output_file):
     Example Usage:
         write_file(yaml_data, output_file)
     """
-    ctx.logger.log(15, 'Writing %s as yaml from provided dictionary' % output_file)
+    slab_logger.log(15, 'Writing %s as yaml from provided dictionary' % output_file)
     if os.path.isfile(output_file):
-        ctx.logger.error(
+        slab_logger.error(
             '%s already exists.  Aborting host create.' %
             output_file)
         return 1
@@ -61,7 +61,7 @@ def write_file(yaml_data, output_file):
         outfile.write(yaml.dump(yaml_data, default_flow_style=False))
     click.echo(output_file)
     click.echo('File created successfully')
-    ctx.logger.debug('%s created succesfully' % output_file)
+    slab_logger.debug('%s created succesfully' % output_file)
 
 
 def find_vlan(source_data):
@@ -82,7 +82,7 @@ def find_vlan(source_data):
         vlan_id = find_vlan(source_data)
     """
     my_ip = ipaddress.IPv4Address(unicode(source_data['ip']))
-    ctx.logger.log(15, 'Determining the vlan id for %s' % source_data['ip'])
+    slab_logger.log(15, 'Determining the vlan id for %s' % source_data['ip'])
     for key in source_data:
         # Regex search for all keys that are only numbers
         if re.search('^\d+$', key):
@@ -91,7 +91,7 @@ def find_vlan(source_data):
             if my_ip in subnet_ips:
                 return key
 
-    ctx.logger.error('Unable to find the vlan for %s within %s'
+    slab_logger.error('Unable to find the vlan for %s within %s'
                      % (source_data['ip'], source_data['tc_name']))
     return 1
 
@@ -147,7 +147,7 @@ def find_ip(env_path, vlan):
     Example Usage:
         find_ip('<environments path>, ipaddress.IPv4Network(unicode(10.11.12.0/24))
     """
-    ctx.logger.log(15, 'Finding next available IP in vlan %s' % vlan)
+    slab_logger.log(15, 'Finding next available IP in vlan %s' % vlan)
     # Create list of ipaddress module objects of all valid IPs in the subnet
     all_ips = list(vlan.hosts())
     # Remove the first 4 IPs.  They *should* be reserved in AM anyway.
@@ -180,7 +180,7 @@ def find_ip(env_path, vlan):
                             if ipaddy in all_ips:
                                 all_ips.remove(ipaddy)
                     except TypeError:
-                        ctx.logger.debug('%s did not contain any data for interface %s'
+                        slab_logger.debug('%s did not contain any data for interface %s'
                                          % (hostfile, interface))
                     except ipaddress.AddressValueError:
                         tcvm_logger.info('Bad address found in %s' % hostfile)
@@ -231,9 +231,9 @@ def create_vm(
                                     role=<none, typically>, groups=<['default', 'other']>,
                                     sec_groups='default,something,somethingelse,maybe')
     """
-    ctx.logger.log(15, 'Creating host yaml file for %s' % hostname)
+    slab_logger.log(15, 'Creating host yaml file for %s' % hostname)
     if sc_name == tc_name:
-        ctx.logger.error('Please select a tenant cloud within %s' % sc_name)
+        slab_logger.error('Please select a tenant cloud within %s' % sc_name)
         return 1
     source_data = {'repo_path': repo_path,
                    'hostname': str(hostname),
@@ -254,9 +254,9 @@ def create_vm(
     source_data['vlan_id'] = str(source_data['vlan_prefix']) + source_data['vlan_id']
     if vlan_id not in source_data:
         source_data[source_data['vlan_id']] = input_vlan(source_data)
-        ctx.logger.error(
-            'Vlan%s was not found within %s.  Please try a different vlan' %
-            (vlan_id, source_data['tc_name']))
+        slab_logger.error(
+            ('Vlan%s was not found within %s.  Please try a different vlan' %
+             (vlan_id, source_data['tc_name'])))
         return 1
     if not ip_address:
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
@@ -273,7 +273,7 @@ def create_vm(
             return 1
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
     if not source_data['ip']:
-        ctx.logger.error(
+        slab_logger.error(
             'Vlan%s does not have any IP addresses available' %
             vlan_id)
         return 1
@@ -299,7 +299,7 @@ def determine_az(hostname):
     Example Usage:
         my_availability_zone = determine_az('my-hostname-003')
     """
-    ctx.logger.log(15, 'Determining availablity zone for %s' % hostname)
+    slab_logger.log(15, 'Determining availablity zone for %s' % hostname)
     match = re.search('(\d+)$', hostname)
     if match:
         num_switch = {1: '-a', 2: '-b', 3: '-c'}
@@ -336,7 +336,7 @@ def build_yaml_data(source_data, vlan):
         my_vlan = ipaddress.IPv4Network(unicode(10.11.12.0/24))
         host_data = build_yaml_data(source_data, my_vlan)
     """
-    ctx.logger.log(15, 'Building data dictionary to write to host yaml file')
+    slab_logger.log(15, 'Building data dictionary to write to host yaml file')
     fqdn = str(source_data['hostname'] + '.' + source_data['tc_name'] + '.' +
                source_data['domain'])
     yaml_data = {
@@ -385,7 +385,7 @@ def extract_env_data(source_data):
     Example Usage:
         source_data = extract_env_data(source_data)
     """
-    ctx.logger.log(15, 'Extracting data from service and tenant cloud environment yamls')
+    slab_logger.log(15, 'Extracting data from service and tenant cloud environment yamls')
     # Open the service cloud environment.yaml
     env_path = os.path.join(
         source_data['repo_path'],
@@ -430,7 +430,7 @@ def extract_env_data(source_data):
         match = re.search('([\w-]+)-keystonectl-001', env_data['keystone_hostnames'][0])
         source_data['tc_region'] = match.group(1)
         if not len(source_data[source_data['vlan_id']]):
-            ctx.logger.error('Unable to find ServiceLab data in %s' % env_file)
+            slab_logger.error('Unable to find ServiceLab data in %s' % env_file)
             return 1
     for vlan_key in env_data:
         match = re.search('^vlan(\d{0,2})(6[367])(-sup)?$', vlan_key)

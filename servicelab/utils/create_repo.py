@@ -14,17 +14,17 @@ For
 
 """
 import os
-import shutil
-
 import yaml
 import click
+import shutil
+
+import logger_utils
+import service_utils
 
 from abc import ABCMeta, abstractmethod
-from servicelab.utils import service_utils
+from servicelab import settings
 
-from servicelab.stack import SLAB_Logger
-
-ctx = SLAB_Logger()
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.create_repo')
 
 
 class Repo(object):
@@ -37,19 +37,19 @@ class Repo(object):
         """
         Static method Instantiates Concreate classes of type Repo.
         """
-        ctx.logger.log(15, 'Setting up repo method')
+        slab_logger.log(15, 'Setting up repo method')
         if rtype is "Ansible":
             repo = Ansible(gsrvr, path, name, username, interactive)
-            ctx.logger.debug('Repo configured for Anisble')
+            slab_logger.debug('Repo configured for Anisble')
         elif rtype is "Puppet":
             repo = Puppet(gsrvr, path, name, username, interactive)
-            ctx.logger.debug('Repo configured for Puppet')
+            slab_logger.debug('Repo configured for Puppet')
         elif rtype is "Project":
             repo = Project(gsrvr, path, name, interactive)
-            ctx.logger.debug('Repo configured for Project')
+            slab_logger.debug('Repo configured for Project')
         elif rtype is "EmptyProject":
             repo = EmptyProject(gsrvr, path, name, username, interactive)
-            ctx.logger.debug('Repo configured for EmptyProject')
+            slab_logger.debug('Repo configured for EmptyProject')
         else:
             assert 0, "unable to construct the project of type: " + rtype
         repo.set_reponame()
@@ -91,7 +91,7 @@ class Repo(object):
         """
         if the repo exist, print message and return true.
         """
-        ctx.logger.log(15, 'Checking for repo %s' % self.get_reponame())
+        slab_logger.log(15, 'Checking for repo %s' % self.get_reponame())
         if os.path.exists("./{}".format(self.get_reponame())):
             click.echo("repo for {0} exist as {1}".format(self.name, self.get_reponame()))
             return True
@@ -107,7 +107,7 @@ class Repo(object):
             str : output string if any.
         )
         """
-        ctx.logger.log(15, 'Creating project %s on gerrit' % self.get_reponame())
+        slab_logger.log(15, 'Creating project %s on gerrit' % self.get_reponame())
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
         cmd = "ssh -p {} {}@{} gerrit create-project {}".format(port,
@@ -122,7 +122,7 @@ class Repo(object):
         """
         Clean up any files from the template directories
         """
-        ctx.logger.log(15, 'Cleaning up files from template directories')
+        slab_logger.log(15, 'Cleaning up files from template directories')
         pdict = {}
         fpath = os.path.join(self.get_reponame(), "serverspec", "properties.yml")
         with open(self.get_reponame() + "/serverspec/properties.yml") as ydata:
@@ -140,7 +140,7 @@ class Repo(object):
             str : output string if any.
         )
         """
-        ctx.logger.log(15, 'Creating local repo %s' % self.get_reponame())
+        slab_logger.log(15, 'Creating local repo %s' % self.get_reponame())
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
         # please see https://code.google.com/p/gerrit/issues/detail?id=1013
@@ -164,7 +164,7 @@ class Repo(object):
         """
         creates the correct rlease nootes file.
         """
-        ctx.logger.log(15, 'Creating release notes file')
+        slab_logger.log(15, 'Creating release notes file')
         # correcting the release note
         release_note = """#
 # Release Notes for component service-{0}-{1}
@@ -183,7 +183,7 @@ Current version: 0.1.1
         """
         if the repo exist, then remove
         """
-        ctx.logger.log(15, 'Removing repo %s' % name)
+        slab_logger.log(15, 'Removing repo %s' % name)
         if os.path.exists(name):
             os.remove(name)
 
@@ -219,14 +219,14 @@ class Ansible(Repo):
         """
         get ansible projcet of type service-<project name>-ansible
         """
-        ctx.logger.debug('Repo name is %s' % self.reponame)
+        slab_logger.debug('Repo name is %s' % self.reponame)
         return self.reponame
 
     def create_nimbus(self):
         """
         create the nimbus file .nimbus.yml for Ansible project.
         """
-        ctx.logger.log(15, 'Creating .nimbus.yml for %s' % self.get_reponame())
+        slab_logger.log(15, 'Creating .nimbus.yml for %s' % self.get_reponame())
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
                                            default="./check.sh", type=str)
@@ -250,7 +250,7 @@ class Ansible(Repo):
             add the roles. If command is invoked with interactive flag, then user can
             enter the various roles.
             """
-            ctx.logger.log(15, 'Determining Anisble roles')
+            slab_logger.log(15, 'Determining Anisble roles')
             if not self.interactive:
                 self.play_roles.append(str(self.name))
                 return
@@ -272,7 +272,7 @@ class Ansible(Repo):
             """
             write the ansible project yml file.
             """
-            ctx.logger.log(15, 'Creating Ansible project file for %s' % self.get_reponame())
+            slab_logger.log(15, 'Creating Ansible project file for %s' % self.get_reponame())
             playfile = "./{}/ansible/{}".format(self.get_reponame(),
                                                 self.name + ".yml")
             with open(playfile, "w") as playbook:
@@ -294,7 +294,7 @@ class Ansible(Repo):
         Create all the roles in the ansible directory
         """
         path = os.path.join(self.get_reponame(), "ansible", "roles")
-        ctx.logger.log(15, 'Creating roles within %s' % path)
+        slab_logger.log(15, 'Creating roles within %s' % path)
         if not os.path.isdir(path):
             os.mkdir(path)
         for role in roles:
@@ -307,7 +307,7 @@ class Ansible(Repo):
         """
         Download the service-helloworld-ansible template from the gerrit server
         """
-        ctx.logger.log(15, 'Downloading service-helloworld-ansible template from gerrit')
+        slab_logger.log(15, 'Downloading service-helloworld-ansible template from gerrit')
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
         cmd = "git clone --depth=1 "
@@ -324,7 +324,7 @@ class Ansible(Repo):
         removing some files as well updating others with the correct input project
         name.
         """
-        ctx.logger.log(15, 'Instantiating service-helloworld-ansible to %s'
+        slab_logger.log(15, 'Instantiating service-helloworld-ansible to %s'
                        % self.get_reponame)
         shutil.rmtree(os.path.join(self.get_reponame(), ".git"))
         self.cleanup_properties("helloworld-test")
@@ -388,7 +388,7 @@ class Ansible(Repo):
             5. Creating the nimbus
             6. Creating the roles directory.
         """
-        ctx.logger.log(15, 'Constructing the ansible project')
+        slab_logger.log(15, 'Constructing the ansible project')
         try:
             if self.check():
                 return
@@ -418,14 +418,14 @@ class Puppet(Repo):
         """
         get a puppet service project name of type service-<project_name>-puppet
         """
-        ctx.logger.debug('Service project name is %s' % self.reponame)
+        slab_logger.debug('Service project name is %s' % self.reponame)
         return self.reponame
 
     def create_nimbus(self):
         """
         Create the nimbus file .nimbus.yml for the Puppet project.
         """
-        ctx.logger.log(15, 'Creating .nimbus.yml for project %s' % self.get_reponame())
+        slab_logger.log(15, 'Creating .nimbus.yml for project %s' % self.get_reponame())
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
                                            default="./check.sh", type=str)
@@ -446,7 +446,7 @@ class Puppet(Repo):
         """
         Download the service-helloworld-ansible template from the gerrit server
         """
-        ctx.logger.log(15, 'Downloading the service-helloworld-ansible template')
+        slab_logger.log(15, 'Downloading the service-helloworld-ansible template')
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
         cmd = "git clone --depth=1 "
@@ -463,7 +463,7 @@ class Puppet(Repo):
         removing some files as well updating others with the correct input project
         name.
         """
-        ctx.logger.log(15, 'Instantiating service-helloworld-project to project %s'
+        slab_logger.log(15, 'Instantiating service-helloworld-project to project %s'
                        % self.get_reponame())
         # cleanup any extra artifact
         shutil.rmtree(os.path.join(self.get_reponame(), ".git"))
@@ -543,7 +543,7 @@ class Puppet(Repo):
             4. Creating the git repo files.
             5. Creating the nimbus
         """
-        ctx.logger.log(15, 'Constructing the puppet project')
+        slab_logger.log(15, 'Constructing the puppet project')
         try:
             if self.check():
                 return
@@ -569,7 +569,7 @@ class Project(Repo):
         """
         get project repo name of type project-<project name>.
         """
-        ctx.logger.debug('Repo project name is %s' % self.reponame)
+        slab_logger.debug('Repo project name is %s' % self.reponame)
         return self.reponame
 
     def download_template(self):
@@ -590,7 +590,7 @@ class Project(Repo):
         """
         Instantiating the project involves creating the project spec file.
         """
-        ctx.logger.log(15, 'Instantiating the repo %s' % self.get_reponame())
+        slab_logger.log(15, 'Instantiating the repo %s' % self.get_reponame())
         with open(os.path.join(".", self.get_reponame(), self.name + ".spec"),
                   "w") as specf:
             specf.write("Name:" + self.name + "\n"
@@ -612,7 +612,7 @@ class Project(Repo):
         """
         Create the nimbus file .nimbus.yml for the project.
         """
-        ctx.logger.log(15, 'Creating .nimbus.yml for project %s' % self.get_reponame())
+        slab_logger.log(15, 'Creating .nimbus.yml for project %s' % self.get_reponame())
         if self.interactive:
             self.chk_script = click.prompt("enter the script to check",
                                            default="/bin/true",
@@ -637,7 +637,7 @@ class Project(Repo):
             3. Instantiating the template to the correct value.
             4. Creating the nimbus
         """
-        ctx.logger.log(15, 'Constructing the repo project')
+        slab_logger.log(15, 'Constructing the repo project')
         try:
             if self.check():
                 return
@@ -666,7 +666,7 @@ class EmptyProject(Repo):
         """
         Download the created project from the gerrit server
         """
-        ctx.logger.log(15, 'Downloading project %s from gerrit' % self.get_reponame())
+        slab_logger.log(15, 'Downloading project %s from gerrit' % self.get_reponame())
         hostname = self.gsrvr['hostname']
         port = self.gsrvr['port']
         cmd = "git clone --depth=1 ssh://{}@{}:{}/{}".format(self.username,
@@ -696,7 +696,7 @@ class EmptyProject(Repo):
             3. Instantiating the template to the correct value.
             4. Creating the nimbus
         """
-        ctx.logger.log(15, 'Constructing the empty project')
+        slab_logger.log(15, 'Constructing the empty project')
         try:
             if self.check():
                 return

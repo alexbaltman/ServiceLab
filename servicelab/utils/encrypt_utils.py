@@ -1,10 +1,12 @@
 """
 Help fuctions for public key encrytption and decryption.
 """
-from servicelab.utils import service_utils
-from servicelab.stack import SLAB_Logger
+import service_utils
+import logger_utils
 
-ctx = SLAB_Logger()
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.encrypt')
 
 
 def public_key(fname):
@@ -23,11 +25,11 @@ def public_key(fname):
         >>> print publickey(public_key_pem)
         (0, "")
     """
-    ctx.logger.loc(15, 'Creating ssl public key')
+    slab_logger.loc(15, 'Creating ssl public key')
     cmd = "openssl x509 -inform pem -in %s -pubkey -noout" % (fname)
     cmd_returncode, cmd_info = service_utils.run_this(cmd)
     if cmd_returncode > 0:
-        ctx.logger.error(cmd_info)
+        slab_logger.error(cmd_info)
     return (cmd_returncode, cmd_info)
 
 
@@ -48,7 +50,7 @@ def encrypt(pub_fname, data):
         (0, "")
             #Data encryption is also outputted
     """
-    ctx.logger.log(15, 'Encrpyting data using ssl public key')
+    slab_logger.log(15, 'Encrpyting data using ssl public key')
     code = "\""
     code = code + "require 'openssl'; require 'base64';"
     code = code + "public_key_pem = File.read '" + pub_fname + "';"
@@ -62,7 +64,7 @@ def encrypt(pub_fname, data):
 
     cmd_returncode, cmd_info = service_utils.run_this(cmd)
     if cmd_returncode > 0:
-        ctx.logger.error(cmd_info)
+        slab_logger.error(cmd_info)
     return (cmd_returncode, cmd_info)
 
 
@@ -85,7 +87,7 @@ def decrypt(pub_fname, priv_fname, data):
         (0, "")
             #outputs decrypted data
     """
-    ctx.logger.log(15, 'Decrptying data with ssl private key')
+    slab_logger.log(15, 'Decrptying data with ssl private key')
     code = "\""
     code = code + "require 'openssl'; require 'base64';"
     code = code + "public_key_pem = File.read '" + pub_fname + "';"
@@ -100,7 +102,7 @@ def decrypt(pub_fname, priv_fname, data):
     cmd = "ruby -e " + code
     cmd_returncode, cmd_info = service_utils.run_this(cmd)
     if cmd_returncode > 0:
-        ctx.logger.error(cmd_info)
+        slab_logger.error(cmd_info)
     return (cmd_returncode, cmd_info)
 
 
@@ -121,14 +123,14 @@ if __name__ == '__main__':
         if ret == 0:
             print "ENCRYPT['alpha']="+enc_data
         else:
-            ctx.logger.error("Unable to encrypt\ndescription:\n%s", enc_data)
+            slab_logger.error("Unable to encrypt\ndescription:\n%s", enc_data)
             return
 
         ret, decrypt_data = decrypt(ipub_fname, ipriv_fname, enc_data)
         if ret == 0:
             print decrypt_data + "=DECRYPT["+enc_data+"]"
         else:
-            ctx.logger.error("Unable to decrypt:\ndescription:\n%s", decrypt_data)
+            slab_logger.error("Unable to decrypt:\ndescription:\n%s", decrypt_data)
             return
 
     test_fn()

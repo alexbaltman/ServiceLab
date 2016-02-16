@@ -7,6 +7,12 @@ import logging
 import requests
 from requests.auth import HTTPBasicAuth
 
+import logger_utils
+
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.pulp')
+
 
 def validate_pulp_ip_cb(ctx, param, value):
     """Validates the supplied pulp ip information.
@@ -24,7 +30,7 @@ def validate_pulp_ip_cb(ctx, param, value):
     Example Usage:
         >>> print validate_pulp_ip_cb(ctx, param, "localhost")
     """
-    ctx.logger.log(15, 'Validating pulp server IP address')
+    slab_logger.log(15, 'Validating pulp server IP address')
     if not value:
         value = ctx.obj.get_pulp_info()['url']
     return value
@@ -51,7 +57,7 @@ def put(url, ip_address, ctx, username, password,
         >>> print put("/pulp/api/v2/repositories", "http://localhost/", ctx, "admin",
                       "admin", {"criteria":{"filters":{"repo_id":{"$eq": "test_repo"}}}})
     """
-    ctx.logger.log(15, 'Sending put request to %s' % ip_address)
+    slab_logger.log(15, 'Sending put request to %s' % ip_address)
     requests.packages.urllib3.disable_warnings()
     headers = {"Accept": "application/json",
                "Content-Type": "multipart/form-data"}
@@ -63,9 +69,9 @@ def put(url, ip_address, ctx, username, password,
         click.echo(".", nl=False)
         process_response(res, ctx)
     except requests.exceptions.RequestException as ex:
-        ctx.logger.error("Could not connect to pulp server. Please,"
+        slab_logger.error("Could not connect to pulp server. Please,"
                          " check url {0}".format(ip_address))
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
         sys.exit(1)
     return res.text
 
@@ -90,7 +96,7 @@ def post(url, ip_address, ctx, username, password, payload):
         >>> print post("/pulp/api/v2/repositories", "http://localhost/", ctx, "admin",
                       "admin", {"criteria":{"filters":{"repo_id":{"$eq": "test_repo"}}}})
     """
-    ctx.logger.log(15, 'Sending post request to %s' % ip_address)
+    slab_logger.log(15, 'Sending post request to %s' % ip_address)
     requests.packages.urllib3.disable_warnings()
     headers = {"Accept": "application/json"}
     try:
@@ -101,9 +107,9 @@ def post(url, ip_address, ctx, username, password, payload):
                             data=payload)
         process_response(res, ctx)
     except requests.exceptions.RequestException as ex:
-        ctx.logger.error("Could not connect to pulp server. Please,"
+        slab_logger.error("Could not connect to pulp server. Please,"
                          " check url {0}".format(ip_address))
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
         sys.exit(1)
     return res.text
 
@@ -127,7 +133,7 @@ def get(url, ip_address, ctx, username, password):
         >>> print get("/pulp/api/v2/repositories", "http://localhost/", ctx, "admin",
                       "admin")
     """
-    ctx.logger.log(15, 'Sending get request to %s' % ip_address)
+    slab_logger.log(15, 'Sending get request to %s' % ip_address)
     requests.packages.urllib3.disable_warnings()
     headers = {"Accept": "application/json"}
     try:
@@ -136,9 +142,9 @@ def get(url, ip_address, ctx, username, password):
                            headers=headers)
         process_response(res, ctx)
     except requests.exceptions.RequestException as ex:
-        ctx.logger.error("Could not connect to pulp server. Please,"
+        slab_logger.error("Could not connect to pulp server. Please,"
                          " check url {0}".format(ip_address))
-        ctx.logger.error(str(ex))
+        slab_logger.error(str(ex))
         sys.exit(1)
     return res.text
 
@@ -160,13 +166,13 @@ def process_response(res, ctx):
     Example Usage:
         >>> print process_response(res, ctx)
     """
-    ctx.logger.log(15, 'Processing REST API response')
+    slab_logger.log(15, 'Processing REST API response')
     if res.status_code == 404:
-        ctx.logger.error("Incorrect pulp repo id supplied... exiting")
+        slab_logger.error("Incorrect pulp repo id supplied... exiting")
         sys.exit(1)
     if res.status_code == 401:
-        ctx.logger.error("Authentication failed... exiting")
+        slab_logger.error("Authentication failed... exiting")
         sys.exit(1)
     if res.status_code == 400:
-        ctx.logger.error("Incorrect information supplied... exiting")
+        slab_logger.error("Incorrect information supplied... exiting")
         sys.exit(1)

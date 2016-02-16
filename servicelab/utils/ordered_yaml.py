@@ -1,19 +1,23 @@
 import re
 import yaml
-from collections import OrderedDict
-from servicelab.stack import SLAB_Logger
 
-ctx = SLAB_Logger()
+import logger_utils
+
+from collections import OrderedDict
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.ordered_yaml')
 
 """
 based on the stack overflow discussin
-http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
+http://stackoverflow.com/questions/5121931/\
+in-python-how-can-you-load-yaml-mappings-as-ordereddicts
 
 """
 
 
 def load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
-    ctx.logger.log(15, 'Loading yaml file into ordered dictionary')
+    slab_logger.log(15, 'Loading yaml file into ordered dictionary')
 
     class OrderedLoader(Loader):
         pass
@@ -30,7 +34,7 @@ def load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
 
 def dump(data, fname, Dumper=yaml.Dumper):
     # this dumps the data as it was read in by load
-    ctx.logger.log(15, 'Writing data as it was read in by load')
+    slab_logger.log(15, 'Writing data as it was read in by load')
 
     class OrderedDumper(Dumper):
         pass

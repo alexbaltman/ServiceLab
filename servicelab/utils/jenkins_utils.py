@@ -9,9 +9,11 @@ import click
 from bs4 import BeautifulSoup
 from jenkinsapi.jenkins import Jenkins
 from requests.auth import HTTPBasicAuth
-from servicelab.stack import SLAB_Logger
+from servicelab import settings
 
-ctx = SLAB_Logger()
+import logger_utils
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.jenkins')
 
 
 START_LOG = "-------- Printing job log for build %s--------\n"
@@ -99,9 +101,9 @@ def run_build(job_name, user, password, ip_address, ctx):
             res = requests.post(url, auth=HTTPBasicAuth(user, password))
             process_response(res, ctx)
         except requests.exceptions.RequestException as ex:
-            ctx.logger.error("Could not connect to jenkins server. Please,"
+            slab_logger.error("Could not connect to jenkins server. Please,"
                              " check url {0}".format(ip_address))
-            ctx.logger.error(str(ex))
+            slab_logger.error(str(ex))
             return False
     else:
         click.echo("Starting Build : %s " % (job_name))
@@ -139,11 +141,11 @@ def process_response(res, ctx):
         >>> print process_response(res, ctx)
     """
     if res.status_code == 404:
-        ctx.logger.error("Incorrect jenkins url supplied... exiting")
+        slab_logger.error("Incorrect jenkins url supplied... exiting")
         return False
     if res.status_code == 401:
-        ctx.logger.error("Authentication failed... exiting")
+        slab_logger.error("Authentication failed... exiting")
         return False
     if res.status_code == 400:
-        ctx.logger.error("Incorrect information supplied... exiting")
+        slab_logger.error("Incorrect information supplied... exiting")
         return False

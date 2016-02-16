@@ -1,13 +1,14 @@
-import logging
-import sys
 import os
-import ordered_yaml
+import sys
 import yaml
 
-from servicelab.utils import tc_vm_yaml_create
-from servicelab.stack import Context
+import ordered_yaml
+import logger_utils
+import tc_vm_yaml_create
 
-ctx = Context()
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.ccsdata')
 
 
 def get_environment_yaml_file(path, site, env):
@@ -28,7 +29,7 @@ def get_environment_yaml_file(path, site, env):
         /Users/kunanda/Git/servicelab/servicelab/.stack/services/ccs-data/sites/
         ccs-dev-1/environments/servicelab
     """
-    ctx.logger.debug('Building path for %s environment.yaml file' % env)
+    slab_logger.debug('Building path for %s environment.yaml file' % env)
     return os.path.join(path,
                         "services", "ccs-data",
                         "sites", site,
@@ -52,7 +53,7 @@ def get_env_settings_for_site(path, site, env):
         >>> print get_env_settings_for_site("/Users/nan/Git/servicelab/servicelab/.stack"
                                         "ccs-dev-1", "servicelab")
     """
-    ctx.logger.debug('Extracting data from %s environment.yaml file' % env)
+    slab_logger.debug('Extracting data from %s environment.yaml file' % env)
     fnm = os.path.join(path,
                        "services", "ccs-data",
                        "sites", site,
@@ -83,7 +84,7 @@ def get_env_for_site_path(path, site, env):
         /Users/aaltman/Git/servicelab/servicelab/.stack/services/ccs-data/sites/
         ccs-dev-1/environments/servicelab
     """
-    ctx.logger.debug('Building path to %s directory' % env)
+    slab_logger.debug('Building path to %s directory' % env)
     return os.path.join(path, "services", "ccs-data", "sites", site,
                         "environments", env)
 
@@ -103,21 +104,21 @@ def list_envs_or_sites(path):
     Example Usage:
         >>> print list_envs_or_sites("/Users/aaltman/Git/servicelab/servicelab/.stack")
     """
-    ctx.logger.log(15, 'Gathering site names from ccs-data')
+    slab_logger.log(15, 'Gathering site names from ccs-data')
     # TODO: JIC we want to list services in the future.
     services = []
     our_sites = {}
     os.listdir(path)
     # TODO: Add error handling and possibly return code
-    ctx.logger.debug('Checking for ccs-data repo')
+    slab_logger.debug('Checking for ccs-data repo')
     ccsdata_reporoot = os.path.join(path, "services", "ccs-data")
     if not os.path.isdir(ccsdata_reporoot):
-        ctx.logger.error('The ccs-data repo could not be found.  '
+        slab_logger.error('The ccs-data repo could not be found.  '
                          'Please try "stack workon ccs-data"')
         return(1, our_sites)
     ccsdata_sitedir = os.path.join(ccsdata_reporoot, "sites")
     our_sites = {x: None for x in os.listdir(ccsdata_sitedir)}
-    ctx.logger.debug('Ensuring found sites are valid sites and not environments')
+    slab_logger.debug('Ensuring found sites are valid sites and not environments')
     for key in our_sites:
         # Note: os.walk provides dirpath, dirnames, and files,
         #       but next()[1] provides us just dirnames for an
@@ -162,7 +163,7 @@ def get_site_from_env(env):
     Example Usage:
         >>>
     """
-    ctx.logger.debug('Determining site from environment %s' % env)
+    slab_logger.debug('Determining site from environment %s' % env)
     ret_code, our_sites = (list_envs_or_sites(ctx.path))
     if ret_code > 0:
         return(1, 'invalid')
@@ -170,7 +171,7 @@ def get_site_from_env(env):
         for x in our_sites[k]:
             if x == env:
                 return(0, k)
-    ctx.logger.error('%s is an invalid env. Please select one from stack list envs'
+    slab_logger.error('%s is an invalid env. Please select one from stack list envs'
                      % env_name)
     return(1, 'invalid')
 
@@ -195,7 +196,7 @@ def get_flavors_from_site(site_env_path):
      '4cpu.8ram.20-512sas',
      etc....]
     """
-    ctx.logger.debug('Extracting flavors for site %s' % site)
+    slab_logger.debug('Extracting flavors for site %s' % site)
     flavors = []
     site_data = get_host_data_from_site(site_env_path)
     for env in site_data:
@@ -241,7 +242,7 @@ def get_host_data_from_site(site_env_path):
                                   'server': 'sdlc-mirror.cisco.com',
                                   'type': 'virtual'},
     """
-    ctx.logger.debug('Extracting all host yaml file data from %s' % site_env_path)
+    slab_logger.debug('Extracting all host yaml file data from %s' % site_env_path)
     site_data = {}
     for env in os.listdir(site_env_path):
         site_data[env] = {}
