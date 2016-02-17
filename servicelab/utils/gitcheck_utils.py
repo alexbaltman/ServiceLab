@@ -1,7 +1,7 @@
 """
 Git check utilities
 """
-from __future__ import unicode_literals, absolute_import
+#from __future__ import unicode_literals, absolute_import
 from __future__ import division, print_function
 
 import os

@@ -22,6 +22,7 @@ from servicelab.utils import ccsdata_utils
 from servicelab.utils import tc_vm_yaml_create
 from servicelab.utils import yaml_utils
 from servicelab.utils import helper_utils
+from servicelab.utils import logger_utils
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.cmd.create')

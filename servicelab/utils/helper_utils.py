@@ -7,7 +7,7 @@ import getpass
 
 import logger_utils
 
-from servicelab.utils.yaml_utils import host_exists_vagrantyaml
+import yaml_utils
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.helper')
@@ -186,7 +186,7 @@ def name_vm(name, path):
     slab_logger.log(15, 'Determining next available hostname for %s' % name)
     for i in xrange(1, 100):
         hostname = name + "-" + "%03d" % (i)
-        returncode = host_exists_vagrantyaml(hostname, path)
+        returncode = yaml_utils.host_exists_vagrantyaml(hostname, path)
         if returncode == 1:
             slab_logger.debug('Hostname set to %s' % hostname)
             return hostname
