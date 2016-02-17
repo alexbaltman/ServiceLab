@@ -89,7 +89,6 @@ class TestVagrantFileUtils(unittest.TestCase):
         with open(self.vagrant_file, 'r') as f:
             my_data = f.read()
         self.assertEqual(my_data, self.vagrant_data + '\n')
-        self.ctx.logger.info('Vagrantfile init passed')
 
     def test_write_it(self):
         """
@@ -104,7 +103,6 @@ class TestVagrantFileUtils(unittest.TestCase):
         with open(self.vagrant_file, 'r') as f:
             my_data = f.read()
         self.assertEqual(my_data, all_data)
-        self.ctx.logger.info('Write new Vagrantfile passed')
 
     def test_append_it(self):
         """
@@ -122,7 +120,6 @@ class TestVagrantFileUtils(unittest.TestCase):
         with open(self.vagrant_file, 'r') as f:
             my_data = f.read()
         self.assertEqual(my_data, all_data)
-        self.ctx.logger.info('Append to Vagrantfile passed')
 
     def test_add_virtualbox_vm(self):
         """
@@ -154,7 +151,6 @@ class TestVagrantFileUtils(unittest.TestCase):
         with open(self.vagrant_file, 'r') as f:
             file_data = f.read()
         self.assertEqual(file_data, compare_data)
-        self.ctx.logger.info('Add virtualbox vm to Vagrantfile passed')
 
     def test_add_openstack_vm(self):
         """
@@ -196,7 +192,6 @@ class TestVagrantFileUtils(unittest.TestCase):
         with open(self.vagrant_file, 'r') as f:
             file_data = f.read()
         self.assertEqual(file_data, compare_data)
-        self.ctx.logger.info('Add openstack vm to Vagrantfile passed')
 
     def test_env_vars_settings(self):
         """
@@ -214,7 +209,6 @@ class TestVagrantFileUtils(unittest.TestCase):
         sec_groups = [{'name': "default"}]
         self.vf_utils.set_env_vars(self.float_net, self.networks, sec_groups)
         self.assertEqual(self.vf_utils.env_vars, compare_data)
-        self.ctx.logger.info('Created env_vars with expected data')
 
     def test_multiple_networks_data(self):
         """
@@ -222,7 +216,6 @@ class TestVagrantFileUtils(unittest.TestCase):
         """
         net = self.vf_utils.get_multiple_networks(self.networks)
         self.assertEqual(net, self.noaddr_nets)
-        self.ctx.logger.info('Tenant networks data parsed as expected')
 
     def test_securitygroups_namelst_fetch(self):
         """
@@ -236,7 +229,6 @@ class TestVagrantFileUtils(unittest.TestCase):
                       ]
         parsed_groups = self.vf_utils.get_securitygroups_namelst(sec_groups)
         self.assertEqual(parsed_groups, compare_data)
-        self.ctx.logger.info('Security group data parsed as expected')
 
     def test_host_image_flavors_setting(self):
         """
@@ -246,7 +238,6 @@ class TestVagrantFileUtils(unittest.TestCase):
         self.vf_utils.hostname = self.test_host
         self.vf_utils.set_host_image_flavors(self.ctx.path)
         self.assertEqual(self.vf_utils.host_vars, compare_data)
-        self.ctx.logger.info('Host variables parsed as expected')
 
 
 if __name__ == '__main__':

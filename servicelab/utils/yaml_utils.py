@@ -1,16 +1,17 @@
 import os
 import re
 import sys
+
 import yaml
 import ipaddress
 
+import encrypt_utils
 import helper_utils
 import service_utils
 import openstack_utils as os_utils
 import tc_vm_yaml_create
 import vagrantfile_utils
 import logger_utils
-
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.yaml')
@@ -903,7 +904,8 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
         doc['interfaces']['eth0']['ip_address'] = ip
         doc['role'] = role
         groups = [i.split('service-')[1] for i in groups]  # remove leading service-
-        doc['groups'].append(groups)
+        if groups:
+            doc['groups'].append(groups)
         match = re.search('^(?:cs[lmsx]-\w\d?-)?(service-)?([\w-]+)-\d+$', hostname)
         if match:
             # All hostnames starting with 'service-' use the remaining text for sec group
@@ -1152,8 +1154,8 @@ def read_host_yaml(host_name, env_path):
         host_name += '.yaml'
     host_yaml = os.path.join(env_path, 'hosts.d', host_name)
     if not os.path.isfile(host_yaml):
-        slab_logger.error('Unable to find %s.  Please check the spelling of the host and' +
-                         'environment to try again.' % host_yaml)
+        slab_logger.error('Unable to find {0} within {1}.\n'.format(host_name, env_path) +
+                          'Please verify the spelling of the host and environment.')
         return(1, data_dict)
     retcode, data_dict = open_yaml_file(host_yaml)
     if retcode > 0:
@@ -1212,7 +1214,6 @@ def decrypt_set(path):
         return 1
 
     # write the password
-    from servicelab.utils import encrypt_utils
     cert = os.path.join(path,
                         "provision",
                         "servicelab.crt")

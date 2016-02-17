@@ -7,7 +7,9 @@ import logger_utils
 import tc_vm_yaml_create
 
 from servicelab import settings
+from servicelab.stack import Context
 
+ctx = Context()
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.ccsdata')
 
 
@@ -114,7 +116,7 @@ def list_envs_or_sites(path):
     ccsdata_reporoot = os.path.join(path, "services", "ccs-data")
     if not os.path.isdir(ccsdata_reporoot):
         slab_logger.error('The ccs-data repo could not be found.  '
-                         'Please try "stack workon ccs-data"')
+                          'Please try "stack workon ccs-data"')
         return(1, our_sites)
     ccsdata_sitedir = os.path.join(ccsdata_reporoot, "sites")
     our_sites = {x: None for x in os.listdir(ccsdata_sitedir)}
@@ -172,7 +174,7 @@ def get_site_from_env(env):
             if x == env:
                 return(0, k)
     slab_logger.error('%s is an invalid env. Please select one from stack list envs'
-                     % env_name)
+                      % env)
     return(1, 'invalid')
 
 
@@ -196,7 +198,7 @@ def get_flavors_from_site(site_env_path):
      '4cpu.8ram.20-512sas',
      etc....]
     """
-    slab_logger.debug('Extracting flavors for site %s' % site)
+    slab_logger.debug('Extracting flavors from %s' % site_env_path)
     flavors = []
     site_data = get_host_data_from_site(site_env_path)
     for env in site_data:

@@ -13,8 +13,8 @@ import re
 import sys
 import json
 import yaml
-import click
 
+import click
 from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
 import requests
@@ -59,7 +59,7 @@ def list_sites(ctx):
             val_lst.append(keys)
         val_lst.sort()
         for site in val_lst:
-            click.echo(site)
+            slab_logger.log(25, site)
     except Exception as ex:
         slab_logger.error("unable to get site list. unable to read ccs-data")
         slab_logger.error(ex)
@@ -82,7 +82,7 @@ def list_envs(ctx):
                 val_lst.append(val)
         val_lst.sort()
         for env in val_lst:
-            click.echo(env)
+            slab_logger.log(25, env)
     except Exception as ex:
         slab_logger.error(
             "unable to get environment list. unable to read ccs-data")
@@ -102,7 +102,7 @@ def list_hosts(ctx):
             return 1
         for _, values in data.iteritems():
             for _, l2_values in values.iteritems():
-                click.echo(l2_values)
+                slab_logger.log(25, l2_values)
     except Exception as ex:
         slab_logger.error(
             "unable to get environment list. unable to read ccs-data")
@@ -186,7 +186,7 @@ def list_build(ctx, ip_address, username, password, interactive):
                                                username,
                                                password)
     for key in server.keys():
-        click.echo(key)
+        slab_logger.log(25, key)
 
 
 @cli.command('artifacts', short_help='List all artifacts in Artifactory.')
@@ -222,9 +222,8 @@ def list_artifact(ctx, ip_address, username, password, interactive):
     list_url = ip_address + "/api/search/creation?from=968987355"
     requests.packages.urllib3.disable_warnings()
     res = requests.get(list_url, auth=HTTPBasicAuth(username, password))
-    click.echo(res.content)
     for val in json.loads(res.content)["results"]:
-        click.echo(val["uri"])
+        logger.log(25, val["uri"])
 
 
 @cli.command('pipes', short_help='List all pipelines in GO.')
@@ -262,8 +261,8 @@ def list_pipe(ctx, localrepo, username, password, ip_address, interactive):
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
 
     server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
@@ -294,10 +293,10 @@ def display_pipelines(pipelines, localrepo, servicesdirs):
                     if sdir.startswith("service-"):
                         service = sdir.split("service-", 1)[1]
                         if service == pipeline_name:
-                            click.echo(pipeline_name)
+                            slab_logger.log(25, pipeline_name)
             else:
                 tokens = pipeline_name.split('/')
-                click.echo(tokens[len(tokens) - 2])
+                slab_logger.log(25, tokens[len(tokens) - 2])
 
 
 @cli.command('ospvms', short_help='List all OpenStack Platform VMs')
@@ -312,7 +311,7 @@ def ospvms_list(ctx):
     osp_vms[1].sort()
     for host_data in osp_vms[1]:
         for host in host_data:
-            click.echo(host)
+            slab_logger.log(25, host)
 
 
 @click.option('--site', '-s', default=None,
@@ -325,7 +324,7 @@ def flavors_list(ctx, site):
     """
     if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
         slab_logger.error('The ccs-data repo does not appear to be installed.  ' +
-                         'Try "stack workon ccs-data"')
+                          'Try "stack workon ccs-data"')
         return 1
     if site:
         slab_logger.info('Listing flavors for site %s' % site)
@@ -343,7 +342,7 @@ def flavors_list(ctx, site):
                 source_data = yaml.load(stream)
         except IOError:
             slab_logger.error('Unable to open %s.  Run the "make_flavors_yaml.py" to ' +
-                             'create this file' % source_file)
+                              'create this file' % source_file)
             return 1
         flavor_list = []
         for site in source_data:
@@ -353,7 +352,7 @@ def flavors_list(ctx, site):
         flavor_list.sort()
 
     for flavor in flavor_list:
-        click.echo(flavor)
+        slab_logger.log(25, flavor)
 
 
 @cli.command('rpms', short_help='List rpms in pulp repository')
@@ -394,8 +393,8 @@ def list_rpms(ctx, ip_address, username, password, pulp_repo, interactive):
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     url = "/pulp/api/v2/repositories/%s/search/units/" % (pulp_repo)
     payload = '{ "criteria": { "fields": { "unit": [ "name",'\
@@ -406,10 +405,10 @@ def list_rpms(ctx, ip_address, username, password, pulp_repo, interactive):
 
     if rpms is not None and len(rpms) > 0:
         for rpm in rpms:
-            click.echo("Id      : %s" % rpm["id"])
-            click.echo("Filename: %s" % rpm["metadata"]["filename"])
-            click.echo("Name    : %s" % rpm["metadata"]["name"])
-            click.echo("Version : %s" % rpm["metadata"]["version"] + "\n")
+            slab_logger.log(25, "Id      : %s" % rpm["id"])
+            slab_logger.log(25, "Filename: %s" % rpm["metadata"]["filename"])
+            slab_logger.log(25, "Name    : %s" % rpm["metadata"]["name"])
+            slab_logger.log(25, "Version : %s" % rpm["metadata"]["version"] + "\n")
     else:
         slab_logger.error("No rpms found in this repository.")
 
@@ -455,8 +454,8 @@ def list_pulp_repos(ctx, ip_address, username, password, interactive):
 
     if repos is not None and len(repos) > 0:
         for repo in repos:
-            click.echo("Repo Id      : %s" % repo["id"])
-            click.echo("Repo Name    : %s" % repo["display_name"])
-            click.echo("Repo path    : %s" % repo["_href"] + "\n")
+            slab_logger.log(25, "Repo Id      : %s" % repo["id"])
+            slab_logger.log(25, "Repo Name    : %s" % repo["display_name"])
+            slab_logger.log(25, "Repo path    : %s" % repo["_href"] + "\n")
     else:
-        click.echo("No repositories found on this pulp server.")
+        slab_logger.log(25, "No repositories found on this pulp server.")

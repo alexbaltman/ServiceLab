@@ -1,21 +1,19 @@
 import os
+from subprocess import CalledProcessError
 
-# Note: from here --> python-vagrant fabric cuisine pyvbox
-import cuisine
 import vagrant
 import virtualbox
+from fabric.api import env, task
+from fabric.contrib.files import sed
 
 import yaml_utils
 import service_utils
 import vagrantfile_utils
 import logger_utils
-
-from fabric.api import env, task
-from fabric.contrib.files import sed
-from subprocess import CalledProcessError
 from servicelab import settings
 
-lab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.vagrant')
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.vagrant')
+
 
 class Connect_to_vagrant(object):
     """Vagrant class for booting, provisioning and managing a virtual machine."""
@@ -190,6 +188,9 @@ class Connect_to_vagrant(object):
             pkg  --  name of package to be installed
         """
         slab_logger.log(15, 'Installing yum package %s on the VM' % pkg)
+        # Moved the cuisine import here as it was breaking verbosity for stack destroy
+        # Note: from here --> python-vagrant fabric cuisine pyvbox
+        import cuisine
         cuisine.package_ensure_yum(pkg)
 
     @staticmethod
@@ -319,10 +320,9 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
         remote = False
 
     slab_logger.debug("Checking for an existing {}"
-                     "infra node.".format("remote " if remote else ""))
-    ispoweron, isremote = vagrant_utils.vm_isrunning(hostname=hostname, path=path)
-    infra_connection = vagrant_utils.Connect_to_vagrant(vm_name=hostname,
-                                                        path=path)
+                      "infra node.".format("remote " if remote else ""))
+    ispoweron, isremote = vm_isrunning(hostname=hostname, path=path)
+    infra_connection = Connect_to_vagrant(vm_name=hostname, path=path)
 
     # Note: Ensure 001 is in inventory even if we're using 002.
     slab_logger.debug("Adding {} to local inventory.".format(hostname))

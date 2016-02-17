@@ -1,18 +1,13 @@
 """
 Git check utilities
 """
-#from __future__ import unicode_literals, absolute_import
-from __future__ import division, print_function
-
 import os
 import re
-import subprocess
 import shlex
-import click
+import subprocess
+from subprocess import PIPE
 
 import logger_utils
-
-from subprocess import PIPE
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.gitcheck')
@@ -92,11 +87,11 @@ class Gitcheckutils(object):
             commits = Gitcheckutils.get_local_to_push(rep, remote, branch)
             if len(commits) > 0:
                 rname = "  |--%(remote)s" % locals()
-                click.echo(rname)
+                slab_logger.log(25, rname)
                 for commit in commits:
                     pcommit = "     |--[To Review] %s" % (
                         commit)
-                    click.echo(pcommit)
+                    slab_logger.log(25, pcommit)
 
         return
 
@@ -110,11 +105,11 @@ class Gitcheckutils(object):
             commits = Gitcheckutils.get_remote_to_pull(rep, remote, branch)
             if len(commits) > 0:
                 rname = "  |--%(remote)s" % locals()
-                click.echo(rname)
+                slab_logger.log(25, rname)
                 for commit in commits:
                     pcommit = "     |--[To Pull] %s" % (
                         commit)
-                    click.echo(pcommit)
+                    slab_logger.log(25, pcommit)
 
         return
 
@@ -175,9 +170,8 @@ class Gitcheckutils(object):
         else:
             strlocal = ""
 
-        click.echo(
-            "%s/%s %s%s%s" %
-            (repname, branch, strlocal, topush, topull))
+        slab_logger.log(25, "%s/%s %s%s%s"
+                        % (repname, branch, strlocal, topush, topull))
 
         if ischange > 0:
             filename = "  |--Local"
@@ -185,7 +179,7 @@ class Gitcheckutils(object):
                 filename = "     |--%s %s" % (
                     change[0],
                     change[1])
-                click.echo(filename)
+                slab_logger.log(25, filename)
         if branch != "":
             remotes = Gitcheckutils.get_remote_repositories(rep)
             Gitcheckutils.display_reviews(remotes, rep, branch)
@@ -201,7 +195,7 @@ class Gitcheckutils(object):
         """
         Gets changed files
         """
-        slab_logger.lob(15, 'Determining changed files')
+        slab_logger.log(15, 'Determining changed files')
         files = []
         snbchange = re.compile(r'^(.{2}) (.*)')
         only_tracked_arg = ""

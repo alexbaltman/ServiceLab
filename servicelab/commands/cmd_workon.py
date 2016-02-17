@@ -41,7 +41,7 @@ def cli(ctx, branch, data_branch, username, service_name):
 
         if current == any([None, ""]) and (service_name == "current"):
             slab_logger.error("No service set on command line nor the "
-                             "current(literally) file.")
+                              "current(literally) file.")
             sys.exit(1)
         elif current == any([None, ""]) and (service_name != "current"):
             returncode = service_utils.check_service(ctx.path, service_name)
@@ -49,8 +49,7 @@ def cli(ctx, branch, data_branch, username, service_name):
                 slab_logger.error("Service repo does not exist")
                 sys.exit(1)
 
-            service_utils.sync_service(ctx.path, branch, username,
-                                       service_name)
+            service_utils.sync_service(ctx.path, branch, username, service_name)
             service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_service(ctx.path, data_branch, username,
@@ -63,8 +62,7 @@ def cli(ctx, branch, data_branch, username, service_name):
                 sys.exit(1)
 
             service_utils.clean(ctx.path)
-            service_utils.sync_service(ctx.path, branch, username,
-                                       service_name)
+            service_utils.sync_service(ctx.path, branch, username, service_name)
             service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
             service_utils.sync_service(ctx.path, data_branch, username,
@@ -87,7 +85,6 @@ def cli(ctx, branch, data_branch, username, service_name):
             slab_logger.error("Service repo does not exist")
             sys.exit(1)
         service_utils.sync_service(ctx.path, branch, username, service_name)
-        service_utils.sync_service(ctx.path, data_branch, username,
-                                   "ccs-data")
+        service_utils.sync_service(ctx.path, data_branch, username, "ccs-data")
         service_utils.link(ctx.path, service_name, branch, username)
         service_utils.setup_vagrant_sshkeys(ctx.path)

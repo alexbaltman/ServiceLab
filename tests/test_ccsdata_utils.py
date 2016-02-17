@@ -101,7 +101,6 @@ class TestCCsDataUtils(unittest.TestCase):
         """
         site_flavors = ccsdata_utils.get_flavors_from_site(self.site_env_path)
         self.assertEqual(self.flavors_list, site_flavors)
-        self.ctx.logger.info('The flavors list matched the expected output')
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.artifact')
 
+
 def get_artifact_info(url, user, password):
     """
     Get artifact info string

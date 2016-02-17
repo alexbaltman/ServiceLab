@@ -2,10 +2,25 @@ import os
 import sys
 import logging
 
+
+class SLAB_Formatter(logging.Formatter):
+    """
+    Sets up the formatter for console based on the logger level, specfically so
+    ECHO outputs the same as click.echo
+    """
+    FORMATS = {25: '%(message)s',
+               'DEFAULT': '%(levelname)-6s - %(name)s - %(message)s'}
+
+    def format(self, record):
+        self._fmt = self.FORMATS.get(record.levelno, self.FORMATS['DEFAULT'])
+        return logging.Formatter.format(self, record)
+
+
 def setup_logger(verbosity, name='stack'):
     logger = logging.getLogger(name)
-    if not len(logger.handlers):
+    if not logger.handlers:
         logging.addLevelName(15, 'DETAIL')
+        logging.addLevelName(25, 'ECHO')
 
         # Create filehandler that logs everything.
         pardir = os.path.dirname
@@ -17,9 +32,8 @@ def setup_logger(verbosity, name='stack'):
                             filemode='a')
 
         # Create console handler that displays based on verbosity level
-        ch_formatter = logging.Formatter('%(levelname)-6s - %(name)s - %(message)s')
         console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(ch_formatter)
+        console_handler.setFormatter(SLAB_Formatter())
         console_handler.setLevel(verbosity)
         logger.addHandler(console_handler)
 

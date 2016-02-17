@@ -1,9 +1,14 @@
 """
 stack
+
+Do not import util modules as doing so will break logging
 """
 import os
 import re
 import sys
+import getpass
+import logging
+
 import click
 
 # Global Variables
@@ -37,6 +42,12 @@ class Context(object):
         self.config = os.path.join(os.path.dirname(__file__),
                                    '.stack/stack.conf')
 
+        slab_logger = logging.basicConfig(
+                          level=logging.DEBUG,
+                          format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                          filename=os.path.join(self.path, 'stack.log'),
+                          filemode='a')
+
         self.pkey_name = "servicelab/utils/public_key.pkcs7.pem"
 
         self.__gerrit_test_info = {"hostname": "ccs-gerrit-stg.cisco.com",
@@ -55,6 +66,7 @@ class Context(object):
         if returncode > 0:
             self.username = getpass.getuser()
         self.password = None
+
         if os.getenv("OS_USERNAME"):
             self.username = os.getenv("OS_USERNAME")
             self.password = os.getenv("OS_PASSWORD")
@@ -123,10 +135,10 @@ class Context(object):
         username
         """
         if not self.username:
-            self.logger.error("servicelab: username is unavailable from git config,"
-                              " os, or environments OS_USERNAME, STX_USERNAMRE. "
-                              "Please set it through any of the given "
-                              "mechanism and run the command again.")
+            self.slab_logger.error("servicelab: username is unavailable from git config,"
+                                   " os, or environments OS_USERNAME, STX_USERNAMRE. "
+                                   "Please set it through any of the given "
+                                   "mechanism and run the command again.")
             sys.exit(1)
         return self.username
 
@@ -142,23 +154,23 @@ class Context(object):
         """
         Extract username from the original git clone of the servicelab repo
         """
-        matches = None                                                        
-        username = ""                                                         
-                                                                              
-        path_to_reporoot = os.path.split(path)                                
-        path_to_reporoot = os.path.split(path_to_reporoot[0])                 
-        path_to_reporoot = path_to_reporoot[0]                                
-                                                                              
-        regex = re.compile(r'://([a-z]*)@?(ccs|cis)-gerrit.cisco.com')        
+        matches = None
+        username = ""
+
+        path_to_reporoot = os.path.split(path)
+        path_to_reporoot = os.path.split(path_to_reporoot[0])
+        path_to_reporoot = path_to_reporoot[0]
+
+        regex = re.compile(r'://([a-z]*)@?(ccs|cis)-gerrit.cisco.com')
         with open(os.path.join(path_to_reporoot, ".git", "config"), 'r') as f:
-            for line in f.readlines():                                        
-                matches = re.search(regex, line)                              
-                if matches:                                                   
-                    username = matches.group(1)                               
-                    if not username:                                          
-                        return 1, username                                    
-                    return 0, username                                        
-        return 1, username                                                    
+            for line in f.readlines():
+                matches = re.search(regex, line)
+                if matches:
+                    username = matches.group(1)
+                    if not username:
+                        return 1, username
+                    return 0, username
+        return 1, username
 
 
 pass_context = click.make_pass_decorator(Context, ensure=True)
@@ -192,6 +204,7 @@ class ComplexCLI(click.MultiCommand):
             return
         return mod.cli
 
+
 def write_settings_file(verbosity):
     settings_file = os.path.join(os.path.dirname(__file__), 'settings.py')
     myfile = open(settings_file, 'w')
@@ -203,7 +216,7 @@ def write_settings_file(verbosity):
 
 def verbosity_option(f):
     def callback(ctx, param, value):
-        verbosity = 30
+        verbosity = 25
         if value:
             if value == 1:
                 verbosity = 20
@@ -226,7 +239,6 @@ def verbosity_option(f):
 def common_options(f):
     f = verbosity_option(f)
     return f
-
 
 
 @common_options

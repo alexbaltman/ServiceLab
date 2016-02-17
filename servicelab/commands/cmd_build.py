@@ -62,7 +62,7 @@ def display_build_status(ctx,
                                             username,
                                             password,
                                             ip_address)
-    click.echo(status)
+    slab_logger.log(25, status)
 
 
 @cli.command('log', short_help='Display the status log of a build in Jenkins.')
@@ -93,7 +93,7 @@ def display_build_log(ctx, job_name, username, password, ip_address, interactive
     if not password:
         password = ctx.get_password(interactive)
     log = jenkins_utils.get_build_log(job_name, username, password, ip_address)
-    click.echo(log)
+    slab_logger.log(25, log)
 
 
 @cli.command('run', short_help='Trigger a build in Jenkins.')

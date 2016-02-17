@@ -53,7 +53,7 @@ def review_inc(ctx, project, username, detail, interactive):
                 project = click.prompt("Project Name",
                                        default=helper_utils.get_current_service(ctx.path)[1])
             else:
-                click.echo("current project is " + project)
+                slab_logger.log(25, "current project is " + project)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         if detail:
@@ -89,7 +89,7 @@ def review_out(ctx, project, username, detail, interactive):
                 project = click.prompt("Project Name",
                                        default=helper_utils.get_current_service(ctx.path)[1])
             else:
-                click.echo("current project is " + project)
+                slab_logger.log(25, "current project is " + project)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         if detail:
@@ -125,7 +125,7 @@ def review_plustwo(ctx, gerrit_change_id, project, username, message, interactiv
                 project = click.prompt("Project Name",
                                        default=helper_utils.get_current_service(ctx.path)[1])
             else:
-                click.echo("current project is " + project)
+                slab_logger.log(25, "current project is " + project)
 
         if interactive and not message:
             message = click.prompt("Message", default=message)
@@ -160,7 +160,7 @@ def review_plusone(ctx, gerrit_change_id, project, username, message, interactiv
                 project = click.prompt("Project Name",
                                        default=helper_utils.get_current_service(ctx.path)[1])
             else:
-                click.echo("current project is " + project)
+                slab_logger.log(25, "current project is " + project)
 
         if interactive and not message:
             message = click.prompt("Message", default=message)
@@ -194,7 +194,7 @@ def review_minusone(ctx, gerrit_change_id, project, username, message, interacti
                 project = click.prompt("Project Name",
                                        default=helper_utils.get_current_service(ctx.path)[1])
             else:
-                click.echo("current project is " + project)
+                slab_logger.log(25, "current project is " + project)
 
         if interactive and not message:
             message = click.prompt("Message", default=message)
@@ -227,7 +227,7 @@ def review_minusone(ctx, gerrit_change_id, project, username, message, interacti
 #                 project = click.prompt("Project Name",
 #                                        default=helper_utils.get_current_service(ctx.path)[1])
 #             else:
-#                 click.echo("current project is " + project)
+#                 slab_logger.log(25, "current project is " + project)
 #
 #         if interactive and not message:
 #             message = click.prompt("Message", default=message)
@@ -261,7 +261,7 @@ def review_abandon(ctx, gerrit_change_id, project, username, message, interactiv
                 project = click.prompt("Project Name",
                                        default=helper_utils.get_current_service(ctx.path)[1])
             else:
-                click.echo("current project is " + project)
+                slab_logger.log(25, "current project is " + project)
 
         if interactive and not message:
             message = click.prompt("Message", default=message)
@@ -294,7 +294,7 @@ def review_show(ctx, gerrit_change_id, project, username, interactive):
                 project = click.prompt("Project Name",
                                        default=helper_utils.get_current_service(ctx.path)[1])
             else:
-                click.echo("current project is " + project)
+                slab_logger.log(25, "current project is " + project)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         gfn.print_gerrit("detail", gerrit_change_id)
@@ -325,7 +325,7 @@ def review_code(ctx, gerrit_change_id, project, username, interactive):
                 project = click.prompt("Project Name",
                                        default=helper_utils.get_current_service(ctx.path)[1])
             else:
-                click.echo("current project is " + project)
+                slab_logger.log(25, "current project is " + project)
 
         gfn = gerrit_functions.GerritFns(username, project, ctx)
         gfn.code_review(gerrit_change_id)

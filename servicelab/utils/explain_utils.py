@@ -3,18 +3,17 @@ Stack explain command
 """
 import os
 import re
+
 import yaml
-import click
 import requests
 import operator
+from string import maketrans
+from prettytable import PrettyTable
+from bs4 import BeautifulSoup
 
 import service_utils
 import ccsbuildtools_utils
 import logger_utils
-
-from string import maketrans
-from prettytable import PrettyTable
-from bs4 import BeautifulSoup
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.explain')

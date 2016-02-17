@@ -19,7 +19,6 @@ class SlabVagrantfile(object):
         Varies per method.  See method docstrings for details
 
     Example Usage:
-        from servicelab.utils import vagrantfile_utils
         my_class_var = vagrantfile_utils.SlabVagrantfile('/path/to/use/for/vagrant/')
         my_class_var.<method_name>(args)
     """
@@ -261,9 +260,9 @@ class SlabVagrantfile(object):
         Example Usage:
             my_class_var.add_openstack_vm(host_dict)
         """
-        slab_logger.log(15, 'Adding Openstack vm %s to Vagrantfile' % host_dict['hostname'])
         self.host_dict = host_dict
         self.hostname = self.host_dict.keys()[0]
+        slab_logger.log(15, 'Adding Openstack vm %s to Vagrantfile' % self.hostname)
         ip = self.host_dict[self.hostname]['ip']
         env_vars = self.env_vars
         self.set_host_image_flavors(self.path)

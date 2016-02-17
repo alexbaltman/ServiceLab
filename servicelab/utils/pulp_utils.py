@@ -2,13 +2,11 @@
 Utility functions for pulp
 """
 import sys
-import click
 import logging
 import requests
 from requests.auth import HTTPBasicAuth
 
 import logger_utils
-
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.pulp')
@@ -66,11 +64,11 @@ def put(url, ip_address, ctx, username, password,
                            auth=HTTPBasicAuth(username, password),
                            data=payload,
                            headers=headers)
-        click.echo(".", nl=False)
+        slab_logger.log(25, ".", nl=False)
         process_response(res, ctx)
     except requests.exceptions.RequestException as ex:
         slab_logger.error("Could not connect to pulp server. Please,"
-                         " check url {0}".format(ip_address))
+                          " check url {0}".format(ip_address))
         slab_logger.error(str(ex))
         sys.exit(1)
     return res.text
@@ -100,7 +98,7 @@ def post(url, ip_address, ctx, username, password, payload):
     requests.packages.urllib3.disable_warnings()
     headers = {"Accept": "application/json"}
     try:
-        click.echo(ip_address + url)
+        slab_logger.log(25, ip_address + url)
         res = requests.post(ip_address + url, verify=False,
                             auth=HTTPBasicAuth(username, password),
                             headers=headers,
@@ -108,7 +106,7 @@ def post(url, ip_address, ctx, username, password, payload):
         process_response(res, ctx)
     except requests.exceptions.RequestException as ex:
         slab_logger.error("Could not connect to pulp server. Please,"
-                         " check url {0}".format(ip_address))
+                          " check url {0}".format(ip_address))
         slab_logger.error(str(ex))
         sys.exit(1)
     return res.text
@@ -143,7 +141,7 @@ def get(url, ip_address, ctx, username, password):
         process_response(res, ctx)
     except requests.exceptions.RequestException as ex:
         slab_logger.error("Could not connect to pulp server. Please,"
-                         " check url {0}".format(ip_address))
+                          " check url {0}".format(ip_address))
         slab_logger.error(str(ex))
         sys.exit(1)
     return res.text

@@ -67,10 +67,10 @@ def show_build(ctx, build_number):
     username = ctx.get_username()
     servername = context_utils.get_jenkins_url()
     password = click.prompt("password", hide_input=True, type=str)
-    click.echo(jenkins_utils.get_build_status(build_number, username,
-                                              password, servername))
-    click.echo(jenkins_utils.get_build_log(build_number, username,
-                                           password, servername))
+    slab_logger.log(25, jenkins_utils.get_build_status(build_number, username,
+                                                       password, servername))
+    slab_logger.log(25, jenkins_utils.get_build_log(build_number, username,
+                                                    password, servername))
 
 
 @cli.command('artifact', short_help='Show the details of an artifact'
@@ -100,8 +100,8 @@ def show_artifact(ctx, username, password, url, interactive):
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
-    click.echo('Showing details of artifact %s' % url)
-    click.echo(artifact_utils.get_artifact_info(url, username, password))
+    slab_logger.log(25, 'Showing details of artifact %s' % url)
+    slab_logger.log(25, artifact_utils.get_artifact_info(url, username, password))
 
 
 @cli.command('pipe', short_help='Show the details of a pipeline in GO.')
@@ -137,6 +137,6 @@ def show_pipe(ctx, pipeline_name, username, password, ip_address, interactive):
         password = ctx.get_password(interactive)
     if ip_address is None:
         ip_address = context_utils.get_gocd_ip()
-    click.echo('Showing details of pipeline %s' % pipeline_name)
-    click.echo(gocd_utils.get_pipe_info(pipeline_name, username,
-                                        password, ip_address))
+    slab_logger.log(25, 'Showing details of pipeline %s' % pipeline_name)
+    slab_logger.log(25, gocd_utils.get_pipe_info(pipeline_name, username,
+                                                 password, ip_address))

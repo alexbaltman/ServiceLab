@@ -93,7 +93,8 @@ class Repo(object):
         """
         slab_logger.log(15, 'Checking for repo %s' % self.get_reponame())
         if os.path.exists("./{}".format(self.get_reponame())):
-            click.echo("repo for {0} exist as {1}".format(self.name, self.get_reponame()))
+            slab_logger.log(25, "repo for %s exist as %s"
+                            % (self.name, self.get_reponame()))
             return True
         return False
 
@@ -262,7 +263,7 @@ class Ansible(Repo):
                         break
                     if role in self.play_roles:
                         lst = [str(play_role) for play_role in self.play_roles]
-                        click.echo(" entered roles:" + str(lst))
+                        slab_logger.log(25, " entered roles:" + str(lst))
                         if click.confirm(' do you want to continue?'):
                             continue
                         break
@@ -325,7 +326,7 @@ class Ansible(Repo):
         name.
         """
         slab_logger.log(15, 'Instantiating service-helloworld-ansible to %s'
-                       % self.get_reponame)
+                        % self.get_reponame)
         shutil.rmtree(os.path.join(self.get_reponame(), ".git"))
         self.cleanup_properties("helloworld-test")
 
@@ -464,7 +465,7 @@ class Puppet(Repo):
         name.
         """
         slab_logger.log(15, 'Instantiating service-helloworld-project to project %s'
-                       % self.get_reponame())
+                        % self.get_reponame())
         # cleanup any extra artifact
         shutil.rmtree(os.path.join(self.get_reponame(), ".git"))
 

@@ -12,6 +12,7 @@ from servicelab import settings
 
 lab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.ccsdata_haproxy')
 
+
 def _search_env(path, env):
     slab_logger.debug('Searching for %s in ccs-data sites' % env)
     lst = []
@@ -94,7 +95,7 @@ def console_print(data):
         data (dict): The data dictionary.
     """
     for key, value in data.iteritems():
-        click.echo(key + " : " + str(value))
+        slab_logger.log(25, key + " : " + str(value))
 
 
 def generate_tag_value(complete_dict, entry, ip, server_ips=None,
@@ -143,7 +144,7 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
 
         # as interactive is enabled so prompt and get the results
         if ipslst != []:
-            click.echo("Supplied ip's are : " + str(ipslst))
+            slab_logger.log(25, "Supplied ip's are : " + str(ipslst))
         else:
             ipslst = []
         while True:
@@ -152,7 +153,7 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
                 possible_iplst = {}
                 for ip_name in search(complete_dict, "ip"):
                     possible_iplst[ip_name] = complete_dict[ip_name]
-                click.echo("all available ips are :")
+                slab_logger.log(25, "all available ips are :")
                 console_print(possible_iplst)
                 continue
 
@@ -179,7 +180,7 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
 
         # as interactive is enabled so prompt and get the results
         if hostlst != []:
-            click.echo("Supplied hostnames are : " + str(hostlst))
+            slab_logger.log(25, "Supplied hostnames are : " + str(hostlst))
         else:
             hostlst = []
         while True:
@@ -188,7 +189,7 @@ def generate_tag_value(complete_dict, entry, ip, server_ips=None,
                 hostname_lst = {}
                 for hostname in search(complete_dict, "hostname"):
                     hostname_lst[hostname] = complete_dict[hostname]
-                click.echo("all available host names are :")
+                slab_logger.log(25, "all available host names are :")
                 console_print(hostname_lst)
                 continue
 

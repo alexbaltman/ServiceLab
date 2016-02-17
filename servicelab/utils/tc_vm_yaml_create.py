@@ -1,13 +1,12 @@
 import os
 import re
 import sys
+
 import yaml
-import click
 import socket
 import ipaddress
 
 import logger_utils
-
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.tc_vm_yaml_create')
@@ -59,8 +58,8 @@ def write_file(yaml_data, output_file):
     # default_flow_style=False breaks lists into individual lines with leading '-'
     with open(output_file, 'w') as outfile:
         outfile.write(yaml.dump(yaml_data, default_flow_style=False))
-    click.echo(output_file)
-    click.echo('File created successfully')
+    slab_logger.log(25, output_file)
+    slab_logger.log(25, 'File created successfully')
     slab_logger.debug('%s created succesfully' % output_file)
 
 
@@ -92,7 +91,7 @@ def find_vlan(source_data):
                 return key
 
     slab_logger.error('Unable to find the vlan for %s within %s'
-                     % (source_data['ip'], source_data['tc_name']))
+                      % (source_data['ip'], source_data['tc_name']))
     return 1
 
 
@@ -117,19 +116,19 @@ def input_vlan(source_data):
         >>> Input vlan subnet information: <user_input>
     """
     done = False
-    click.echo('Unable to find data needed for vlan %s.  Please supply the subnet\n'
-               'information from a "neutron net-list" run from %s infra node'
-               % (source_data['vlan_id'], source_data['sc_name']))
+    slab_logger.log(25, 'Unable to find data needed for vlan %s.  Please supply the subnet\n'
+                    'information from a "neutron net-list" run from %s infra node'
+                    % (source_data['vlan_id'], source_data['sc_name']))
     while not done:
         subnet_input = raw_input('Input vlan subnet information: ')
         try:
             subnet = ipaddress.IPv4Network(unicode(subnet_input))
             if subnet.prefixlen > 28:
-                click.echo('%i is an invalid mask' % subnet.prefixlen)
+                slab_logger.log(25, '%i is an invalid mask' % subnet.prefixlen)
             else:
                 done = True
         except ValueError:
-            click.echo('%s is not a valid subnet.  Please try again' % subnet_input)
+            slab_logger.log(25, '%s is not a valid subnet.  Please try again' % subnet_input)
     return str(subnet.with_prefixlen)
 
 
@@ -155,9 +154,7 @@ def find_ip(env_path, vlan):
 
     # check if path exists if not exist
     if not os.path.exists(env_path):
-        click.echo("Cannot perform the current operation since this "
-                   "path : %s is not found. Most likely you need to"
-                   " perform : stack workon <service-name>" % (env_path))
+        slab_logger.log(25, 'The ccs-data repo was not found.  Try "stack workon ccs-data"')
         sys.exit(1)
     # Find all the envs within the site
     for env in os.listdir(env_path):
@@ -181,7 +178,7 @@ def find_ip(env_path, vlan):
                                 all_ips.remove(ipaddy)
                     except TypeError:
                         slab_logger.debug('%s did not contain any data for interface %s'
-                                         % (hostfile, interface))
+                                          % (hostfile, interface))
                     except ipaddress.AddressValueError:
                         tcvm_logger.info('Bad address found in %s' % hostfile)
     for ip in all_ips:

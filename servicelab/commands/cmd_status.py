@@ -29,7 +29,7 @@ def cmd_repo_status(ctx):
     """
     Shows the details of git repos.
     """
-    slab_logger.info('Displaying git repos details')
+    slab_logger.log(25, 'Displaying git repos details')
     status_utils.show_repo_status(ctx.path)
 
 
@@ -39,7 +39,7 @@ def cmd_vm_status(ctx):
     """
     Shows the vm status
     """
-    slab_logger.info('Displaying status of Servicelab VMs')
+    slab_logger.log(15, 'Displaying status of Servicelab VMs')
     display_vm_status(ctx)
 
 
@@ -68,7 +68,7 @@ def show_all_status(ctx):
     """
     Shows the Vm status.
     """
-    slab_logger.info('Displaying status of git repos')
+    slab_logger.log(25, 'Displaying status of git repos')
     status_utils.show_repo_status(ctx.path)
-    slab_logger.info('Displaying status of Servicelab VMs')
+    slab_logger.log(25, 'Displaying status of Servicelab VMs')
     display_vm_status(ctx)

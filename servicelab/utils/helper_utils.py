@@ -1,13 +1,11 @@
 import os
 import re
-import click
 import shutil
 import fnmatch
 import getpass
 
-import logger_utils
-
 import yaml_utils
+import logger_utils
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.helper')

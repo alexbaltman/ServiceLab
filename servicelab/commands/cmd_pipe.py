@@ -70,8 +70,8 @@ def display_pipeline_log(ctx,
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     stages_url = "http://{0}/go/api/pipelines/{1}/stages.xml"
     # Find latest run info
@@ -148,8 +148,8 @@ def display_pipeline_status(ctx,
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     server_url = "http://{0}/go/api/pipelines/{1}/status"
     res = requests.get(server_url.format(ip_address, pipeline_name),
@@ -205,8 +205,8 @@ def trigger_pipeline(ctx,
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     server_url = "http://{0}/go/api/pipelines/{1}/schedule"
     env_data = None
@@ -222,16 +222,15 @@ def trigger_pipeline(ctx,
     return_code, current_pipeline_counter = gocd_utils.get_current_pipeline_counter(
         pipeline_name, ip_address, auth=HTTPBasicAuth(username, password))
     if return_code == -1:
-        click.echo("Error occurred. Exiting.")
+        slab_logger.log(25, "Error occurred. Exiting.")
         return
-    click.echo(
-        "Current pipeline_counter : %s" %
-        (current_pipeline_counter + 1))
-    click.echo("Scheduling pipeline.")
+    slab_logger.log(25, "Current pipeline_counter : %s"
+                    % (current_pipeline_counter + 1))
+    slab_logger.log(25, "Scheduling pipeline.")
     res = requests.post(server_url.format(ip_address, pipeline_name),
                         auth=HTTPBasicAuth(username, password), data=env_data)
     soup = BeautifulSoup(res.content, "html.parser")
-    click.echo(soup)
+    slab_logger.log(25, soup)
     if all_stages:
         gocd_utils.process_all_stages(
             pipeline_name,
@@ -279,8 +278,8 @@ def clone_pipeline(ctx,
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     config_xmlurl = "http://{0}/go/api/admin/config/current.xml".format(
         ip_address)

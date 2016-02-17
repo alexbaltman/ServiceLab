@@ -6,7 +6,6 @@ import time
 import copy
 import json
 import xml.etree.ElementTree as ET
-import click
 import requests
 
 import logger_utils
@@ -124,15 +123,13 @@ def process_all_stages(pipeline_name, pipeline_counter, ip_address, auth=None):
                 return
 
             if 'result' in matching_stage:
-                click.echo(
-                    "Stage : %s  has %s " %
-                    (matching_stage['name'],
-                     matching_stage['result']))
+                slab_logger.log(25, "Stage : %s  has %s "
+                                % (matching_stage['name'], matching_stage['result']))
                 if matching_stage['result'] == "Failed":
                     slab_logger.error("Exiting.")
                     return
             else:
-                click.echo("Scheduling Stage : %s " % (stage['name']))
+                slab_logger.log(25, "Scheduling Stage : %s " % (stage['name']))
                 url = "http://%s/go/run/%s/%s/%s" % (
                     ip_address, pipeline_name, pipeline_counter, stage['name'])
                 req = requests.post(url, auth=auth, data="")
@@ -149,10 +146,8 @@ def process_all_stages(pipeline_name, pipeline_counter, ip_address, auth=None):
                 return_code, current_pipeline_instance = get_pipeline_instance(
                     pipeline_name, pipeline_counter, ip_address, auth)
                 matching_stage = current_pipeline_instance['stages'][i]
-                click.echo(
-                    "Stage : %s  has %s " %
-                    (matching_stage['name'],
-                     matching_stage['result']))
+                slab_logger.log(25, "Stage : %s  has %s "
+                                % (matching_stage['name'], matching_stage['result']))
 
             i += 1
 
@@ -245,7 +240,7 @@ def create_pipeline(root, name, new_name):
     new_pipeline = root.find('.//pipeline[@name="%s"]' % new_name)
     if new_pipeline is not None:
         slab_logger.error("The pipeline name : %s provided already exists. Please "
-                         "provide a different pipeline name. " % new_name)
+                          "provide a different pipeline name. " % new_name)
         sys.exit(1)
 
     if pipeline is None:
@@ -253,7 +248,7 @@ def create_pipeline(root, name, new_name):
         sys.exit(1)
 
     new_pipeline = copy.deepcopy(pipeline)
-    click.echo("Setting pipeline name: %s" % new_name)
+    slab_logger.log(25, "Setting pipeline name: %s" % new_name)
     new_pipeline.set('name', new_name)
     pipeline_parent.append(new_pipeline)
 

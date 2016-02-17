@@ -116,10 +116,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     if rhel7:
         hostname = str(helper_utils.name_vm("rhel7", ctx.path))
     elif service:
-        service_groups = []
         if not service_utils.installed(service, ctx.path):
             slab_logger.error("{0} is not in the .stack/services/ directory.\n"
-                             "Try: stack workon {0}".format(service))
+                              "Try: stack workon {0}".format(service))
             sys.exit(1)
         hostname = str(helper_utils.name_vm(service, ctx.path))
     elif target:
@@ -140,7 +139,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             flavor = yaml_data['deploy_args']['flavor']
         except KeyError:
             slab_logger.warning('Unable to find flavor for %s, using default flavor'
-                               % hostname)
+                                % hostname)
         service_groups = []
         groups = []
         try:
@@ -153,24 +152,26 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         except KeyError:
             pass  # can pass, vm has no groups
         if groups:
-            click.echo('\nThe following groups were found within %s yaml file: ' % hostname)
+            slab_logger.log(25, '\nThe following groups were found within %s yaml file: '
+                            % hostname)
             for group in groups:
-                click.echo(group)
+                slab_logger.log(25, group)
             if not service_groups:
-                click.echo('\nNo service groups were found locally installed')
+                slab_logger.log(25, '\nNo service groups were found locally installed')
             else:
-                click.echo('\nThe following service groups were found installed locally:')
+                slab_logger.log(25, '\nThe following service groups were found installed '
+                                'locally:')
                 for service in service_groups:
-                    click.echo(service)
+                    slab_logger.log(25, service)
             input_display = ('\nAre the locally installed service groups the expected '
                              'groups to be installed on %s? y/n: ' % hostname)
             if not re.search('^[Yy][Ee]*[Ss]*', raw_input(input_display)):
-                click.echo('Try "stack workon service-<group>" for each to be installed '
-                           'and rerun the "stack up --existing-vm" command')
+                slab_logger.log(25, 'Try "stack workon service-<group>" for each to be '
+                                'installed and rerun the "stack up --existing-vm" command')
                 sys.exit(0)
         else:
-            ctx.logger.warning('No groups were found for %s.  Continuing to build the VM.'
-                               % hostname)
+            slab_logger.warning('No groups were found for %s.  Continuing to build the VM.'
+                                % hostname)
 
     # Setup data and inventory
     if not target and not mini and not full:
@@ -231,7 +232,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                 slab_logger.error("Could not run vagrant hostmanager because\
                                  {0}".format(myinfo))
                 slab_logger.error("Vagrant hostmanager will fail if you "
-                                 "have local vms and remote vms.")
+                                  "have local vms and remote vms.")
                 sys.exit(1)
         # You can exit safely now if you're just booting a rhel7 vm
         if rhel7:
@@ -263,7 +264,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                 slab_logger.error("Could not run vagrant hostmanager because\
                                  {0}".format(myinfo))
                 slab_logger.error("Vagrant manager will fail if you have local vms"
-                                 "and remote vms.")
+                                  "and remote vms.")
                 sys.exit(1)
 
         command = ('vagrant ssh {0} -c \"cd /opt/ccs/services/{1}/ && sudo heighliner '
@@ -273,9 +274,9 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             returncode, myinfo = service_utils.run_this(command.format(infra_name, service),
                                                         ctx.path)
             if returncode > 0:
-                slab_logger.error("There was a failure during the heighliner deploy phase of "
-                                 "your service. Please see the following information"
-                                 "for debugging: ")
+                slab_logger.error("There was a failure during the heighliner deploy phase of"
+                                  " your service. Please see the following information"
+                                  "for debugging: ")
                 slab_logger.error(myinfo)
                 sys.exit(1)
             else:
@@ -287,8 +288,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                                             ctx.path)
                 if returncode > 0:
                     slab_logger.error("There was a failure during the heighliner deploy "
-                                     "phase of your service. Please see the following "
-                                     "information for debugging: ")
+                                      "phase of your service. Please see the following "
+                                      "information for debugging: ")
                     slab_logger.error(myinfo)
                     sys.exit(1)
             sys.exit(0)
@@ -326,8 +327,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                            "dev",
                                            "ccs-data")):
             slab_logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
-                                                                'ccs-data') + "with  " +
-                             os.path.join(ctx.path, "services", "ccs-data"))
+                                                                 'ccs-data') + "with  " +
+                              os.path.join(ctx.path, "services", "ccs-data"))
             # Note: os.symlink(src, dst)
             os.symlink(os.path.join(ctx.path,
                                     "services",
@@ -341,18 +342,18 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             settingsyaml = {'openstack_provider': True}
             returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml, hostname=target)
             if returncode > 0:
-                slab_logger.error('Failed to write settings yaml - make sure you have your OS'
-                                 'cred.s sourced and have access to'
-                                 'ccs-gerrit.cisco.com and have keys setup.')
+                slab_logger.error('Failed to write settings yaml - make sure you have your '
+                                  'OS cred.s sourced and have access to'
+                                  'ccs-gerrit.cisco.com and have keys setup.')
                 sys.exit(1)
             a.v.up(vm_name=target, provider='openstack')
         else:
             settingsyaml = {'openstack_provider': 'false'}
             returncode = yaml_utils.wr_settingsyaml(ctx.path, settingsyaml=settingsyaml)
             if returncode > 0:
-                slab_logger.error('Failed to write settings yaml - make sure you have your OS'
-                                 'cred.s sourced and have access to'
-                                 'ccs-gerrit.cisco.com and have keys setup.')
+                slab_logger.error('Failed to write settings yaml - make sure you have your '
+                                  'OS cred.s sourced and have access to'
+                                  'ccs-gerrit.cisco.com and have keys setup.')
                 sys.exit(1)
             a.v.up(vm_name=target)
 
@@ -443,8 +444,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                                            "dev",
                                            "ccs-data")):
             slab_logger.debug('WARNING: Linking ' + os.path.join(redhouse_ten_path, 'dev',
-                                                                'ccs-data') + "with  " +
-                             os.path.join(ctx.path, "services", "ccs-data"))
+                                                                 'ccs-data') + "with  " +
+                              os.path.join(ctx.path, "services", "ccs-data"))
             # Note: os.symlink(src, dst)
             os.symlink(os.path.join(ctx.path,
                                     "services",

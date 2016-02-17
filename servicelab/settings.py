@@ -1,3 +1,3 @@
 # Global variables file
 
-verbosity = 30
+verbosity = 25

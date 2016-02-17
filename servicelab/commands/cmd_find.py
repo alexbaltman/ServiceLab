@@ -14,7 +14,6 @@ import json
 import click
 import requests
 from requests.auth import HTTPBasicAuth
-
 from bs4 import BeautifulSoup
 
 from servicelab.stack import pass_context
@@ -52,7 +51,7 @@ def find_repo(ctx, search_term):
     for elem in repo_list:
         match_obj = re.search(search_term, elem, re.I)
         if match_obj:
-            click.echo(elem)
+            slab_logger.log(25, elem)
 
 
 def validate_artifact_ip_cb(ctx, param, value):
@@ -95,8 +94,8 @@ def find_artifact(ctx, search_term, ip_address,
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     if ip_address is None:
         ip_address = ctx.get_artifactory_info()
@@ -106,7 +105,7 @@ def find_artifact(ctx, search_term, ip_address,
     res = requests.get(find_url, auth=HTTPBasicAuth(username, password))
     if json.loads(res.content).get('results'):
         for val in json.loads(res.content)["results"]:
-            click.echo(val["uri"])
+            slab_logger.log(25, val["uri"])
     else:
         slab_logger.error("No results found.")
         sys.exit(1)
@@ -194,8 +193,8 @@ def find_pipe(ctx, search_term, localrepo, username,
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     servicesdirs = []
     if os.path.isdir(os.path.join(ctx.path, "services")):
@@ -207,12 +206,12 @@ def find_pipe(ctx, search_term, localrepo, username,
         match_str, return_code = _get_match(pipeline)
         if return_code == 1:
             slab_logger.error("Internal error occurred. The regular "
-                             "expression supplied seems to be invalid. "
-                             "Please, retry with a correct regular expression.")
+                              "expression supplied seems to be invalid. "
+                              "Please, retry with a correct regular expression.")
             sys.exit(1)
         else:
             if match_str:
-                click.echo(match_str)
+                slab_logger.log(25, match_str)
 
 
 def validate_build_ip_cb(ctx, param, value):
@@ -254,15 +253,15 @@ def find_build(ctx, search_term, username, password, ip_address, interactive):
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
 
     server = jenkins_utils.get_server_instance(ip_address, username, password)
     for key in server.keys():
         match_obj = re.search(search_term, key, re.M | re.I)
         if match_obj:
-            click.echo(key)
+            slab_logger.log(25, key)
 
 
 @cli.command('pulp-repos', short_help='Find all the matching pulp repositories')
@@ -298,8 +297,8 @@ def find_pulp_repos(ctx, repo_name, ip_address, username, password, interactive)
         password = ctx.get_password(interactive)
     if not password or not username:
         slab_logger.error("Username is %s and password is %s. "
-                         "Please, set the correct value for both and retry." %
-                         (username, password))
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     url = "/pulp/api/v2/repositories/search/"
     payload = '{ "criteria": { "filters" : { "display_name" : {"$regex" : "%s"}}\
@@ -310,8 +309,8 @@ def find_pulp_repos(ctx, repo_name, ip_address, username, password, interactive)
 
     if repos is not None and len(repos) > 0:
         for repo in repos:
-            click.echo("Repo Id      : %s" % repo["id"])
-            click.echo("Repo Name    : %s" % repo["display_name"])
-            click.echo("Repo path    : %s" % repo["_href"] + "\n")
+            slab_logger.log(25, "Repo Id      : %s" % repo["id"])
+            slab_logger.log(25, "Repo Name    : %s" % repo["display_name"])
+            slab_logger.log(25, "Repo path    : %s" % repo["_href"] + "\n")
     else:
         slab_logger.error("No matching repositories found on this pulp server.")

@@ -8,11 +8,11 @@ import os
 import sys
 import click
 
+from servicelab.utils import logger_utils
 from servicelab.stack import pass_context
 from servicelab.utils import vagrant_utils
 from servicelab.utils import helper_utils
 from servicelab.utils import openstack_utils
-from servicelab.utils import logger_utils
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.destroy')
@@ -41,7 +41,6 @@ def destroy_vm(ctx, force, vm_name):
     """Destroy non OSP VMs in either virtualbox or Openstack. This function
     will do some basic cleanup as well.
 
-    \b
     1. Remove from inventory. (?)
     2. Delete from Vagrantfile (?)
     3. Remove from dev-tenant in ccs-data (?)
@@ -65,7 +64,6 @@ def destroy_min(ctx, force):
     """ Destroy the minimum required to put us into a usable, but still mostly
     brownfield environment.
 
-    \b
     Delete:
     1. .stack/vagrant.yaml
     2. .stack/Vagrantfile
@@ -80,12 +78,12 @@ def destroy_min(ctx, force):
     files = ['Vagrantfile', 'vagrant.yaml']
 
     # before we destroy lets check if we have any machine not destroyed still
-    click.echo("Checking for active VMs.")
+    slab_logger.log(25, "Checking for active VMs.")
     if vagrant_utils.check_vm_is_available(ctx.path):
-        click.echo("There are active VMs in the stack environment. "
-                   "Please destroy these using stack destroy vm command\n")
+        slab_logger.log(25, "There are active VMs in the stack environment. "
+                        "Please destroy these using stack destroy vm command\n")
         sys.exit(-1)
-    click.echo("No active VMs found. Proceeding with destroy.")
+    slab_logger.log(25, "No active VMs found. Proceeding with destroy.")
 
     directories = [os.path.join(ctx.path, di) for di in directories]
     files = [os.path.join(ctx.path, fi) for fi in files]
@@ -114,7 +112,6 @@ def destroy_more(ctx, force):
     """ Destroy my copy of ccs-data and service-redhouse-tenant in addition to the
     minimum need to get us into a usable, but still mostly brownfield environment.
 
-    \b
     Delete:
     1. .stack/vagrant.yaml
     2. .stack/Vagrantfile
@@ -188,7 +185,7 @@ def destroy_os_networks(ctx, force):
                 "The above VMs need to be deleted before you can run this command.")
     else:
         slab_logger.error("Error occurred connecting to Vagrant. To debug try running : "
-                         "vagrant up in %s " % (ctx.path))
+                          "vagrant up in %s " % (ctx.path))
 
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'

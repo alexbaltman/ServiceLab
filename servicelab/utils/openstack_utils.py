@@ -2,7 +2,6 @@ import os
 import yaml
 import time
 import requests
-import click
 
 import logger_utils
 import helper_utils
@@ -129,7 +128,7 @@ class SLab_OS(object):
 
                 if not self.tenant_id:
                     slab_logger.error("Unable to determine tenant_id"
-                                     "for {}".format(self.os_tenant_name))
+                                      "for {}".format(self.os_tenant_name))
                     return 1, self.tenant_id, self.token
                 return 0, self.tenant_id, self.token
             else:
@@ -1073,7 +1072,7 @@ def os_check_vms(path):
         for status in statuses:
                 if status[1] == 'running' or status[1] == 'active':
                     running_vm = True
-                    click.echo("VM %s is running" % (status[0]))
+                    slab_logger.log(25, "VM %s is running" % (status[0]))
         return 0, running_vm
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
@@ -1094,23 +1093,23 @@ def os_delete_vms(path, force):
     vm_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra-001",
                                                      path=path)
     if force:
-        click.echo("Deleting all VMs.")
+        slab_logger.log(25, "Deleting all VMs.")
     try:
         statuses = vm_connection.v.status()
         for status in statuses:
             if force:
                 vm_connection.v.destroy(status[0])
-                click.echo("Deleted VM : %s " % (status[0]))
+                slab_logger.log(25, "Deleted VM : %s " % (status[0]))
             else:
                 if yes_or_no("Do you want to destroy VM : %s ? "
                              % (status[0])):
                     vm_connection.v.destroy(status[0])
-                    click.echo("Deleted VM : %s " % (status[0]))
+                    slab_logger.log(25, "Deleted VM : %s " % (status[0]))
                 else:
-                    click.echo("Skipping deletion of VM : %s " % (status[0]))
+                    slab_logger.log(25, "Skipping deletion of VM : %s " % (status[0]))
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
-        click.echo("Error occurred connecting to Vagrant.")
+        slab_logger.log(25, "Error occurred connecting to Vagrant.")
 
 
 def os_delete_networks(path, force):
@@ -1153,7 +1152,7 @@ def os_delete_networks(path, force):
     slab.connect_to_neutron()
     netw = slab.neutron.list_networks()
     if force:
-        click.echo("Deleting all SLAB networks.")
+        slab_logger.log(25, "Deleting all SLAB networks.")
     try:
         networks = netw['networks']
         for network in networks:
@@ -1167,11 +1166,11 @@ def os_delete_networks(path, force):
                                  % (network['name'])):
                         os_delete_networking_components(slab.neutron, network)
                     else:
-                        click.echo("Skipping deletion of network : %s "
-                                   % (network['name']))
+                        slab_logger.log(25, "Skipping deletion of network : %s "
+                                        % (network['name']))
         os_delete_routers(slab.neutron, force)
     except CalledProcessError:
-        click.echo("Error occurred deleting network.")
+        slab_logger.log(25, "Error occurred deleting network.")
 
 
 def os_delete_networking_components(neutron, network):
@@ -1186,7 +1185,7 @@ def os_delete_networking_components(neutron, network):
     os_delete_ports(neutron, network)
     os_delete_subnets(neutron, network)
     neutron.delete_network(network['id'])
-    click.echo("Deleted network : %s " % (network['name']))
+    slab_logger.log(25, "Deleted network : %s " % (network['name']))
 
 
 def os_delete_subnets(neutron, network):
@@ -1199,7 +1198,7 @@ def os_delete_subnets(neutron, network):
     """
     try:
         for subnet in network['subnets']:
-            click.echo("Deleting subnet : %s " % (subnet))
+            slab_logger.log(25, "Deleting subnet : %s " % (subnet))
             neutron.delete_subnet(subnet)
     except NotFound as ex:
         pass
@@ -1221,15 +1220,15 @@ def os_delete_routers(neutron, force):
             try:
                 if force:
                     neutron.delete_router(router['id'])
-                    click.echo("Deleted router : %s " % (router['name']))
+                    slab_logger.log(25, "Deleted router : %s " % (router['name']))
                 else:
                     if yes_or_no("Do you want to delete router : %s ? "
                                  % (router['name'])):
                         neutron.delete_router(router['id'])
-                        click.echo("Deleted router : %s " % (router['id']))
+                        slab_logger.log(25, "Deleted router : %s " % (router['id']))
                     else:
-                        click.echo("Skipping deletion of router : %s "
-                                   % (router['name']))
+                        slab_logger.log(25, "Skipping deletion of router : %s "
+                                        % (router['name']))
             except NotFound as ex:
                     pass
 
@@ -1247,8 +1246,8 @@ def os_delete_ports(neutron, network):
     if ports['ports']:
         for port in ports['ports']:
             if network['id'] == port['network_id']:
-                click.echo("Deleting ports : %s in network %s "
-                           % (port['id'], network['name']))
+                slab_logger.log(25, "Deleting ports : %s in network %s "
+                                % (port['id'], network['name']))
                 try:
                     port['device_owner'] = None
                     neutron.update_port(port['id'], {'port': {'device_owner': ''}})

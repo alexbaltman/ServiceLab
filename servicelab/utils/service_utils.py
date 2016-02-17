@@ -6,8 +6,8 @@ import re
 import shutil
 import subprocess32 as subprocess
 
+import yaml_utils
 import logger_utils
-
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.service')
@@ -97,7 +97,6 @@ def build_data(path):
 
     """
     slab_logger.log(15, 'Building ccs-dev-1 site in ccs-data')
-    from servicelab.utils import yaml_utils
     if yaml_utils.decrypt_set(path) != 0:
         return(1, "unable to decrypt the pulp password")
 
@@ -389,7 +388,7 @@ def link(path, service_name, branch, username):
                            os.path.join(path, "current_service"))
             else:
                 slab_logger.error("Failed to find source for symlink: " +
-                                 os.path.join(path, "services", service_name))
+                                  os.path.join(path, "services", service_name))
                 return 1
     else:
         slab_logger.debug("Link already exists.")
