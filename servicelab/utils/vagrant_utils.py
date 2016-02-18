@@ -235,6 +235,8 @@ def vm_isrunning(hostname, path):
         Returncode (int):
             0 - if vm is ON
             1 - if vm is OFF
+            2 - no vm exists
+            3 - other state: suspended, aborted, etc.
         Return (boolean):
             True - if vm is remote
             False - if vm is local
@@ -295,10 +297,11 @@ def infra_ensure_up(mynets, float_net, my_security_groups, path=None):
     Returns:
         0 - success, infra node has been sucessfully booted
         1 - failure
+        hostname (str): infra-001 or infra-002
 
     Example:
-        >>> infra_ensure_up()
-            0
+        >>> infra_ensure_up(None, None, None, ctx.path)
+            0, infra-001
 
     Data Structure:
         From python-vagrant's status call.
