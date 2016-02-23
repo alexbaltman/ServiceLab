@@ -258,7 +258,7 @@ def vm_isrunning(hostname, path):
     vm_connection = Connect_to_vagrant(vm_name=hostname,
                                        path=path)
     try:
-        status = vm_connection.v.status(hostname)
+        status = vm_connection.v.status(vm_name=hostname)
         # Note: local vbox value: running
         if status[0][1] == 'running':
             return 0, False
@@ -276,8 +276,7 @@ def vm_isrunning(hostname, path):
             return 1, True
         # Note: remote OS value: un created
         elif status[0][1] == 'not_created':
-            vm_connection.v.up(hostname)
-            return 0, False
+            return 1, False
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
         return 2, False
