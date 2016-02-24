@@ -22,7 +22,7 @@ class SlabVagrantfile(object):
         my_class_var.<method_name>(args)
     """
 
-    def __init__(self, path):
+    def __init__(self, path, remote=False):
         self.path = path
         self.set_header = False
         # OS RC file vars
@@ -33,6 +33,7 @@ class SlabVagrantfile(object):
         self.host_vars = {}
         self.default_flavor = '2cpu.4ram.20sas'
         self.default_image = 'slab-RHEL7.1v9'
+        self.remote = remote
 
     def init_vagrantfile(self):
         """
@@ -198,21 +199,28 @@ class SlabVagrantfile(object):
                         Vagrantfile_utils_logger.debug('Non-fatal - may not be set')
                         Vagrantfile_utils_logger.debug('Failed to set vm attribute: ' + e)
             setitup += '  end\n'
-            setitup += "  config.vm.hostname = \"" + self.hostname + "\"\n"
+            setitup += '  config.vm.hostname = "' + self.hostname + '"\n'
             try:
-                setitup += "  config.vm.network :private_network, ip: \"" + ip
-                setitup += "\", mac: \"" + host_dict[self.hostname]['mac'] + "\"\n"
+                setitup += '  config.vm.network :private_network, ip: "' + ip
+                setitup += '", mac: "' + host_dict[self.hostname]['mac'] + '"\n'
             except KeyError:
-                setitup += "  config.vm.network :private_network, ip: \"" + ip + "\"\n"
-            setitup += "  config.vm.provision \"shell\", path: \"provision/infra.sh\"\n"
-            setitup += "  config.vm.provision \"shell\", path: \"provision/node.sh\"\n"
-            setitup += ("  config.vm.provision \"file\", source: " +
-                        "\"provision/ssh-config\"," +
-                        "destination:\"/home/vagrant/.ssh/config\"\n")
-            setitup += ("  config.vm.provision \"file\", source: \"hosts\", " +
-                        "destination: \"/etc/hosts\"\n")
-            setitup += ("  config.vm.synced_folder \"services\", " +
-                        "\"/opt/ccs/services/\"\n")
+                setitup += '  config.vm.network :private_network, ip: "' + ip + '"\n'
+
+            setitup += '  config.vm.provision "shell", path: "provision/infra.sh"\n'
+            setitup += '  config.vm.provision "shell", path: "provision/node.sh"\n'
+            setitup += ('  config.vm.provision "file", ' +
+                        'source: "provision/ssh-config",' +
+                        'destination:"/home/vagrant/.ssh/config"\n')
+            setitup += ('  config.vm.provision "file", source: "hosts", ' +
+                        'destination: "/etc/hosts"\n')
+            setitup += ('  config.vm.synced_folder "services", ' +
+                        '"/opt/ccs/services/"')
+
+            # we are rsyncing onl in case of remote
+            if self.remote:
+                setitup += ' type: "rsync" '
+            setitup += "\n"
+
             self.append_it(setitup)
             return 0
         except KeyError:
@@ -297,7 +305,12 @@ class SlabVagrantfile(object):
                     "destination:\"/home/cloud-user/.ssh/config\"\n")
         setitup += ("  config.vm.provision \"file\", source: \"hosts\", destination: "
                     "\"/etc/hosts\"\n")
-        setitup += ("  config.vm.synced_folder \"services\", \"/opt/ccs/services/\"\n")
+        setitup += ('  config.vm.synced_folder "services", "/opt/ccs/services/"')
+
+        # we are rsyncing onl in case of remote
+        if self.remote:
+            setitup += ' type: "rsync" '
+        setitup += "\n"
 
         self.append_it(setitup)
 
@@ -342,7 +355,7 @@ class SlabVagrantfile(object):
         self.env_vars['security_groups'] = security_groups
         openstack_network_url = None
         openstack_image_url = None
-        if (self.env_vars.get('openstack_auth_url')):
+        if self.env_vars.get('openstack_auth_url'):
             proto, baseurl, port = self.env_vars.get('openstack_auth_url').split(':')
             openstack_network_url = proto + ':' + baseurl + ":9696/v2.0"
             openstack_image_url = proto + ':' + baseurl + ":9292/v2/"
@@ -428,9 +441,9 @@ class SlabVagrantfile(object):
             my_class_var.set_host_image_flavors(self.ctx.path)
         """
         relpath_toyaml = 'services/ccs-data/sites/ccs-dev-1/environments/dev-tenant/hosts.d/'
-        if (os.path.exists(path)):
+        if os.path.exists(path):
             path = os.path.join(path, relpath_toyaml)
-            if (os.path.exists(path)):
+            if os.path.exists(path):
                 path = os.path.join(path, self.hostname.lower() + '.yaml')
                 if os.path.exists(path):
                     try:

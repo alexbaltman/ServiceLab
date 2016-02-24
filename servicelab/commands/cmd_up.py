@@ -183,7 +183,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
                 ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
 
         # Prep class Objects
-        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path)
+        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path, remote=remote)
         if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
         myvag_env = v_utils.Connect_to_vagrant(vm_name=hostname,
@@ -389,7 +389,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
         a = v_utils.Connect_to_vagrant(vm_name='infra-001',
                                        path=os.path.join(redhouse_ten_path))
-        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path)
+        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path, remote=remote)
         if remote:
             returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
             if returncode > 0:
