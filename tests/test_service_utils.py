@@ -18,7 +18,11 @@ class TestServiceUtils(unittest.TestCase):
         pass
 
     def test_sync_service(self):
-        username = helper_utils.get_username(self.ctx.path)
+        returncode, username = helper_utils.get_gitusername(self.ctx.path)
+        if returncode > 0:
+            helper_utils.get_loginusername()
+        if returncode > 0:
+            helper_utils.get_loginusername()
         with temporary_dir() as temp_dir:
             out = service_utils.sync_service(path=temp_dir,
                                              branch='master',

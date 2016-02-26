@@ -13,6 +13,7 @@ from servicelab.utils import jenkins_utils
 
 from servicelab.commands import cmd_list
 from servicelab.commands import cmd_find
+from servicelab.commands import cmd_build
 from servicelab.stack import Context
 
 
@@ -27,6 +28,7 @@ class TestJenkinsUtils(unittest.TestCase):
     JENKINS_PASS = "NEWjob2015"
     JOB_NAME = "check-servicelab"
     BUILD_STATUS = "check-servicelab"
+    RUN_STATUS = "Retriggering last build"
 
     def setUp(self):
         """
@@ -86,6 +88,21 @@ class TestJenkinsUtils(unittest.TestCase):
                                           TestJenkinsUtils.JENKINS_SERVER)
         self.assertTrue(jenkins_utils.END_LOG in log)
 
+    def test_cmd_build_run(self):
+        """
+        Tests pipeline status command.
+        """
+        runner = CliRunner()
+        result = runner.invoke(cmd_build.cli,
+                               ['run',
+                                TestJenkinsUtils.JOB_NAME,
+                                '-u',
+                                TestJenkinsUtils.JENKINS_USER,
+                                '-p',
+                                TestJenkinsUtils.JENKINS_PASS,
+                                '-ip',
+                                TestJenkinsUtils.JENKINS_SERVER])
+        self.assertTrue(TestJenkinsUtils.RUN_STATUS in result.output.strip())
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,6 +5,8 @@ import logging
 import fnmatch
 import getpass
 
+import click
+
 import servicelab.utils.yaml_utils
 
 # create logger
@@ -55,7 +57,7 @@ def find_all_yaml_recurs(full_path):
         return 1, matches
 
 
-def set_user(path):
+def get_gitusername(path):
     """Sets user to whoever clone the git repo from gerrit.
 
     Args:
@@ -70,7 +72,7 @@ def set_user(path):
     Example Usage:
         >>> print path
         /Users/aaltman/Git/servicelab/servicelab/.stack
-        >>> print set_user(path)
+        >>> print get_gitusername(path)
         (0, aaltman)
     """
     matches = None
@@ -86,8 +88,23 @@ def set_user(path):
             matches = re.search(regex, line)
             if matches:
                 username = matches.group(1)
+                if not username:
+                    return 1, username
                 return 0, username
     return 1, username
+
+
+def get_loginusername():
+    """Gets the login  user name.
+
+    Returns:
+        username(str): login name
+
+    Example Usage:
+    >>> print get_loginusername()
+    aaltman
+    """
+    return getpass.getuser()
 
 
 def get_current_service(path):
@@ -145,15 +162,6 @@ def get_path_to_utils(path):
     return path_to_utils
 
 
-def get_username(path):
-    returncode, username = set_user(path)
-    if returncode > 0:
-        username = getpass.getuser()
-        if not username:
-            raise Exception("Still couldn't set username. Exiting.")
-    return username
-
-
 def name_vm(name, path):
     """This is how we're currently generating a name for arbitrary vms.
 
@@ -197,10 +205,14 @@ def destroy_files(paths_to_files):
         if os.path.exists(mypath):
             try:
                 os.remove(mypath)
+                click.echo("File destroyed successfully: {0}".format(mypath))
             except OSError as ex:
+                click.echo("File was not destroyed: {0}".format(mypath))
                 helper_utils_logger.debug('Caught error: ')
                 helper_utils_logger.debug(ex)
                 return 1
+        else:
+            click.echo("File does not exist : {0}".format(mypath))
     return 0
 
 
@@ -224,8 +236,12 @@ def destroy_dirs(paths):
             helper_utils_logger.debug("Destroying {0}".format(path))
             try:
                 shutil.rmtree(path)
+                click.echo("Directory destroyed successfully : {0}".format(path))
             except OSError as ex:
+                click.echo("Directory was not destroyed : {0}".format(path))
                 helper_utils_logger.debug('Caught error: ')
                 helper_utils_logger.debug(ex)
                 return 1
+        else:
+            click.echo("Directory does not exist : {0}".format(path))
     return 0

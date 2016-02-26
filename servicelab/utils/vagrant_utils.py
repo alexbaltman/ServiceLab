@@ -12,7 +12,7 @@ from subprocess import CalledProcessError
 import yaml_utils
 import service_utils
 import vagrant_utils
-import Vagrantfile_utils
+import vagrantfile_utils
 
 
 # create logger
@@ -235,6 +235,8 @@ def vm_isrunning(hostname, path):
         Returncode (int):
             0 - if vm is ON
             1 - if vm is OFF
+            2 - no vm exists
+            3 - other state: suspended, aborted, etc.
         Return (boolean):
             True - if vm is remote
             False - if vm is local
@@ -256,7 +258,7 @@ def vm_isrunning(hostname, path):
     vm_connection = Connect_to_vagrant(vm_name=hostname,
                                        path=path)
     try:
-        status = vm_connection.v.status(hostname)
+        status = vm_connection.v.status(vm_name=hostname)
         # Note: local vbox value: running
         if status[0][1] == 'running':
             return 0, False
@@ -274,8 +276,7 @@ def vm_isrunning(hostname, path):
             return 1, True
         # Note: remote OS value: un created
         elif status[0][1] == 'not_created':
-            vm_connection.v.up(hostname)
-            return 0, False
+            return 1, False
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
         return 2, False
@@ -295,10 +296,11 @@ def infra_ensure_up(mynets, float_net, my_security_groups, nfs, rootpassword, pa
     Returns:
         0 - success, infra node has been sucessfully booted
         1 - failure
+        hostname (str): infra-001 or infra-002
 
     Example:
-        >>> infra_ensure_up()
-            0
+        >>> infra_ensure_up(None, None, None, ctx.path)
+            0, infra-001
 
     Data Structure:
         From python-vagrant's status call.
@@ -338,7 +340,7 @@ def infra_ensure_up(mynets, float_net, my_security_groups, nfs, rootpassword, pa
         return 0, hostname
 
     # Shared code b/w remote and local vbox
-    thisvfile = Vagrantfile_utils.SlabVagrantfile(path=path)
+    thisvfile = vagrantfile_utils.SlabVagrantfile(path=path)
 
     # vagrant_utils.vm_isrunning currently doesn't manage these alternative states
     # so we fail

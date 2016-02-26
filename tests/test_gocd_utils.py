@@ -2,16 +2,16 @@
     TestClass to test various go cd functions.
 """
 import time
+import sys
 
 import unittest
 import requests
+from requests.auth import HTTPBasicAuth
 from click.testing import CliRunner
-
 
 from servicelab.commands import cmd_pipe
 from servicelab.commands import cmd_list
 from servicelab.commands import cmd_find
-from requests.auth import HTTPBasicAuth
 from servicelab.stack import Context
 from servicelab.utils import context_utils
 from servicelab.utils import gocd_utils
@@ -39,8 +39,9 @@ class TestGoCdUtils(unittest.TestCase):
     SHOW_PIPELINE_NAME = "deploy-sdu-test-tempest"
     T_SCHED = "{\"locked\":false,\"paused\":false,\"schedulable\":true}"
     F_SCHED = "{\"locked\":false,\"paused\":false,\"schedulable\":false}"
-    REMOTE_STATUS = "{\"paused\":false,\"schedulable\":true,\"locked\":false}"
+    REMOTE_STATUS = "schedulable"
     ENDING_LOG = "End of job log for pipeline"
+    ALL_STAGES_OUT = "Stage : secondStage  has Passed"
 
     def setUp(self):
         """ Setup variables required to test the os_provider functions
@@ -127,7 +128,7 @@ class TestGoCdUtils(unittest.TestCase):
                                 TestGoCdUtils.GOCD_SERVER])
         self.assertTrue(TestGoCdUtils.GOCD_ENV_GOCD_OVERRIDE in
                         result.output.strip())
-        time.sleep(5)
+        time.sleep(45)
         result = runner.invoke(cmd_pipe.cli,
                                ['run',
                                 TestGoCdUtils.PIPELINE_NAME,
@@ -140,6 +141,19 @@ class TestGoCdUtils(unittest.TestCase):
                                 '-e',
                                 TestGoCdUtils.GOCD_ENV_GOCD_INVALID])
         self.assertTrue(TestGoCdUtils.GOCD_ENV_INVALID_ERROR in
+                        result.output.strip())
+        time.sleep(45)
+        result = runner.invoke(cmd_pipe.cli,
+                               ['run',
+                                TestGoCdUtils.PIPELINE_NAME,
+                                '-u',
+                                TestGoCdUtils.GOCD_USER,
+                                '-p',
+                                TestGoCdUtils.GOCD_PASS,
+                                '-ip',
+                                TestGoCdUtils.GOCD_SERVER,
+                                '--all-stages'])
+        self.assertTrue(TestGoCdUtils.ALL_STAGES_OUT in
                         result.output.strip())
 
     def test_cmd_list(self):
@@ -188,6 +202,8 @@ class TestGoCdUtils(unittest.TestCase):
         time.sleep(25)
         self.assertTrue(TestGoCdUtils.ENDING_LOG in result.output.strip())
 
+    @unittest.skipUnless(sys.platform == "darwin",
+                         "Mac only since prod Gocd can break jenkins")
     def test_cmd_show(self):
         """ Tests show command.
         """
@@ -196,7 +212,7 @@ class TestGoCdUtils(unittest.TestCase):
                                           TestGoCdUtils.GOCD_REMOTE_USER,
                                           TestGoCdUtils.GOCD_REMOTE_PASS,
                                           context_utils.get_gocd_ip())
-        self.assertTrue(TestGoCdUtils.REMOTE_STATUS in result)
+        self.assertTrue(TestGoCdUtils.REMOTE_STATUS in result.output)
 
 
 if __name__ == '__main__':

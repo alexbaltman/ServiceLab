@@ -1,14 +1,16 @@
 """
-Stack utility functions.
+Stack utility functions
 """
 import os
 import re
 import shutil
-import platform
 
+import platform
 import subprocess32 as subprocess
 from reconfigure.configs import ExportsConfig
+
 import logging
+import click
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
@@ -177,6 +179,17 @@ def _git_clone(path, branch, username, service_name):
                                   "%s/services/%s" % (branch, username,
                                                       service_name, path,
                                                       service_name))
+    # check if failure because of unresolved references
+    pstr = "fatal: pack has [0-9]+ unresolved deltas\nfatal: index-pack failed"
+    ptrn = re.compile(pstr)
+    if ptrn.search(myinfo):
+        # we are going to ignore any unresolved references as we are doing only
+        # shallow copy with depth 1
+        SERVICE_UTILS_LOGGER.info("Ignoring unresolved references as "
+                                  "slab does a shallow clone of the "
+                                  "service repo")
+        returncode = 0
+        myinfo = ""
     return(returncode, myinfo)
 
 
@@ -207,6 +220,64 @@ def _git_pull_ff(path, branch, service_name):
     """
     # Note: Branch defaults to master in the click application
     service_path = os.path.join(path, "services", service_name)
+
+    # Before doing git checkout, check if the remote ref exists
+    # if it does not then take some steps to get it and run checks
+    try:
+        click.echo("Checking for remote references in %s " % (service_path))
+        command_to_run = "git show-ref %s" % (branch)
+        output = subprocess.Popen(command_to_run, shell=True,
+                                  stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, close_fds=True,
+                                  cwd=service_path)
+        ref_info = output.communicate()[0]
+        if branch not in ref_info:
+            click.echo("Remote git branch not found : %s " % (branch))
+            click.echo(
+                "Setting remote origin in .git/config to :"
+                " +refs/heads/*:refs/remotes/origin/*")
+            command_to_run = "git config --replace-all  remote.origin.fetch"\
+                "  \"+refs/heads/*:refs/remotes/origin/*\""
+            output = subprocess.Popen(command_to_run, shell=True,
+                                      stdin=subprocess.PIPE,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT, close_fds=True,
+                                      cwd=service_path)
+            command_to_run = "git fetch --unshallow"
+            click.echo(
+                "Fetching all remote branches. It might take a few minutes. %s " %
+                (service_path))
+            subprocess.call('git fetch --unshallow', cwd=service_path, shell=True)
+            click.echo("Done Fetching all remote branches.")
+            click.echo("Updating remotes. ")
+            call(["git", "remote", "update"], cwd=service_path)
+            click.echo("Done update remotes. ")
+            command_to_run = "git show-ref %s" % (branch)
+            output = subprocess.Popen(command_to_run, shell=True,
+                                      stdin=subprocess.PIPE,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT, close_fds=True,
+                                      cwd=service_path)
+            ref_info = output.communicate()[0]
+            if branch not in ref_info:
+                click.echo("Remote branch %s not found." % (branch))
+                command_to_run = "git show-ref"
+                output = subprocess.Popen(
+                    command_to_run,
+                    shell=True,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    close_fds=True,
+                    cwd=service_path)
+                ref_info = output.communicate()[0]
+                click.echo("Following branches found : %s " % ref_info)
+                click.echo("Branch not found. Please, check branch name. Exiting.")
+    except OSError, ex:
+        SERVICE_UTILS_LOGGER.error(ex)
+        return (1, str(ex))
+
     # TODO: Do more error checking here --> after debugging, definitely
     # TODO: checkout a branch ifexists in origin only--> not replacing git
     #       or setup a tracking branch if there's nothing local or fail.
@@ -449,8 +520,13 @@ def check_service(path, service_name):
                 if re.search(service_name, line):
                     return 0
 
-            run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects">\
-                     %s' % (os.path.join(path, "cache", "projects")))
+            ret_val, ret_str = run_this('ssh -p 29418 ccs-gerrit.cisco.com '
+                                        '"gerrit ls-projects" > %s'
+                                        % (os.path.join(path, "cache", "projects")))
+            if ret_val != 0:
+                SERVICE_UTILS_LOGGER.error("Unable to fetch project list from gerrit")
+                SERVICE_UTILS_LOGGER.error("error {}".format(ret_str))
+                return 1
             for line in open(os.path.join(path, "cache", "projects"), 'r'):
                 if re.search(service_name, line):
                     return 0
@@ -464,8 +540,14 @@ def check_service(path, service_name):
         # Note: We close right away b/c we're just trying to
         #       create the file.
         cachef.close()
-        run_this('ssh -p 29418 ccs-gerrit.cisco.com "gerrit ls-projects" > %s'
-                 % (os.path.join(path, "cache", "projects")))
+        ret_val, ret_str = run_this('ssh -p 29418 ccs-gerrit.cisco.com '
+                                    '"gerrit ls-projects" > %s'
+                                    % (os.path.join(path, "cache", "projects")))
+        if ret_val != 0:
+            SERVICE_UTILS_LOGGER.error("Unable to fetch project list from gerrit")
+            SERVICE_UTILS_LOGGER.error("error {}".format(ret_str))
+            return 1
+
         for line in open(os.path.join(path, "cache", "projects"), 'r'):
             if re.search(service_name, line):
                 return 0
@@ -542,7 +624,11 @@ def installed(service, path):
     return True
 
 
-def export_for_nfs(rootpasswd, path, ip):
+def export_for_nfs(rootpassword, path, ip):
+    """
+    This function is currently not in use. It is vagrant responsibilty to update the /etc/exports
+    file.
+    """
     def __darwin_check_option(existing_opt):
         flag = False
         entry = existing_opt.clients
@@ -573,8 +659,8 @@ def export_for_nfs(rootpasswd, path, ip):
         return flag
 
     def __darwin_update():
-        cmd = "echo {} | sudo -S chmod o+w /etc/exports".format(rootpasswd)
-        ret_code, ret_info = service_utils.run_this(cmd)
+        cmd = "echo {} | sudo -S chmod o+w /etc/exports".format(rootpassword)
+        ret_code, ret_info = run_this(cmd)
         if ret_code != 0:
             return 1
 
@@ -583,19 +669,19 @@ def export_for_nfs(rootpasswd, path, ip):
                                                            os.getuid(),
                                                            os.getgid())
         cmd = 'echo \"{}\" >> /etc/exports'.format(line)
-        ret_code, ret_info = service_utils.run_this(cmd)
+        ret_code, ret_info = run_this(cmd)
         if ret_code != 0:
             SERVICE_UTILS_LOGGER.error(ret_info)
             return 1
 
-        cmd = "echo {} | sudo -S chmod o-w /etc/exports".format(rootpasswd)
-        ret_code, ret_info = service_utils.run_this(cmd)
+        cmd = "echo {} | sudo -S chmod o-w /etc/exports".format(rootpassword)
+        ret_code, ret_info = run_this(cmd)
         if ret_code != 0:
             SERVICE_UTILS_LOGGER.error(ret_info)
             return 1
 
-        cmd = "echo {} | sudo -S nfsd update".format(rootpasswd)
-        ret_code, ret_info = service_utils.run_this(cmd)
+        cmd = "echo {} | sudo -S nfsd update".format(rootpassword)
+        ret_code, ret_info = run_this(cmd)
         if ret_code != 0:
             SERVICE_UTILS_LOGGER.error(ret_info)
             return 1
@@ -612,8 +698,8 @@ def export_for_nfs(rootpasswd, path, ip):
             return flag
 
     def __linux_update():
-        cmd = "echo {} | sudo -S chmod o+w /etc/exports".format(rootpasswd)
-        ret_code, ret_info = service_utils.run_this(cmd)
+        cmd = "echo {} | sudo -S chmod o+w /etc/exports".format(rootpassword)
+        ret_code, ret_info = run_this(cmd)
         if ret_code != 0:
             return 1
 
@@ -621,41 +707,44 @@ def export_for_nfs(rootpasswd, path, ip):
         line = '\\"{}\\" {}'+line
         line = line.format(path, ip, os.getuid(), os.getgid())
         cmd = 'echo \"{}\" >> /etc/exports'.format(line)
-        ret_code, ret_info = service_utils.run_this(cmd)
+        ret_code, ret_info = run_this(cmd)
         if ret_code != 0:
             SERVICE_UTILS_LOGGER.error(ret_info)
             return 1
 
-        cmd = "echo {} | sudo -S chmod o-w /etc/exports".format(rootpasswd)
-        ret_code, ret_info = service_utils.run_this(cmd)
+        cmd = "echo {} | sudo -S chmod o-w /etc/exports".format(rootpassword)
+        ret_code, ret_info = run_this(cmd)
         if ret_code != 0:
             SERVICE_UTILS_LOGGER.error(ret_info)
             return 1
 
-        cmd = "echo {} | sudo exportfs -ra".format(rootpasswd)
-        ret_code, ret_info = service_utils.run_this(cmd)
+        cmd = "echo {} | sudo exportfs -ra".format(rootpassword)
+        ret_code, ret_info = run_this(cmd)
         if ret_code != 0:
             SERVICE_UTILS_LOGGER.error(ret_info)
             return 1
         return 0
 
-    if platform.system() == 'Darwin':
-        __check = __darwin_check_option
-        __update = __darwin_update
-    elif platform.system() == 'Linux':
-        __check = __linux_check_option
-        __update = __linux_update
-    else:
-        ret_info = "servicelab support nfs mount for mac os or redhat/linux only"
-        SERVICE_UTILS_LOGGER.error(ret_info)
-        return 1
+    vagrant_responsibility = True
+    if not vagrant_responsibility:
+        if platform.system() == 'Darwin':
+            __check = __darwin_check_option
+            __update = __darwin_update
+        elif platform.system() == 'Linux':
+            __check = __linux_check_option
+            __update = __linux_update
+        else:
+            ret_info = "servicelab support nfs mount for mac os or redhat/linux only"
+            SERVICE_UTILS_LOGGER.error(ret_info)
+            return 1
 
-    # check if the ip exist with the options
-    exp_list = ExportsConfig(path="/etc/exports")
-    exp_list.load()
-    for opt in exp_list.tree.exports:
-        if opt.name == path and __check(opt) is True:
-            return 0
+        # check if the ip exist with the options
+        exp_list = ExportsConfig(path="/etc/exports")
+        exp_list.load()
+        for opt in exp_list.tree.exports:
+            if opt.name == path and __check(opt) is True:
+                return 0
 
-    # add the mount
-    return __update()
+        # add the mount
+        return __update()
+    return 0

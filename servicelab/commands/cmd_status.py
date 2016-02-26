@@ -2,6 +2,7 @@
 The module contains the status subcommand implemenation.
 """
 import os
+import sys
 
 import click
 

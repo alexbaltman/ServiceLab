@@ -10,12 +10,12 @@ import helper_utils
 import service_utils
 import openstack_utils as os_utils
 import tc_vm_yaml_create
-import Vagrantfile_utils
+import vagrantfile_utils
 
 # create logger
 # TODO: For now warning and error print. Got to figure out how
 #       to import the one in stack.py properly.
-yaml_utils_logger = logging.getLogger('click_application')
+yaml_utils_logger = logging.getLogger('stack')
 logging.basicConfig()
 
 
@@ -83,6 +83,10 @@ def host_exists_vagrantyaml(hostname, pathto_yaml):
                                           "/Users/aaltman/Git/servicelab/servicelab/.stack")
         0
     """
+    if not os.path.isfile(os.path.join(pathto_yaml, "vagrant.yaml")):
+        yaml_utils_logger.info("vagrant.yaml file is missing")
+        return 1
+
     retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
     if retcode > 0:
         yaml_utils_logger.error("Invalid yaml file")
@@ -97,10 +101,13 @@ def host_exists_vagrantyaml(hostname, pathto_yaml):
                 return 1
             for d in doc:
                 # EXP: x = hostname for vagrantyaml
-                for x in doc[d]:
-                    if hostname == x:
-                        yaml_utils_logger.debug("Found host:" + hostname)
-                        return 0
+                try:
+                    for x in doc[d]:
+                        if hostname == x:
+                            yaml_utils_logger.debug("Found host:" + hostname)
+                            return 0
+                except TypeError:
+                    return 1
             return 1
     except IOError as error:
         yaml_utils_logger.error('File error: ' + str(error))
@@ -461,7 +468,7 @@ def host_add_vagrantyaml(path, file_name, hostname, site, cpus=2, memory=2,
                         yaml_utils_logger.error("Couldn't write file\
                                                 because no ip provided.")
                         return 1
-                if doc is not None:
+                if doc is not None and doc['hosts']:
                     for d in doc:
                         doc["hosts"][hostname] = {'role': role,
                                                   'domain': domain,
@@ -777,7 +784,7 @@ def gen_mac_from_ip(ip):
 
 def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
                            env="dev-tenant", flavor='2cpu.4ram.20sas',
-                           image='slab-RHEL7.1v8'):
+                           image='slab-RHEL7.1v8', groups=[]):
     """Given an ip address generate a mac address.
 
     Mac will be in form: 02:00:27:00:0x:xx where the Xs will depend
@@ -828,6 +835,8 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
         image (str): The servicelab default image is slab-rhel7.1V7, you may
                      pass to the function whichever flavor is available in
                      your environment though.
+        groups (list): Any extra groups that you need to specify beyond what the
+                       the default template provides (which is just virtual).
 
     Returns:
         returncode (int): 0 - Success, 1 - Failure
@@ -858,6 +867,9 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
               management_pass: cisco
               management_type: cimc
             hostname: db-001
+            groups:
+            - virtual
+            - etc.
             interfaces:
               eth0:
                 gateway: 192.168.100.2
@@ -885,6 +897,8 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
         doc['hostname'] = hostname
         doc['interfaces']['eth0']['ip_address'] = ip
         doc['role'] = role
+        groups = [i.split('service-')[1] for i in groups]  # remove leading service-
+        doc['groups'].append(groups)
         match = re.search('^(?:cs[lmsx]-\w\d?-)?(service-)?([\w-]+)-\d+$', hostname)
         if match:
             # All hostnames starting with 'service-' use the remaining text for sec group
@@ -957,7 +971,7 @@ def get_dev_hostyaml(path, hostname, site='ccs-dev-1', env='dev-tenant'):
     myhost = {}
     if not os.path.exists(os.path.join(path, 'services', 'ccs-data')):
         yaml_utils_logger.debug("Cloning ccs-data. on master branch.")
-        returncode, username = helper_utils.set_user(path)
+        returncode, username = helper_utils.get_gitusername(path)
         if returncode > 0:
             yaml_utils_logger.error('could not set username for clone of ccs-data.')
             return 1, myhost
@@ -1060,7 +1074,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
     for security_group in my_security_groups:
         sgrparry.append(str(security_group['name']))
 
-    a = Vagrantfile_utils.SlabVagrantfile(path)
+    a = vagrantfile_utils.SlabVagrantfile(path)
     # Note: setup host_vars under instance of class
     a.hostname = hostname
     a.set_host_image_flavors(path)

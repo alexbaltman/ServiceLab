@@ -11,7 +11,7 @@ from servicelab.utils import vagrant_utils as v_utils
 from servicelab.utils import helper_utils
 from servicelab.stack import pass_context
 from servicelab.utils import yaml_utils
-from servicelab.utils import Vagrantfile_utils as Vf_utils
+from servicelab.utils import vagrantfile_utils as Vf_utils
 from servicelab.utils import ccsdata_utils
 
 
@@ -73,7 +73,7 @@ from servicelab.utils import ccsdata_utils
               default='2cpu.4ram.20sas',
               help='Choose the flavor for the VM to use')
 @click.option('--image',
-              default='slab-RHEL7.1v8',
+              default='slab-RHEL7.1v9',
               help='Choose the image for the VM to use')
 @click.option('--nfs',
               default=False,
@@ -120,30 +120,60 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
     if rhel7:
         hostname = str(helper_utils.name_vm("rhel7", ctx.path))
     elif service:
+        service_groups = []
         if not service_utils.installed(service, ctx.path):
-            ctx.logger.error("{0} is not installed on the stack.\n"
+            ctx.logger.error("{0} is not in the .stack/services/ directory.\n"
                              "Try: stack workon {0}".format(service))
             sys.exit(1)
         hostname = str(helper_utils.name_vm(service, ctx.path))
     elif target:
         hostname = target
     elif existing_vm:
+        hostname = existing_vm
         ret_code, site = ccsdata_utils.get_site_from_env(env)
         if ret_code > 0:
-            return 1
+            ctx.logger.error("Could not find parent site for {}".format(env))
+            sys.exit(1)
         env_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site,
                                 'environments', env)
         ret_code, yaml_data = yaml_utils.read_host_yaml(existing_vm, env_path)
         if ret_code > 0:
-            return 1
-        for group in yaml_data['groups']:
-            if group != 'virtual':
-                service_group = 'service-' + group.replace('_', '-')
-                if not os.path.isdir(os.path.join(ctx.path, 'services', service_group)):
-                    ctx.logger.error('Unable to find %s repo.  Try "stack workon %s"'
-                                     % (service_group, service_group))
-                    return 1
-        hostname = existing_vm
+            sys.exit(1)
+        try:
+            flavor = yaml_data['deploy_args']['flavor']
+        except KeyError:
+            ctx.logger.warning('Unable to find flavor for %s, using default flavor'
+                               % hostname)
+        service_groups = []
+        groups = []
+        try:
+            for group in yaml_data['groups']:
+                if group != 'virtual':
+                    groups.append(group)
+                    service_group = 'service-' + group.replace('_', '-')
+                    if os.path.isdir(os.path.join(ctx.path, 'services', service_group)):
+                        service_groups.append(service_group)
+        except KeyError:
+            pass  # can pass, vm has no groups
+        if groups:
+            click.echo('\nThe following groups were found within %s yaml file: ' % hostname)
+            for group in groups:
+                click.echo(group)
+            if not service_groups:
+                click.echo('\nNo service groups were found locally installed')
+            else:
+                click.echo('\nThe following service groups were found installed locally:')
+                for service in service_groups:
+                    click.echo(service)
+            input_display = ('\nAre the locally installed service groups the expected '
+                             'groups to be installed on %s? y/n: ' % hostname)
+            if not re.search('^[Yy][Ee]*[Ss]*', raw_input(input_display)):
+                click.echo('Try "stack workon service-<group>" for each to be installed '
+                           'and rerun the "stack up --existing-vm" command')
+                sys.exit(0)
+        else:
+            ctx.logger.warning('No groups were found for %s.  Continuing to build the VM.'
+                               % hostname)
 
     # Setup data and inventory
     if not target and not mini and not full:
@@ -153,14 +183,19 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             memory = int(match.group(2)) * 2
         yaml_utils.host_add_vagrantyaml(ctx.path, "vagrant.yaml", hostname,
                                         "ccs-dev-1", memory=memory, cpus=cpus)
-        yaml_utils.write_dev_hostyaml_out(ctx.path, hostname, flavor=flavor, image=image)
-        if service:
+        if not service_groups:
+            yaml_utils.write_dev_hostyaml_out(ctx.path, hostname, flavor=flavor, image=image)
+        else:
+            yaml_utils.write_dev_hostyaml_out(ctx.path, hostname, flavor=flavor, image=image,
+                                              groups=service_groups)
+
+        if service or existing_vm:
             retc, myinfo = service_utils.build_data(ctx.path)
             if retc > 0:
                 ctx.logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
 
         # Prep class Objects
-        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path)
+        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path, remote=remote)
         if not os.path.exists(os.path.join(ctx.path, 'Vagrantfile')):
             myvfile.init_vagrantfile()
         myvag_env = v_utils.Connect_to_vagrant(vm_name=hostname,
@@ -199,7 +234,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             if returncode > 0:
                 ctx.logger.error("Could not run vagrant hostmanager because\
                                  {0}".format(myinfo))
-                ctx.logger.error("Vagrant manager will fail if you "
+                ctx.logger.error("Vagrant hostmanager will fail if you "
                                  "have local vms and remote vms.")
                 sys.exit(1)
         # You can exit safely now if you're just booting a rhel7 vm
@@ -207,7 +242,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             sys.exit(0)
 
     # SERVICE VM remaining workflow  =================================
-    if service:
+    if service or existing_vm:
         if remote:
             returncode, infra_name = v_utils.infra_ensure_up(mynets,
                                                              float_net,
@@ -242,15 +277,28 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         command = ('vagrant ssh {0} -c \"cd /opt/ccs/services/{1}/ && sudo heighliner '
                    '--dev --debug deploy\"')
 
-        returncode, myinfo = service_utils.run_this(command.format(infra_name, service),
-                                                    ctx.path)
-        if returncode > 0:
-            ctx.logger.error("There was a failure during the heighliner deploy phase of "
-                             "your service. Please see the following information"
-                             "for debugging: ")
-            ctx.logger.error(myinfo)
-            sys.exit(1)
-        else:
+        if service:
+            returncode, myinfo = service_utils.run_this(command.format(infra_name, service),
+                                                        ctx.path)
+            if returncode > 0:
+                ctx.logger.error("There was a failure during the heighliner deploy phase of "
+                                 "your service. Please see the following information"
+                                 "for debugging: ")
+                ctx.logger.error(myinfo)
+                sys.exit(1)
+            else:
+                sys.exit(0)
+        else:  # will only match if existing_vm
+            for service in service_groups:
+                returncode, myinfo = service_utils.run_this(command.format(infra_name,
+                                                                           service),
+                                                            ctx.path)
+                if returncode > 0:
+                    ctx.logger.error("There was a failure during the heighliner deploy "
+                                     "phase of your service. Please see the following "
+                                     "information for debugging: ")
+                    ctx.logger.error(myinfo)
+                    sys.exit(1)
             sys.exit(0)
     elif target:
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
@@ -360,7 +408,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         redhouse_ten_path = os.path.join(ctx.path, 'services', 'service-redhouse-tenant')
         a = v_utils.Connect_to_vagrant(vm_name='infra-001',
                                        path=os.path.join(redhouse_ten_path))
-        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path)
+        myvfile = Vf_utils.SlabVagrantfile(path=ctx.path, remote=remote)
         if remote:
             returncode, float_net, mynets, my_sec_grps = os_utils.os_ensure_network(ctx.path)
             if returncode > 0:

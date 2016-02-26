@@ -1,12 +1,8 @@
 import os
 import yaml
 import logging
-
 import service_utils
 
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
 Vagrantfile_utils_logger = logging.getLogger('click_application')
 logging.basicConfig()
 
@@ -22,12 +18,12 @@ class SlabVagrantfile(object):
         Varies per method.  See method docstrings for details
 
     Example Usage:
-        from servicelab.utils import Vagrantfile_utils
-        my_class_var = Vagrantfile_utils.SlabVagrantfile('/path/to/use/for/vagrant/')
+        from servicelab.utils import vagrantfile_utils
+        my_class_var = vagrantfile_utils.SlabVagrantfile('/path/to/use/for/vagrant/')
         my_class_var.<method_name>(args)
     """
 
-    def __init__(self, path):
+    def __init__(self, path, remote=False):
         self.path = path
         self.set_header = False
         # OS RC file vars
@@ -37,7 +33,8 @@ class SlabVagrantfile(object):
         # ccs-data flavor image settings
         self.host_vars = {}
         self.default_flavor = '2cpu.4ram.20sas'
-        self.default_image = 'slab-RHEL7.1v8'
+        self.default_image = 'slab-RHEL7.1v9'
+        self.remote = remote
 
     def init_vagrantfile(self):
         """
@@ -160,7 +157,7 @@ class SlabVagrantfile(object):
             vfile.write('end')
             vfile.write('\n')
 
-    def add_virtualbox_vm(self, host_dict, path="", nfs=False, rootpassword=""):
+    def add_virtualbox_vm(self, host_dict, path="", nfs=False):
         """
         Adds a virtual box to Vagrantfile
 
@@ -176,7 +173,6 @@ class SlabVagrantfile(object):
                               }
                  }
              nfs(boolean): True if we are nfs mounting the service subdirectory in the path
-             rootpassword: Root password to use to sudo update /etc/exports dircetory
 
         Returns:
             0 or 1 for success or failure.  Also calls append_it to add data to Vagrantfile
@@ -219,17 +215,18 @@ class SlabVagrantfile(object):
             setitup += ('  config.vm.provision "file", source: "hosts", ' +
                         'destination: "/etc/hosts"\n')
 
+            # if the sudoer file is not setup then Vagrant will try to update /etc/exports
+            # user will have to supply the password.
+            # to setup the sudoer file, please see ROOT PRIVILEGE REQUIREMENT in 
+            #     https://www.vagrantup.com/docs/synced-folders/nfs.html
             if nfs:
-                if service_utils.export_for_nfs(rootpassword,
-                                                os.path.join(path, "services"),
-                                                ip) != 0:
-                    Vagrantfile_utils_logger.error('unable to setup nfs mount for ' +
-                                                   os.path.join(path, "services"))
-                    return 1
                 setitup += ('  config.vm.synced_folder "services", "/opt/ccs/services", '
-                            'type: "nfs", nfs_export: false\n')
+                            'type: "nfs", nfs_export: true\n')
             else:
-                setitup += ('  config.vm.synced_folder "services", "/opt/ccs/services"\n')
+                setitup += ('  config.vm.synced_folder "services", "/opt/ccs/services"')
+                if self.remote:
+                    setitup += ' type: "rsync" '
+                setitup += "\n"
 
             self.append_it(setitup)
             return 0
@@ -315,7 +312,12 @@ class SlabVagrantfile(object):
                     "destination:\"/home/cloud-user/.ssh/config\"\n")
         setitup += ("  config.vm.provision \"file\", source: \"hosts\", destination: "
                     "\"/etc/hosts\"\n")
-        setitup += ("  config.vm.synced_folder \"services\", \"/opt/ccs/services/\"\n")
+        setitup += ('  config.vm.synced_folder "services", "/opt/ccs/services/"')
+
+        # we are rsyncing onl in case of remote
+        if self.remote:
+            setitup += ' type: "rsync" '
+        setitup += "\n"
 
         self.append_it(setitup)
 
@@ -440,7 +442,7 @@ class SlabVagrantfile(object):
         Returns:
             Nothing, instead sets the self.host_vars 'image' and 'flavor' key values
             self.host_vars['flavor'] = '2cpu.4ram.20sas'
-            self.host_vars['image']  = 'slab-RHEL7.1v8'
+            self.host_vars['image']  = 'slab-RHEL7.1v9'
 
         Example Usage:
             my_class_var.set_host_image_flavors(self.ctx.path)

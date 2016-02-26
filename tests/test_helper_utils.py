@@ -100,7 +100,7 @@ class TestHelperUtils(unittest.TestCase):
                                    TestHelperUtils.GIT_CONFIG_FILE), 'w') as f:
                 f.write(content)
 
-            returncode, username = helper_utils.set_user(
+            returncode, username = helper_utils.get_gitusername(
                                     os.path.join(temp_dir,
                                                  TestHelperUtils.DOTSTACK_PATH))
 

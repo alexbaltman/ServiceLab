@@ -87,3 +87,36 @@ def display_build_log(ctx, job_name, username, password, ip_address, interactive
         password = ctx.get_password(interactive)
     log = jenkins_utils.get_build_log(job_name, username, password, ip_address)
     click.echo(log)
+
+
+@cli.command('run', short_help='Trigger a build in Jenkins.')
+@click.argument('job_name', required=True)
+@click.option('-u',
+              '--username',
+              help='Provide jenkins username')
+@click.option('-p',
+              '--password',
+              help='Provide jenkins server password')
+@click.option('-ip',
+              '--ip_address',
+              default=context_utils.get_jenkins_url(),
+              help="Provide the jenkinsserv url ip address and port "
+                   "no in format <ip:portno>.")
+@click.option('-i',
+              '--interactive',
+              flag_value=True,
+              help="interactive editor")
+@pass_context
+def run_build(ctx, job_name, username, password, ip_address, interactive):
+    """
+    Displays a build status.
+    """
+    if not username:
+        username = ctx.get_username()
+    if not password:
+        password = ctx.get_password(interactive)
+    jenkins_utils.run_build(job_name,
+                            username,
+                            password,
+                            ip_address,
+                            ctx)

@@ -6,20 +6,22 @@ Pipe stack command submodule implements
 """
 import json
 import copy
-import requests
 import sys
+import xml.etree.ElementTree as ET
 
 import click
 from bs4 import BeautifulSoup
+import requests
 from requests.auth import HTTPBasicAuth
-import xml.etree.ElementTree as ET
 
 from servicelab.utils import gocd_utils
 from servicelab.stack import pass_context
 
 
-@click.group('pipe', short_help='Command subset to help you work with Go pipelines.',
-             add_help_option=True)
+@click.group(
+    'pipe',
+    short_help='Command subset to help you work with Go pipelines.',
+    add_help_option=True)
 @click.pass_context
 def cli(_):
     """
@@ -28,7 +30,9 @@ def cli(_):
     pass
 
 
-@cli.command('log', short_help='Display the log output from a specific pipeline.')
+@cli.command(
+    'log',
+    short_help='Display the log output from a specific pipeline.')
 @click.argument('pipeline_name', required=True)
 @click.option('-u',
               '--username',
@@ -70,7 +74,8 @@ def display_pipeline_log(ctx,
                        auth=HTTPBasicAuth(username, password))
     soup = BeautifulSoup(res.content, "html.parser")
     try:
-        latest_job_info_url = soup.findAll('entry')[0].findAll('link')[0]['href']
+        latest_job_info_url = soup.findAll(
+            'entry')[0].findAll('link')[0]['href']
     except Exception as ex:
         click.echo("Internal error occurred. Please, check arguments supplied.")
         click.echo("Error details : %s " % (ex))
@@ -161,15 +166,20 @@ def display_pipeline_status(ctx,
               callback=gocd_utils.validate_pipe_ip_cb,
               help='Provide the go server ip address and port <ip:port>.',
               required=False)
-@click.option('-e',
-              '--env',
-              default=None,
-              help='Provide environment variables in json format e.x {"var1" : "val1"}',
-              required=False)
+@click.option(
+    '-e',
+    '--env',
+    default=None,
+    help='Provide environment variables in json format e.x {"var1" : "val1"}',
+    required=False)
 @click.option('-i',
               '--interactive',
               flag_value=True,
               help="interactive editor")
+@click.option('-a',
+              '--all-stages',
+              flag_value=True,
+              help="Process all stages without needing manual approval.")
 @pass_context
 def trigger_pipeline(ctx,
                      pipeline_name,
@@ -177,7 +187,8 @@ def trigger_pipeline(ctx,
                      password,
                      ip_address,
                      env,
-                     interactive):
+                     interactive,
+                     all_stages):
     """
     Runs a pipeline.
     """
@@ -199,11 +210,29 @@ def trigger_pipeline(ctx,
             if env_data is None:
                 env_data = "variables[{0}]={1}".format(env_key, env_val)
             else:
-                env_data = "{0}&variables[{1}]={2}".format(env_data, env_key, env_val)
+                env_data = "{0}&variables[{1}]={2}".format(
+                    env_data, env_key, env_val)
+    return_code, current_pipeline_counter = gocd_utils.get_current_pipeline_counter(
+        pipeline_name, ip_address, auth=HTTPBasicAuth(username, password))
+    if return_code == -1:
+        click.echo("Error occurred. Exiting.")
+        return
+    click.echo(
+        "Current pipeline_counter : %s" %
+        (current_pipeline_counter + 1))
+    click.echo("Scheduling pipeline.")
     res = requests.post(server_url.format(ip_address, pipeline_name),
                         auth=HTTPBasicAuth(username, password), data=env_data)
     soup = BeautifulSoup(res.content, "html.parser")
-    print soup
+    click.echo(soup)
+    if all_stages:
+        gocd_utils.process_all_stages(
+            pipeline_name,
+            current_pipeline_counter + 1,
+            ip_address,
+            auth=HTTPBasicAuth(
+                username,
+                password))
 
 
 @cli.command('clone', short_help='Clone a Go pipeline - Go admins only.')
@@ -262,4 +291,5 @@ def clone_pipeline(ctx,
 
     # Upload results
     new_xmls = ET.tostring(new_xml, encoding='utf-8', method='xml')
-    gocd_utils.push_config(post_config_xmlurl, md5, new_xmls, (username, password))
+    gocd_utils.push_config(post_config_xmlurl, md5,
+                           new_xmls, (username, password))

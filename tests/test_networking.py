@@ -18,7 +18,7 @@ from servicelab.utils.openstack_utils import SLab_OS
 from servicelab.utils import helper_utils
 from servicelab.utils import yaml_utils
 from servicelab.utils import service_utils
-from servicelab.utils import Vagrantfile_utils
+from servicelab.utils import vagrantfile_utils
 from servicelab.utils import vagrant_utils
 
 
@@ -411,7 +411,7 @@ class TestInfraNode(TestSLABNetworking):
         yaml_utils.write_dev_hostyaml_out(self.ctx.path, self.hostname)
         result, info = service_utils.build_data(self.ctx.path)
 
-        slab_vagrant_file = Vagrantfile_utils.SlabVagrantfile(path=self.ctx.path)
+        slab_vagrant_file = vagrantfile_utils.SlabVagrantfile(path=self.ctx.path)
         slab_vagrant_file.init_vagrantfile()
         vagrant_env = vagrant_utils.Connect_to_vagrant(vm_name=self.hostname,
                                                        path=self.ctx.path)
