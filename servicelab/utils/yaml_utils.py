@@ -725,10 +725,10 @@ def next_macip_for_devsite(path, site):
     subnet = ipaddress.IPv4Network(unicode('192.168.100.0/24'))
     returncode, ip = tc_vm_yaml_create.find_ip(env_path, subnet)
     if not returncode == 0:
-        return 1, ip, mac_colon, mac_nocolon
+        return(1, ip, '', '')
     returncode, mac_colon, mac_nocolon = gen_mac_from_ip(ip)
     if returncode == 0:
-        return 0, ip, mac_colon, mac_nocolon
+        return(0, ip, mac_colon, mac_nocolon)
     else:
         # Note: everything after the 1 should be None b/c
         #       of the failure in that function.
