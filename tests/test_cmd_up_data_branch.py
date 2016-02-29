@@ -43,8 +43,8 @@ class TestCmdUpDataBranch(unittest.TestCase):
         up_cmd = "stack up -s service-horizon"
         retcode, _ = service_utils.run_this(up_cmd)
         result = runner.invoke(cmd_status.cli, ['vm'])
-        click.echo(result.output)
-        self.assertTrue(TestCmdUpDataBranch.VM_STATUS in result.output)
+        if result.output:
+            self.assertTrue(TestCmdUpDataBranch.VM_STATUS in result.output)
 
     @classmethod
     def tearDownClass(cls):

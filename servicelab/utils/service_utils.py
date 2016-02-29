@@ -221,7 +221,7 @@ def _git_pull_ff(path, branch, service_name):
     # Before doing git checkout, check if the remote ref exists
     # if it does not then take some steps to get it and run checks
     try:
-        click.echo("Checking for remote references in %s " % (service_path))
+        slab_logger.log(25, "Checking for remote references in %s " % (service_path))
         command_to_run = "git show-ref %s" % (branch)
         output = subprocess.Popen(command_to_run, shell=True,
                                   stdin=subprocess.PIPE,
@@ -230,10 +230,9 @@ def _git_pull_ff(path, branch, service_name):
                                   cwd=service_path)
         ref_info = output.communicate()[0]
         if branch not in ref_info:
-            click.echo("Remote git branch not found : %s " % (branch))
-            click.echo(
-                "Setting remote origin in .git/config to :"
-                " +refs/heads/*:refs/remotes/origin/*")
+            slab_logger.log(25, "Remote git branch not found : %s " % (branch))
+            slab_logger.log(25, "Setting remote origin in .git/config to :"
+                                " +refs/heads/*:refs/remotes/origin/*")
             command_to_run = "git config --replace-all  remote.origin.fetch"\
                 "  \"+refs/heads/*:refs/remotes/origin/*\""
             output = subprocess.Popen(command_to_run, shell=True,
@@ -242,14 +241,13 @@ def _git_pull_ff(path, branch, service_name):
                                       stderr=subprocess.STDOUT, close_fds=True,
                                       cwd=service_path)
             command_to_run = "git fetch --unshallow"
-            click.echo(
-                "Fetching all remote branches. It might take a few minutes. %s " %
-                (service_path))
+            slab_logger.log(25, "Fetching all remote branches. "
+                            "It might take a few minutes. %s " % (service_path))
             subprocess.call('git fetch --unshallow', cwd=service_path, shell=True)
-            click.echo("Done Fetching all remote branches.")
-            click.echo("Updating remotes. ")
+            slab_logger.log(25, "Done Fetching all remote branches.")
+            slab_logger.log(25, "Updating remotes. ")
             call(["git", "remote", "update"], cwd=service_path)
-            click.echo("Done update remotes. ")
+            slab_logger.log(25, "Done update remotes. ")
             command_to_run = "git show-ref %s" % (branch)
             output = subprocess.Popen(command_to_run, shell=True,
                                       stdin=subprocess.PIPE,
@@ -258,7 +256,7 @@ def _git_pull_ff(path, branch, service_name):
                                       cwd=service_path)
             ref_info = output.communicate()[0]
             if branch not in ref_info:
-                click.echo("Remote branch %s not found." % (branch))
+                slab_logger.log(25, "Remote branch %s not found." % (branch))
                 command_to_run = "git show-ref"
                 output = subprocess.Popen(
                     command_to_run,
@@ -269,8 +267,8 @@ def _git_pull_ff(path, branch, service_name):
                     close_fds=True,
                     cwd=service_path)
                 ref_info = output.communicate()[0]
-                click.echo("Following branches found : %s " % ref_info)
-                click.echo("Branch not found. Please, check branch name. Exiting.")
+                slab_logger.log(25, "Following branches found : %s " % ref_info)
+                slab_logger.log(25, "Branch not found. Please, check branch name. Exiting.")
     except OSError, ex:
         SERVICE_UTILS_LOGGER.error(ex)
         return (1, str(ex))

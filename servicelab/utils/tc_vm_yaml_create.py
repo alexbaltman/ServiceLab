@@ -154,8 +154,8 @@ def find_ip(env_path, vlan):
 
     # check if path exists if not exist
     if not os.path.exists(env_path):
-        slab_logger.log(25, 'The ccs-data repo was not found.  Try "stack workon ccs-data"')
-        sys.exit(1)
+        slab_logger.error('The ccs-data repo was not found.  Try "stack workon ccs-data"')
+        return(1, '')
     # Find all the envs within the site
     for env in os.listdir(env_path):
         hosts_path = os.path.join(env_path, env, 'hosts.d')
@@ -187,7 +187,8 @@ def find_ip(env_path, vlan):
             socket.gethostbyaddr(str(ip))
         # socket.herror means there was no DNS reservation found
         except socket.herror:
-            return str(ip)
+            return(0, str(ip))
+    return(1, '')
 
 
 def create_vm(
@@ -257,11 +258,11 @@ def create_vm(
         return 1
     if not ip_address:
         vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id)]))
-        source_data['ip'] = find_ip(source_data['env_path'], vlan)
-        if not source_data['ip']:
+        returncode, source_data['ip'] = find_ip(source_data['env_path'], vlan)
+        if not returncode == 0:
             if str(vlan_id + '-sup') in source_data:
                 vlan = ipaddress.IPv4Network(unicode(source_data[str(vlan_id + '-sup')]))
-                source_data['ip'] = find_ip(source_data['env_path'], vlan)
+                returncode, source_data['ip'] = find_ip(source_data['env_path'], vlan)
                 source_data['sup'] = True
     else:
         source_data['ip'] = ip_address

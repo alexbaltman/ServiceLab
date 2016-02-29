@@ -182,9 +182,12 @@ def list_build(ctx, ip_address, username, password, interactive):
     if not password:
         password = ctx.get_password(interactive)
     slab_logger.info('Listing builds in Jenkins.')
-    server = jenkins_utils.get_server_instance(ip_address,
-                                               username,
-                                               password)
+    returncode, server = jenkins_utils.get_server_instance(ip_address,
+                                                           username,
+                                                           password)
+    if not returncode == 0:
+        slab_logger.error('Unable to connect to Jenkins server')
+        sys.exit(1)
     for key in server.keys():
         slab_logger.log(25, key)
 

@@ -40,11 +40,12 @@ class TestJenkinsUtils(unittest.TestCase):
         """
         Tests pipeline status command.
         """
-        status = jenkins_utils.get_build_status(TestJenkinsUtils.JOB_NAME,
-                                                TestJenkinsUtils.JENKINS_USER,
-                                                TestJenkinsUtils.JENKINS_PASS,
-                                                TestJenkinsUtils.JENKINS_SERVER)
-        if len(status):
+        returncode, status = jenkins_utils.get_build_status(
+            TestJenkinsUtils.JOB_NAME,
+            TestJenkinsUtils.JENKINS_USER,
+            TestJenkinsUtils.JENKINS_PASS,
+            TestJenkinsUtils.JENKINS_SERVER)
+        if returncode == 0:
             self.assertTrue(TestJenkinsUtils.BUILD_STATUS in status)
 
     def test_cmd_build_list(self):

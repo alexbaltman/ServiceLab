@@ -723,7 +723,9 @@ def next_macip_for_devsite(path, site):
     env_path = os.path.join(path, 'services', 'ccs-data', 'sites', 'ccs-dev-1',
                             'environments')
     subnet = ipaddress.IPv4Network(unicode('192.168.100.0/24'))
-    ip = tc_vm_yaml_create.find_ip(env_path, subnet)
+    returncode, ip = tc_vm_yaml_create.find_ip(env_path, subnet)
+    if not returncode == 0:
+        return 1, ip, mac_colon, mac_nocolon
     returncode, mac_colon, mac_nocolon = gen_mac_from_ip(ip)
     if returncode == 0:
         return 0, ip, mac_colon, mac_nocolon

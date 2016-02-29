@@ -25,31 +25,32 @@ def get_server_instance(jenkins_server, jenkinsuser, jenkinspass):
     Jenkins instance.
     """
     requests.packages.urllib3.disable_warnings()
+    server = ''
     try:
         server = Jenkins(jenkins_server, username=jenkinsuser,
                          password=jenkinspass)
     except Exception as ex:
         slab_logger.log(25, "Unable to connect to Jenkins server : %s " %
                         str(ex))
-        sys.exit(1)
+        return(1, server)
 
-    return server
+    return(0,  server)
 
 
 def get_build_status(job_name, user, password, ip_address):
     """
     get the build status
     """
-    server = get_server_instance(ip_address, user, password)
-    if not server:
+    returncode, server = get_server_instance(ip_address, user, password)
+    if not returncode == 0:
         # this should be an exception
         print "unable to get server instance"
-        return False
+        return(returncode, server)
 
     status = server[job_name].get_last_build().name
     if server[job_name].get_last_build().get_status():
         status = status + "," + server[job_name].get_last_build().get_status()
-    return status
+    return(returncode, status)
 
 
 def get_build_log(job_name, user, password, ip_address):

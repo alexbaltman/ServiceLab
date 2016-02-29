@@ -60,7 +60,7 @@ class TestArtifactUtils(unittest.TestCase):
             self.ARTIFACT,
             self.ARTIFACTORY_USER,
             self.ARTIFACTORY_PASS)
-        if len(result):
+        if 'Bad credentials' not in result:
             self.assertTrue(self.STATUS in result)
 
 

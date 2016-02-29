@@ -257,7 +257,10 @@ def find_build(ctx, search_term, username, password, ip_address, interactive):
                           (username, password))
         sys.exit(1)
 
-    server = jenkins_utils.get_server_instance(ip_address, username, password)
+    returncode, server = jenkins_utils.get_server_instance(ip_address, username, password)
+    if not returncode == 0:
+        slab_logger.error('Unable to connect to Jenkins server')
+        sys.exit(1)
     for key in server.keys():
         match_obj = re.search(search_term, key, re.M | re.I)
         if match_obj:

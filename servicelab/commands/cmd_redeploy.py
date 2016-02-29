@@ -8,6 +8,9 @@ import click
 from servicelab.utils import service_utils
 from servicelab.utils import vagrant_utils
 from servicelab.stack import pass_context
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.cmd.redeploy')
 
 
 @click.option('-v',
@@ -29,7 +32,7 @@ def cli(ctx, deploy_svc, existing_vm, env):
     """
     if not deploy_svc.startswith('service-'):
         deploy_svc = 'service-' + deploy_svc
-        click.echo('Adding "service-" to service: ' + deploy_svc)
+        slab_logger.log(25, 'Adding "service-" to service: ' + deploy_svc)
 
     command = ('vagrant ssh {0} -c \"cd /opt/ccs/services/{1}/ && sudo heighliner '
                '--dev --debug deploy\"')
@@ -37,20 +40,18 @@ def cli(ctx, deploy_svc, existing_vm, env):
     returncode, myinfo = service_utils.run_this(command.format('infra-001', deploy_svc),
                                                 ctx.path)
 
-    click.echo(myinfo)
-    click.echo('Failed to deploy service. Trying infra-002')
+    slab_logger.log(25, myinfo)
     if returncode > 0:
+        slab_logger.error('Failed to deploy service. Trying infra-002')
         returncode, myinfo = service_utils.run_this(command.format('infra-002', deploy_svc),
                                                     ctx.path)
+        slab_logger.log(25, myinfo)
         if returncode > 0:
-            click.echo(myinfo)
-            click.echo('Failed to deploy service.')
+            slab_logger.error('Failed to deploy service.')
             sys.exit(1)
         else:
-            click.echo(myinfo)
-            click.echo('Deployed service successfully.')
+            slab_logger.log(25, 'Deployed service successfully.')
             sys.exit(0)
     else:
-        click.echo(myinfo)
-        click.echo('Deployed service successfully.')
+        slab_logger.error('Deployed service successfully.')
         sys.exit(0)
