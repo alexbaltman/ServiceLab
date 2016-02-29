@@ -3,13 +3,16 @@ Set of utility functions for Jenkins server
 """
 import sys
 import time
-
 import requests
-import click
 
 from bs4 import BeautifulSoup
 from jenkinsapi.jenkins import Jenkins
 from requests.auth import HTTPBasicAuth
+
+import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.jenkins')
 
 
 START_LOG = "-------- Printing job log for build %s--------\n"
@@ -26,8 +29,8 @@ def get_server_instance(jenkins_server, jenkinsuser, jenkinspass):
         server = Jenkins(jenkins_server, username=jenkinsuser,
                          password=jenkinspass)
     except Exception as ex:
-        click.echo("Unable to connect to Jenkins server : %s " %
-                   str(ex))
+        slab_logger.log(25, "Unable to connect to Jenkins server : %s " %
+                        str(ex))
         sys.exit(1)
 
     return server
@@ -84,7 +87,7 @@ def run_build(job_name, user, password, ip_address, ctx):
     server = get_server_instance(ip_address, user, password)
     if not server:
         # this should be an exception
-        click.echo("unable to get server instance")
+        slab_logger.log(25, "unable to get server instance")
         return False
 
     if server[job_name].get_last_build():
@@ -93,21 +96,21 @@ def run_build(job_name, user, password, ip_address, ctx):
                                                                job_name,
                                                                build_number)
         try:
-            click.echo("Retriggering last build # : %s " % (build_number))
+            slab_logger.log(25, "Retriggering last build # : %s " % (build_number))
             res = requests.post(url, auth=HTTPBasicAuth(user, password))
             process_response(res, ctx)
         except requests.exceptions.RequestException as ex:
-            ctx.logger.error("Could not connect to jenkins server. Please,"
-                             " check url {0}".format(ip_address))
-            ctx.logger.error(str(ex))
+            slab_logger.error("Could not connect to jenkins server. Please,"
+                              " check url {0}".format(ip_address))
+            slab_logger.error(str(ex))
             return False
     else:
-        click.echo("Starting Build : %s " % (job_name))
+        slab_logger.log(25, "Starting Build : %s " % (job_name))
         server.build_job(job_name)
 
     job_instance = server.get_job(job_name)
     time.sleep(2)
-    click.echo('%s run status is : %s' % (job_name, job_instance.is_running()))
+    slab_logger.log(25, '%s run status is : %s' % (job_name, job_instance.is_running()))
 
 
 def validate_build_ip_cb(ctx, param, value):
@@ -137,11 +140,11 @@ def process_response(res, ctx):
         >>> print process_response(res, ctx)
     """
     if res.status_code == 404:
-        ctx.logger.error("Incorrect jenkins url supplied... exiting")
+        slab_logger.error("Incorrect jenkins url supplied... exiting")
         return False
     if res.status_code == 401:
-        ctx.logger.error("Authentication failed... exiting")
+        slab_logger.error("Authentication failed... exiting")
         return False
     if res.status_code == 400:
-        ctx.logger.error("Incorrect information supplied... exiting")
+        slab_logger.error("Incorrect information supplied... exiting")
         return False

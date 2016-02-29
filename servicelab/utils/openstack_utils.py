@@ -1,26 +1,20 @@
 import os
 import yaml
 import time
-import logging
+import requests
+
+import logger_utils
+import helper_utils
+import vagrant_utils
 
 from subprocess import CalledProcessError
-
-import requests
-import click
-
 from keystoneclient.exceptions import AuthorizationFailure, Unauthorized
 from neutronclient.neutron import client as neutron_client
 from keystoneclient.v2_0 import client
 from neutronclient.common.exceptions import NotFound
+from servicelab import settings
 
-import helper_utils
-import vagrant_utils
-
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
-openstack_utils_logger = logging.getLogger('click_application')
-logging.basicConfig()
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.openstack')
 
 
 class SLab_OS(object):
@@ -60,7 +54,7 @@ class SLab_OS(object):
         if not username:
             returncode, username = helper_utils.get_gitusername(ctx.path)
             if returncode > 0:
-                openstack_utils_logger.error("Couldn't set username.")
+                slab_logger.error("Couldn't set username.")
         self.path = path
         self.username = username
         self.password = password
@@ -116,6 +110,7 @@ class SLab_OS(object):
             [<Tenant {u'enabled': True, u'description': u'', u'name': u'ServiceLab',
                       u'id': u'2e3e3bb7ce9f4ab6912da0e500a822ac'}>]
         """
+        slab_logger.log(15, 'Extracting keystone token from Openstack endpoint')
         self.auth_url = 'https://' + self.base_url + self.url_domain + ':5000/v2.0'
 
         try:
@@ -132,8 +127,8 @@ class SLab_OS(object):
                         break
 
                 if not self.tenant_id:
-                    openstack_utils_logger.error("Unable to determine tenant_id"
-                                                 "for {}".format(self.os_tenant_name))
+                    slab_logger.error("Unable to determine tenant_id"
+                                      "for {}".format(self.os_tenant_name))
                     return 1, self.tenant_id, self.token
                 return 0, self.tenant_id, self.token
             else:
@@ -143,10 +138,10 @@ class SLab_OS(object):
                 return 0, self.tenant_id, self.token
 
         except AuthorizationFailure as auth_failure:
-            openstack_utils_logger.error(auth_failure.message)
+            slab_logger.error(auth_failure.message)
             return 1, self.tenant_id, self.token
         except Unauthorized as unauthorized:
-            openstack_utils_logger.error(unauthorized.message)
+            slab_logger.error(unauthorized.message)
             return 1, self.tenant_id, self.token
 
     def connect_to_neutron(self):
@@ -171,6 +166,7 @@ class SLab_OS(object):
             >>> print a.connect_to_neutron()
             0
         """
+        slab_logger.log(15, 'Connecting to neutron endpoint')
         self.endpoint_url = "https://" + self.base_url + self.url_domain + ":9696"
         self.neutron = neutron_client.Client('2.0', endpoint_url=self.endpoint_url,
                                              token=self.token)
@@ -200,6 +196,7 @@ class SLab_OS(object):
             >>> print a.create_name_for("subnet", "mgmt")
             SLAB_Servicelab2_aaltman_mgmt_subnet
         """
+        slab_logger.log(15, 'Generating name for %s' % neutron_type)
         if append:
             append = "_" + append
 
@@ -255,6 +252,7 @@ class SLab_OS(object):
               u'subnets': [],
               u'tenant_id': u'2e3e3bb7ce9f4ab6912da0e500a822ac'}]}
         """
+        slab_logger.log(15, 'Checking neutron for %s' % name)
         networks = self.neutron.list_networks()
         network = ""
         parts = name.split('_')
@@ -310,6 +308,7 @@ class SLab_OS(object):
             created and associated to a network of essentially the same
             name "SLAB_aaltman_network".
         """
+        slab_logger.log(15, 'Checking neutron for %s' % name)
         subnets = self.neutron.list_subnets()
         subnet = ""
         parts = name.split('_')
@@ -354,6 +353,7 @@ class SLab_OS(object):
                 u'id': u'58c068d7-1937-4c63-ab09-d2025d9336d1'
                 }
         """
+        slab_logger.log(15, 'Checking neutron for %s' % name)
         routers = self.neutron.list_routers()
         router = ""
         parts = name.split('_')
@@ -423,6 +423,7 @@ class SLab_OS(object):
            u'status': u'ACTIVE',
            u'tenant_id': u'4ab4b8260df84a869782e2a3a5bf6101'},]}
         """
+        slab_logger.log(15, 'Checking neutron for router ports')
         ports = self.neutron.list_ports()
         for i in ports['ports']:
             if i.get('device_owner') == 'network:router_interface':
@@ -467,6 +468,7 @@ class SLab_OS(object):
         if not name:
             name = self.create_name_for("network")
 
+        slab_logger.log(15, 'Creating network %s' % name)
         returncode, network = self.check_for_network(name)
         if returncode == 1:
             network = {'name': name, 'admin_state_up': True, 'tenant_id': self.tenant_id}
@@ -476,7 +478,7 @@ class SLab_OS(object):
                 self.write_to_cache(network)
                 return 0, network
             else:
-                openstack_utils_logger.error("Tried to make the network, but failed.")
+                slab_logger.error("Tried to make the network, but failed.")
                 return 1, network
         else:
             return 0, network
@@ -510,12 +512,13 @@ class SLab_OS(object):
         if not name:
             name = self.create_name_for("router")
 
+        slab_logger.log(15, 'Creating router %s' % name)
         returncode, router = self.check_for_router(name)
         if returncode == 1:
                 returncode2, external_net_id = self.find_floatnet_id()
                 if returncode2 > 0:
-                    openstack_utils_logger.error("Tried to make the router, but failed\
-                                                  b/c can't find public floating network.")
+                    slab_logger.error("Tried to make the router, but failed\
+                                     b/c can't find public floating network.")
                     return 1, router
                 else:
                     router = {'name': name, 'admin_state_up': True, 'external_gateway_info':
@@ -527,8 +530,7 @@ class SLab_OS(object):
                         self.write_to_cache(router)
                         return 0, router
                     else:
-                        openstack_utils_logger.error("Tried to make the router, "
-                                                     "but failed.")
+                        slab_logger.error("Tried to make the router, but failed.")
                         return 1, router
         else:
             return 0, router
@@ -555,6 +557,7 @@ class SLab_OS(object):
             We should expect in a return 0 scenario that the security_group was
             created.
         """
+        slab_logger.log(15, 'Checking for security group %s' % name)
         security_groups = self.neutron.list_security_groups()
         security_group = ""
         parts = name.split('_')
@@ -595,6 +598,7 @@ class SLab_OS(object):
         if not name:
             name = self.create_name_for("security_group")
 
+        slab_logger.log(15, 'Creating security group %s' % name)
         returncode, security_group = self.check_for_security_group(name)
         if returncode == 1:
             security_group = {'name': name,
@@ -632,7 +636,7 @@ class SLab_OS(object):
             if returncode3 == 0:
                 return 0, security_group
             else:
-                openstack_utils_logger.error(
+                slab_logger.error(
                     "Tried to make the security group, but failed.")
                 return 1, security_group
         else:
@@ -672,6 +676,7 @@ class SLab_OS(object):
                u'id': u'bd738973-2d66-4e19-b67c-1ee261244a91'
                }
         """
+        slab_logger.log(15, 'Creating subnet %s in Openstack project' % cidr)
         subnet = ""
         if not name:
             name = self.create_name_for("subnet")
@@ -680,8 +685,8 @@ class SLab_OS(object):
             if returncode == 0:
                 net_id = network['id']
             else:
-                openstack_utils_logger.error("Can't attach subnet to network\
-                                             provided because it doesn't exist.")
+                slab_logger.error("Can't attach subnet to network\
+                                 provided because it doesn't exist.")
                 return 1, subnet
         else:
             net_name = name.replace("subnet", "network")
@@ -689,7 +694,7 @@ class SLab_OS(object):
             if returncode == 0:
                 net_id = network['id']
             else:
-                openstack_utils_logger.error("Can't attach subnet to network\
+                slab_logger.error("Can't attach subnet to network\
                                              provided because it doesn't exist.")
                 return 1, subnet
 
@@ -708,7 +713,7 @@ class SLab_OS(object):
                 self.write_to_cache(subnet)
                 return 0, subnet
             else:
-                openstack_utils_logger.error("Failed to create the subnet.")
+                slab_logger.error("Failed to create the subnet.")
                 return 1, subnet
         else:
             return 0, subnet
@@ -730,7 +735,7 @@ class SLab_OS(object):
         """
         returncode, external_net_id = self.find_floatnet_id()
         if returncode > 0:
-            openstack_utils_logger.error("Tried to make the router, but failed\
+            slab_logger.error("Tried to make the router, but failed\
                                           b/c can't find public floating network.")
             return 1
         floatingip = {'floating_network_id': external_net_id, 'tenant_id': self.tenant.id}
@@ -778,8 +783,7 @@ class SLab_OS(object):
                 if return_name:
                     return 0, float_name
                 return 0, _id
-        openstack_utils_logger.error('Failed to find public-floating-\* '
-                                     'in networks names')
+        slab_logger.error('Failed to find public-floating-\* in networks names')
         return 1, _id
 
     def del_in_project(self, neutron_type, id):
@@ -815,7 +819,7 @@ class SLab_OS(object):
             if returncode > 0:
                 return 0
             else:
-                openstack_utils_logger.error("Failed to delete network.")
+                slab_logger.error("Failed to delete network.")
                 return 1
         elif neutron_type == "router":
             self.neutron.delete_router(id)
@@ -972,9 +976,9 @@ def os_ensure_network(path):
     security_groups = []
 
     if not password or not base_url:
-        openstack_utils_logger.error('Can --not-- boot into OS b/c password or base_url is\
+        slab_logger.error('Can --not-- boot into OS b/c password or base_url is\
         not set')
-        openstack_utils_logger.error('Exiting now.')
+        slab_logger.error('Exiting now.')
         return 1, float_net, mynewnets, security_groups
 
     a = SLab_OS(path=path, password=password, username=username,
@@ -984,54 +988,53 @@ def os_ensure_network(path):
     if not a.tenant_id:
         returncode, a.tenant_id, temp_token = a.login_or_gettoken()
         if returncode > 0:
-            openstack_utils_logger.error("Could not login to Openstack.")
+            slab_logger.error("Could not login to Openstack.")
             return 1, float_net, mynewnets, security_groups
     # Note: _ is same as above --> a.tenant_id
     returncode, _, token = a.login_or_gettoken(tenant_id=a.tenant_id)
     if returncode > 0:
-        openstack_utils_logger.error("Could not get token to project.")
+        slab_logger.error("Could not get token to project.")
         return 1, float_net, mynewnets, security_groups
 
     a.connect_to_neutron()
 
     returncode, security_group = a.create_security_group()
     if returncode > 0:
-        openstack_utils_logger.error("Could not create security group in project.")
+        slab_logger.error("Could not create security group in project.")
         return 1, float_net, mynewnets, security_groups
     returncode, float_net = a.find_floatnet_id(return_name="Yes")
     if returncode > 0:
-        openstack_utils_logger.error('Could not get the name for the '
-                                     'floating network.')
+        slab_logger.error('Could not get the name for the floating network.')
         return 1, float_net, mynewnets, security_groups
     returncode, router = a.create_router()
     if returncode > 0:
-        openstack_utils_logger.error("Could not create router in project.")
+        slab_logger.error("Could not create router in project.")
         return 1, float_net, mynewnets, security_groups
     router_id = router['id']
     returncode, network = a.create_network()
     if returncode > 0:
-        openstack_utils_logger.error("Could not create network in project.")
+        slab_logger.error("Could not create network in project.")
         return 1, float_net, mynewnets, security_groups
     returncode, subnet = a.create_subnet()
     if returncode > 0:
-        openstack_utils_logger.error("Could not create subnet in project.")
+        slab_logger.error("Could not create subnet in project.")
         return 1, float_net, mynewnets, security_groups
-    openstack_utils_logger.debug('Sleeping 5s b/c of slow neutron create times.')
+    slab_logger.debug('Sleeping 5s b/c of slow neutron create times.')
     time.sleep(5)
     a.add_int_to_router(router_id, subnet['id'])
 
     mgmtname = a.create_name_for("network", append="mgmt")
     returncode, mgmt_network = a.create_network(name=mgmtname)
     if returncode > 0:
-        openstack_utils_logger.error("Could not create network in project.")
+        slab_logger.error("Could not create network in project.")
         return 1, float_net, mynewnets, security_groups
     mgmtsubname = a.create_name_for("subnet", append="mgmt")
     returncode, mgmt_subnet = a.create_subnet(name=mgmtsubname,
                                               cidr='192.168.1.0/24')
     if returncode > 0:
-        openstack_utils_logger.error("Could not create subnet in project.")
+        slab_logger.error("Could not create subnet in project.")
         return 1, float_net, mynewnets, security_groups
-    openstack_utils_logger.debug('Sleeping 5s b/c of slow neutron create times.')
+    slab_logger.debug('Sleeping 5s b/c of slow neutron create times.')
     time.sleep(5)
     a.add_int_to_router(router_id, mgmt_subnet['id'], mgmt=True)
     mynets = a.neutron.list_networks()
@@ -1069,11 +1072,11 @@ def os_check_vms(path):
         for status in statuses:
                 if status[1] == 'running' or status[1] == 'active':
                     running_vm = True
-                    click.echo("VM %s is running" % (status[0]))
+                    slab_logger.log(25, "VM %s is running" % (status[0]))
         return 0, running_vm
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
-        openstack_utils_logger.error("Error occurred connecting to Vagrant.")
+        slab_logger.error("Error occurred connecting to Vagrant.")
         return 1, running_vm
 
 
@@ -1090,23 +1093,23 @@ def os_delete_vms(path, force):
     vm_connection = vagrant_utils.Connect_to_vagrant(vm_name="infra-001",
                                                      path=path)
     if force:
-        click.echo("Deleting all VMs.")
+        slab_logger.log(25, "Deleting all VMs.")
     try:
         statuses = vm_connection.v.status()
         for status in statuses:
             if force:
                 vm_connection.v.destroy(status[0])
-                click.echo("Deleted VM : %s " % (status[0]))
+                slab_logger.log(25, "Deleted VM : %s " % (status[0]))
             else:
                 if yes_or_no("Do you want to destroy VM : %s ? "
                              % (status[0])):
                     vm_connection.v.destroy(status[0])
-                    click.echo("Deleted VM : %s " % (status[0]))
+                    slab_logger.log(25, "Deleted VM : %s " % (status[0]))
                 else:
-                    click.echo("Skipping deletion of VM : %s " % (status[0]))
+                    slab_logger.log(25, "Skipping deletion of VM : %s " % (status[0]))
     except CalledProcessError:
         # RFI: is there a better way to return here? raise exception?
-        click.echo("Error occurred connecting to Vagrant.")
+        slab_logger.log(25, "Error occurred connecting to Vagrant.")
 
 
 def os_delete_networks(path, force):
@@ -1126,9 +1129,9 @@ def os_delete_networks(path, force):
     base_url = os.environ.get('OS_REGION_NAME')
 
     if not password or not base_url:
-        openstack_utils_logger.error('Can delete network b/c password or base_url is\
+        slab_logger.error('Can delete network b/c password or base_url is\
         not set')
-        openstack_utils_logger.error('Exiting now.')
+        slab_logger.error('Exiting now.')
         return
 
     slab = SLab_OS(path=path, password=password, username=username,
@@ -1138,18 +1141,18 @@ def os_delete_networks(path, force):
     if not slab.tenant_id:
         returncode, slab.tenant_id, _ = slab.login_or_gettoken()
         if returncode > 0:
-            openstack_utils_logger.error("Could not login to Openstack.")
+            slab_logger.error("Could not login to Openstack.")
             return
     # Note: _ is same as above --> a.tenant_id
     returncode, _, _ = slab.login_or_gettoken(tenant_id=slab.tenant_id)
     if returncode > 0:
-        openstack_utils_logger.error("Could not get token to project.")
+        slab_logger.error("Could not get token to project.")
         return
 
     slab.connect_to_neutron()
     netw = slab.neutron.list_networks()
     if force:
-        click.echo("Deleting all SLAB networks.")
+        slab_logger.log(25, "Deleting all SLAB networks.")
     try:
         networks = netw['networks']
         for network in networks:
@@ -1163,11 +1166,11 @@ def os_delete_networks(path, force):
                                  % (network['name'])):
                         os_delete_networking_components(slab.neutron, network)
                     else:
-                        click.echo("Skipping deletion of network : %s "
-                                   % (network['name']))
+                        slab_logger.log(25, "Skipping deletion of network : %s "
+                                        % (network['name']))
         os_delete_routers(slab.neutron, force)
     except CalledProcessError:
-        click.echo("Error occurred deleting network.")
+        slab_logger.log(25, "Error occurred deleting network.")
 
 
 def os_delete_networking_components(neutron, network):
@@ -1182,7 +1185,7 @@ def os_delete_networking_components(neutron, network):
     os_delete_ports(neutron, network)
     os_delete_subnets(neutron, network)
     neutron.delete_network(network['id'])
-    click.echo("Deleted network : %s " % (network['name']))
+    slab_logger.log(25, "Deleted network : %s " % (network['name']))
 
 
 def os_delete_subnets(neutron, network):
@@ -1195,7 +1198,7 @@ def os_delete_subnets(neutron, network):
     """
     try:
         for subnet in network['subnets']:
-            click.echo("Deleting subnet : %s " % (subnet))
+            slab_logger.log(25, "Deleting subnet : %s " % (subnet))
             neutron.delete_subnet(subnet)
     except NotFound as ex:
         pass
@@ -1217,15 +1220,15 @@ def os_delete_routers(neutron, force):
             try:
                 if force:
                     neutron.delete_router(router['id'])
-                    click.echo("Deleted router : %s " % (router['name']))
+                    slab_logger.log(25, "Deleted router : %s " % (router['name']))
                 else:
                     if yes_or_no("Do you want to delete router : %s ? "
                                  % (router['name'])):
                         neutron.delete_router(router['id'])
-                        click.echo("Deleted router : %s " % (router['id']))
+                        slab_logger.log(25, "Deleted router : %s " % (router['id']))
                     else:
-                        click.echo("Skipping deletion of router : %s "
-                                   % (router['name']))
+                        slab_logger.log(25, "Skipping deletion of router : %s "
+                                        % (router['name']))
             except NotFound as ex:
                     pass
 
@@ -1243,8 +1246,8 @@ def os_delete_ports(neutron, network):
     if ports['ports']:
         for port in ports['ports']:
             if network['id'] == port['network_id']:
-                click.echo("Deleting ports : %s in network %s "
-                           % (port['id'], network['name']))
+                slab_logger.log(25, "Deleting ports : %s in network %s "
+                                % (port['id'], network['name']))
                 try:
                     port['device_owner'] = None
                     neutron.update_port(port['id'], {'port': {'device_owner': ''}})

@@ -1,22 +1,20 @@
 import os
 import re
 import sys
-import yaml
-import logging
 
+import yaml
 import ipaddress
 
+import encrypt_utils
 import helper_utils
 import service_utils
 import openstack_utils as os_utils
 import tc_vm_yaml_create
 import vagrantfile_utils
+import logger_utils
+from servicelab import settings
 
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
-yaml_utils_logger = logging.getLogger('stack')
-logging.basicConfig()
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.yaml')
 
 
 def validate_syntax(file_name):
@@ -38,12 +36,13 @@ def validate_syntax(file_name):
         >>> print validate_syntax("~/vagrant.yaml")
         0
     """
+    slab_logger.log(15, 'Validating syntax of %s' % file_name)
     code = "\"require 'yaml'; YAML.load_file('" + file_name + "');\""
     cmd = "ruby -e " + code
     cmd_returncode, cmd_info = service_utils.run_this(cmd)
     if cmd_returncode > 0:
-        yaml_utils_logger.error("Invalid yaml: ")
-        yaml_utils_logger.error(cmd_info)
+        slab_logger.error("Invalid yaml: ")
+        slab_logger.error(cmd_info)
         return 1
     return 0
 
@@ -83,13 +82,13 @@ def host_exists_vagrantyaml(hostname, pathto_yaml):
                                           "/Users/aaltman/Git/servicelab/servicelab/.stack")
         0
     """
+    slab_logger.log(15, 'Checking for %s within .stack/vagrant.yaml' % hostname)
     if not os.path.isfile(os.path.join(pathto_yaml, "vagrant.yaml")):
-        yaml_utils_logger.info("vagrant.yaml file is missing")
+        slab_logger.debug("vagrant.yaml file is missing")
         return 1
-
     retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
     if retcode > 0:
-        yaml_utils_logger.error("Invalid yaml file")
+        slab_logger.error("Invalid yaml file")
         return 1
     # Note: load vagrant yaml file
     try:
@@ -104,13 +103,13 @@ def host_exists_vagrantyaml(hostname, pathto_yaml):
                 try:
                     for x in doc[d]:
                         if hostname == x:
-                            yaml_utils_logger.debug("Found host:" + hostname)
+                            slab_logger.debug("Found host:" + hostname)
                             return 0
                 except TypeError:
                     return 1
             return 1
     except IOError as error:
-        yaml_utils_logger.error('File error: ' + str(error))
+        slab_logger.error('File error: ' + str(error))
         return 1
 
 
@@ -144,10 +143,11 @@ def gethost_byname(hostname, pathto_yaml):
                         'mac': '000027000021'}
            }
     """
+    slab_logger.log(15, 'Extracting data for %s from vagrant.yaml' % hostname)
     yourdict = {}
     retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
     if retcode > 0:
-        yaml_utils_logger.error("Invalid yaml file")
+        slab_logger.error("Invalid yaml file")
         return 1, yourdict
     # Note: load vagrant yaml file
     try:
@@ -155,13 +155,13 @@ def gethost_byname(hostname, pathto_yaml):
             doc = yaml.load(f)
             yourdict = doc['hosts'][hostname]
             if not yourdict:
-                yaml_utils_logger.debug("Found host:" + hostname)
+                slab_logger.debug("Found host:" + hostname)
                 return 1, yourdict
             else:
                 yourdict = {hostname: yourdict}
                 return 0, yourdict
     except IOError as error:
-        yaml_utils_logger.error('File error: ' + str(error))
+        slab_logger.error('File error: ' + str(error))
         return 1, yourdict
 
 
@@ -194,6 +194,7 @@ def get_host_order(pathto_yaml):
             'nova-002', 'horizon-001', 'horizon-002']
 
     """
+    slab_logger.log(15, 'Extracting list of OSP hosts in the order they should be booted')
     try:
         with open(os.path.join(pathto_yaml, "order.yaml"), 'r') as f:
             doc = yaml.load(f)
@@ -202,7 +203,7 @@ def get_host_order(pathto_yaml):
             else:
                 return 1, []
     except IOError as error:
-        yaml_utils_logger.error('File error: ' + str(error))
+        slab_logger.error('File error: ' + str(error))
         return 1, []
 
 
@@ -248,11 +249,12 @@ def getmin_OS_vms(path):
 
     RFI: min: True the true is boolean/string?
     """
+    slab_logger.log(15, 'Filtering list of OPS hosts for those needed for mini deploy')
     host_list = []
     pathto_yaml = os.path.join(path, "provision")
     retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
     if retcode > 0:
-        yaml_utils_logger.error("Invalid yaml file")
+        slab_logger.error("Invalid yaml file")
         return 1, host_list
     # Note: load vagrant yaml file
     try:
@@ -265,17 +267,17 @@ def getmin_OS_vms(path):
                         if returncode == 0:
                             host_list.append(host_dict)
                         else:
-                            yaml_utils_logger.error('failed to retrieve a host from\
+                            slab_logger.error('failed to retrieve a host from\
                                                     vagrant.yaml')
                             return 1, host_list
 
         if not host_list:
-            yaml_utils_logger.error('No hosts in host_list')
+            slab_logger.error('No hosts in host_list')
             return 1, host_list
         else:
             return 0, host_list
     except IOError as error:
-        yaml_utils_logger.error('File error: ' + str(error))
+        slab_logger.error('File error: ' + str(error))
         return 1, host_list
 
 
@@ -324,11 +326,12 @@ def getfull_OS_vms(pathto_yaml, vmname_ending_in):
             ...
            ]
     """
+    slab_logger.log(15, 'Extracting data for all OS vms')
     host_list = []
     vmname_ending_in = str(vmname_ending_in)
     retcode = validate_syntax(os.path.join(pathto_yaml, "vagrant.yaml"))
     if retcode > 0:
-        yaml_utils_logger.error("Invalid yaml file")
+        slab_logger.error("Invalid yaml file")
         return 1, host_list
     try:
         with open(os.path.join(pathto_yaml, "vagrant.yaml"), 'r') as f:
@@ -341,17 +344,16 @@ def getfull_OS_vms(pathto_yaml, vmname_ending_in):
                         if returncode == 0:
                             host_list.append(host_dict)
                         else:
-                            yaml_utils_logger.error('failed to retrieve a host from\
-                                                    vagrant.yaml')
+                            slab_logger.error('failed to retrieve a host from vagrant.yaml')
                             return 1, host_list
 
         if not host_list:
-            yaml_utils_logger.error('No hosts in host_list')
+            slab_logger.error('No hosts in host_list')
             return 1, host_list
         else:
             return 0, host_list
     except IOError as error:
-        yaml_utils_logger.error('File error: ' + str(error))
+        slab_logger.error('File error: ' + str(error))
         return 1, host_list
 
 
@@ -439,16 +441,17 @@ def host_add_vagrantyaml(path, file_name, hostname, site, cpus=2, memory=2,
     One last note the ip and mac are autogenerated from a couple other
     functions. TODO: add ref to funct here for shortlink.
     """
+    slab_logger.log(15, 'Adding %s to .stack/vagrant.yaml' % hostname)
     if not os.path.exists(os.path.join(path, file_name)):
         with open(os.path.join(path, file_name), 'w') as f:
             f.write("---")
 
     if storage >= 12:
-        yaml_utils_logger.error("Invalid yaml file")
-        yaml_utils_logger.error("Too many storage disks requested.")
+        slab_logger.error("Invalid yaml file")
+        slab_logger.error("Too many storage disks requested.")
         return 1
     elif storage > 0:
-        yaml_utils_logger.error("Invalid yaml file")
+        slab_logger.error("Invalid yaml file")
         storage_disks = []
         while storage >= 0:
             storage_disks.append(string.ascii_lowercase[disk])
@@ -465,7 +468,7 @@ def host_add_vagrantyaml(path, file_name, hostname, site, cpus=2, memory=2,
                     returncode, ip, mac_colon, mac_nocolon = next_macip_for_devsite(path,
                                                                                     site)
                     if returncode > 0:
-                        yaml_utils_logger.error("Couldn't write file\
+                        slab_logger.error("Couldn't write file\
                                                 because no ip provided.")
                         return 1
                 if doc is not None and doc['hosts']:
@@ -494,16 +497,14 @@ def host_add_vagrantyaml(path, file_name, hostname, site, cpus=2, memory=2,
                 if storage > 0:
                     doc["hosts"][hostname] = {storage: storage_disks}
             stream = file(os.path.join(path, file_name), 'w')
-            yaml_utils_logger.debug(
-                "Adding %s to vagrant environment now." %
-                hostname)
+            slab_logger.debug("Adding %s to vagrant environment now." % hostname)
             yaml.dump(doc, stream, default_flow_style=False)
             return 0
         except IOError as error:
-            yaml_utils_logger.error('File error: ' + str(error))
+            slab_logger.error('File error: ' + str(error))
             return 1
     else:
-        yaml_utils_logger.debug("Host %s already exists in vagrant.yaml" % (hostname))
+        slab_logger.debug("Host %s already exists in vagrant.yaml" % (hostname))
         return 0
 
 
@@ -532,6 +533,7 @@ def host_del_vagrantyaml(path, file_name, hostname):
                                     "/Users/aaltman/Git/servicelab/servicelab/.stack")
         0
     """
+    slab_logger.log(15, 'Removing %s from .stack/vagrant.yaml' % hostname)
     if not host_exists_vagrantyaml(hostname, path):
         try:
             with open(os.path.join(path, file_name), 'r') as f:
@@ -539,15 +541,15 @@ def host_del_vagrantyaml(path, file_name, hostname):
                 for d in doc:
                     del doc[d][hostname]
             stream = file(os.path.join(path, file_name), 'w')
-            yaml_utils_logger.debug('Deleting host: ' + hostname)
+            slab_logger.debug('Deleting host: ' + hostname)
 
             yaml.dump(doc, stream, default_flow_style=False)
             return 0
         except IOError as error:
-            yaml_utils_logger.error('File error: ' + str(error))
+            slab_logger.error('File error: ' + str(error))
             return 1
     else:
-        yaml_utils_logger.debug("Host was not matched or doesn't exist.")
+        slab_logger.error("Host was not matched or doesn't exist.")
         return 1
 
 
@@ -579,15 +581,15 @@ def get_allips_forsite(path, site):
                   "ccs-dev-1")
         ['192.168.100.0', '192.168.100.2', '192.168.100.4']
     """
-    full_path = os.path.join(path, "services", "ccs-data",
-                             "out", site)
+    slab_logger.log(15, 'Extracting IP addresses from site %s' % site)
+    full_path = os.path.join(path, "services", "ccs-data", "out", site)
     if not os.path.exists(full_path):
         # Note: Takes reg. path to .stack and builds rest
         service_utils.build_data(path)
     allips = []
     returncode, yaml_files = helper_utils.find_all_yaml_recurs(full_path)
     if returncode > 0:
-        yaml_utils_logger.error("Failed to get the yamls...exiting")
+        slab_logger.error("Failed to get the yamls...exiting")
         sys.exit(1)
     for yaml_f in yaml_files:
         with open(os.path.join(path, yaml_f), 'r') as f:
@@ -654,6 +656,7 @@ def get_allips_foryaml(d):
                   "ccs-dev-1")
         ['192.168.100.0', '192.168.100.2', '192.168.100.4']
     """
+    slab_logger.log(15, 'Extracting IP address data')
     regex = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
     matches = []
 
@@ -714,6 +717,7 @@ def next_macip_for_devsite(path, site):
                   "ccs-dev-1")
         (0, '192.168.100.3', '02:00:27:00:00:03', '020027000003')
     """
+    slab_logger.log(15, 'Determining next IP address for site %s' % site)
     # Note: We're assuming a pre-sorted list here from
     #       get_allips_forsite, otherwise we'd have to here.
     env_path = os.path.join(path, 'services', 'ccs-data', 'sites', 'ccs-dev-1',
@@ -757,6 +761,7 @@ def gen_mac_from_ip(ip):
         >>> print gen_mac_from_ip("192.168.100.3")
         (0, '02:00:27:00:00:03', '020027000003')
     """
+    slab_logger.log(15, 'Generating MAC address from supplied IP address %s' % ip)
     oct1, oct2, oct3, oct4 = ip.split(".")
     # Note: Both missing last 3 digits.
     # Note: x2, x6, xA, xE are all avail for fake macs.
@@ -778,7 +783,7 @@ def gen_mac_from_ip(ip):
             mac_nocolon += i
         return 0, mac_colon, mac_nocolon
     else:
-        yaml_utils_logger.error("Too many digits to be an ip.")
+        slab_logger.error("Too many digits to be an ip.")
         return 1, mac_colon, mac_nocolon
 
 
@@ -880,6 +885,7 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
             server: sdlc-mirror.cisco.com
             type: physical
     """
+    slab_logger.log(15, 'Generating yaml file for %s' % hostname)
     deploy_hostyaml_to = os.path.join(path, "services", "ccs-data", "sites",
                                       site, "environments", env, "hosts.d")
 
@@ -898,7 +904,8 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
         doc['interfaces']['eth0']['ip_address'] = ip
         doc['role'] = role
         groups = [i.split('service-')[1] for i in groups]  # remove leading service-
-        doc['groups'].append(groups)
+        if groups:
+            doc['groups'].append(groups)
         match = re.search('^(?:cs[lmsx]-\w\d?-)?(service-)?([\w-]+)-\d+$', hostname)
         if match:
             # All hostnames starting with 'service-' use the remaining text for sec group
@@ -916,7 +923,7 @@ def write_dev_hostyaml_out(path, hostname, role='none', site="ccs-dev-1",
                 doc['groups'].append(match.group(2))
 
         if os.path.exists(os.path.join(deploy_hostyaml_to, hostname + ".yaml")):
-            yaml_utils_logger.error("Host yaml already exists.")
+            slab_logger.error("Host yaml already exists.")
             return 1
         else:
             stream = file(os.path.join(deploy_hostyaml_to, hostname + ".yaml"), 'w')
@@ -968,12 +975,13 @@ def get_dev_hostyaml(path, hostname, site='ccs-dev-1', env='dev-tenant'):
           'type': 'physical'}
          )
     '''
+    slab_logger.log(15, 'Extracting data from host yaml file in ccs-data for %s' % hostname)
     myhost = {}
     if not os.path.exists(os.path.join(path, 'services', 'ccs-data')):
-        yaml_utils_logger.debug("Cloning ccs-data. on master branch.")
+        slab_logger.debug("Cloning ccs-data. on master branch.")
         returncode, username = helper_utils.get_gitusername(path)
         if returncode > 0:
-            yaml_utils_logger.error('could not set username for clone of ccs-data.')
+            slab_logger.error('could not set username for clone of ccs-data.')
             return 1, myhost
 
         service_utils.sync_service(path, 'master', username,
@@ -1005,6 +1013,7 @@ def addto_inventory(hostname, path):
         >>> addto_inventory('infra-001', ctx.path)
         0
     """
+    slab_logger.log(15, 'Adding %s to %s/vagrant.yaml' % (hostname, path))
     if host_exists_vagrantyaml(hostname, path) > 0:
         returncode, host_dict = gethost_byname(hostname,
                                                os.path.join(path,
@@ -1050,6 +1059,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
         >>> wr_settingsyaml(ctx.path, {'openstack_provider': True}, 'keystonectl-001')
         0
     """
+    slab_logger.log(15, 'Building data for service-redhouse-tenant/Vagrantfile')
     doc = {}
     settings = os.path.join(path, 'services', 'service-redhouse-tenant', 'settings.yaml')
 
@@ -1097,8 +1107,7 @@ def wr_settingsyaml(path, settingsyaml, hostname=''):
                 doc[k] = v
             yaml.dump(doc, f, default_flow_style=False)
     except (OSError):
-        # TODO: Log - don't have access to settings under
-        # service-redhouse-tenant
+        slab_logger.error('Unable to write to %s' % settings)
         return 1
 
 
@@ -1139,13 +1148,14 @@ def read_host_yaml(host_name, env_path):
           'role': 'none',
           'server': '10.207.232.10',
     """
+    slab_logger.log(15, 'Extracting data from %s yaml file' % host_name)
     data_dict = {}
     if not re.search('\w+\.yaml$', host_name):
         host_name += '.yaml'
     host_yaml = os.path.join(env_path, 'hosts.d', host_name)
     if not os.path.isfile(host_yaml):
-        yaml_utils_logger.error('''
-Unable to find %s.  Please check the spelling and env to try again.''' % host_yaml)
+        slab_logger.error('Unable to find {0} within {1}.\n'.format(host_name, env_path) +
+                          'Please verify the spelling of the host and environment.')
         return(1, data_dict)
     retcode, data_dict = open_yaml_file(host_yaml)
     if retcode > 0:
@@ -1170,11 +1180,12 @@ def open_yaml_file(yaml_file):
         {'deploy_args': {'allowed_address_pairs': [],
                   etc  . . .
     """
+    slab_logger.log(15, 'Extracting yaml data from %s' % yaml_file)
     try:
         with open(yaml_file, 'r') as stream:
             yaml_data = yaml.load(stream)
     except IOError:
-        yaml_utils_logger.error('Unable to open %s' % yaml_file)
+        slab_logger.error('Unable to open %s' % yaml_file)
         return(1, {})
     return(0, yaml_data)
 
@@ -1191,6 +1202,7 @@ def decrypt_set(path):
         0 - success
         1 - failure
     """
+    slab_logger.log(15, 'Decrypting pulp password and adding to commons.yaml for ccs-dev-1')
     yaml_path = os.path.join(path,
                              "provision",
                              "servicelab.yaml")
@@ -1198,11 +1210,10 @@ def decrypt_set(path):
         slab_doc = yaml.load(yaml_strm)
 
     if not all(k in slab_doc.keys() for k in ("pulp_user", "pulp_password")):
-        yaml_utils_logger.error("Unable to decrypt the pulp encrypted password key missing")
+        slab_logger.error("Unable to decrypt the pulp encrypted password key missing")
         return 1
 
     # write the password
-    from servicelab.utils import encrypt_utils
     cert = os.path.join(path,
                         "provision",
                         "servicelab.crt")
@@ -1213,8 +1224,8 @@ def decrypt_set(path):
     enc_password = slab_doc["pulp_password"][5:-2]
     ret, decrypt = encrypt_utils.decrypt(cert, key, enc_password)
     if ret != 0:
-        yaml_utils_logger.error("Unable to decrypt the pulp password")
-        yaml_utils_logger.error(decrypt)
+        slab_logger.error("Unable to decrypt the pulp password")
+        slab_logger.error(decrypt)
         return 1
 
     yaml_path = os.path.join(path,

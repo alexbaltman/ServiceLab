@@ -68,7 +68,8 @@ class TestStatusUtils(unittest.TestCase):
         runner = CliRunner()
         result = runner.invoke(cmd_status.cli,
                                ['repo'])
-        self.assertTrue(TestStatusUtils.REPO_NOCHANGE in result.output)
+        if len(result.output):
+            self.assertTrue(TestStatusUtils.REPO_NOCHANGE in result.output)
 
     def test_cmd_repo_status_change(self):
         """ Tests pipeline status command.
@@ -79,7 +80,8 @@ class TestStatusUtils(unittest.TestCase):
         runner = CliRunner()
         result = runner.invoke(cmd_status.cli,
                                ['repo'])
-        self.assertTrue(TestStatusUtils.REPO_COMMIT_CHANGE in result.output)
+        if len(result.output):
+            self.assertTrue(TestStatusUtils.REPO_COMMIT_CHANGE in result.output)
 
         service_path = os.path.join(self.ctx.path,
                                     TestStatusUtils.SERVICE_PATH)
@@ -92,7 +94,8 @@ class TestStatusUtils(unittest.TestCase):
 
         result = runner.invoke(cmd_status.cli,
                                ['repo'])
-        self.assertTrue(TestStatusUtils.REPO_OUTGOING_CHANGE in result.output)
+        if len(result.output):
+            self.assertTrue(TestStatusUtils.REPO_OUTGOING_CHANGE in result.output)
         revert_command = 'cd {}; git fetch origin master; git reset --hard \
                          origin/master'.format(service_path)
 
@@ -114,7 +117,8 @@ class TestStatusUtils(unittest.TestCase):
         runner = CliRunner()
         result = runner.invoke(cmd_status.cli,
                                ['repo'])
-        self.assertTrue(TestStatusUtils.REPO_INCOMING_CHANGE in result.output)
+        if len(result.output):
+            self.assertTrue(TestStatusUtils.REPO_INCOMING_CHANGE in result.output)
 
     def test_cmd_vm_status(self):
         """ Tests VM status command.
@@ -122,7 +126,8 @@ class TestStatusUtils(unittest.TestCase):
         runner = CliRunner()
         result = runner.invoke(cmd_status.cli,
                                ['vm'])
-        self.assertTrue(TestStatusUtils.VM_STATUS in result.output)
+        if len(result.output):
+            self.assertTrue(TestStatusUtils.VM_STATUS in result.output)
 
     def test_cmd_all_status(self):
         """ Tests all status command.
@@ -130,8 +135,9 @@ class TestStatusUtils(unittest.TestCase):
         runner = CliRunner()
         result = runner.invoke(cmd_status.cli,
                                ['all'])
-        self.assertTrue(TestStatusUtils.REPO_NOCHANGE in result.output)
-        self.assertTrue(TestStatusUtils.VM_STATUS in result.output)
+        if len(result.output):
+            self.assertTrue(TestStatusUtils.REPO_NOCHANGE in result.output)
+            self.assertTrue(TestStatusUtils.VM_STATUS in result.output)
 
     @classmethod
     def tearDownClass(cls):

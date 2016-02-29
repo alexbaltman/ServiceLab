@@ -13,8 +13,8 @@ import re
 import sys
 import json
 import yaml
-import click
 
+import click
 from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
 import requests
@@ -27,6 +27,10 @@ from servicelab.utils import gocd_utils
 from servicelab.utils import gerrit_functions
 from servicelab.utils import yaml_utils
 from servicelab.utils import pulp_utils
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.list')
 
 
 @click.group('list', short_help='You can list objects in pipeline resources.',
@@ -45,6 +49,7 @@ def list_sites(ctx):
     '''
     Here we list all the sites using the git submodule ccs-data.
     '''
+    slab_logger.info('Listing all sites within ccs-data')
     try:
         val_lst = []
         ret_code, sites = ccsdata_utils.list_envs_or_sites(ctx.path)
@@ -54,10 +59,10 @@ def list_sites(ctx):
             val_lst.append(keys)
         val_lst.sort()
         for site in val_lst:
-            click.echo(site)
+            slab_logger.log(25, site)
     except Exception as ex:
-        ctx.logger.error("unable to get site list. unable to read ccs-data")
-        ctx.logger.error(ex)
+        slab_logger.error("unable to get site list. unable to read ccs-data")
+        slab_logger.error(ex)
 
 
 @cli.command('envs', short_help="List all environments in ccs-data.")
@@ -66,6 +71,7 @@ def list_envs(ctx):
     '''
     Here we list all the environments using the git submodule ccs-data.
     '''
+    slab_logger.info('Listing all environmentss (tenant clouds) within ccs-data')
     try:
         val_lst = []
         ret_code, data = ccsdata_utils.list_envs_or_sites(ctx.path)
@@ -76,11 +82,11 @@ def list_envs(ctx):
                 val_lst.append(val)
         val_lst.sort()
         for env in val_lst:
-            click.echo(env)
+            slab_logger.log(25, env)
     except Exception as ex:
-        ctx.logger.error(
+        slab_logger.error(
             "unable to get environment list. unable to read ccs-data")
-        ctx.logger.error(ex)
+        slab_logger.error(ex)
 
 
 @cli.command('hosts', short_help="List all hosts in ccs-data.")
@@ -89,17 +95,18 @@ def list_hosts(ctx):
     '''
     Here we list all the hosts using the git submodule ccs-data.
     '''
+    slab_logger.info('Listing all hosts within ccs-data')
     try:
         ret_code, data = ccsdata_utils.list_envs_or_sites(ctx.path)
         if ret_code > 0:
             return 1
         for _, values in data.iteritems():
             for _, l2_values in values.iteritems():
-                click.echo(l2_values)
+                slab_logger.log(25, l2_values)
     except Exception as ex:
-        ctx.logger.error(
+        slab_logger.error(
             "unable to get environment list. unable to read ccs-data")
-        ctx.logger.error(ex)
+        slab_logger.error(ex)
 
 
 @cli.command('reviews', short_help='List your outstanding reviews in Gerrit.')
@@ -116,6 +123,7 @@ def list_reviews(ctx, inout, username):
     """
     Lists reviews using Gerrit's API.
     """
+    slab_logger.info('Listing outstanding reviews in Gerrit')
     if not username:
         username = ctx.get_username()
     gfn = gerrit_functions.GerritFns(username, "", ctx)
@@ -137,6 +145,7 @@ def list_repos(ctx, username):
     """
     Lists repos using Gerrit's API.
     """
+    slab_logger.info('Listing repos in Gerrit')
     if not username:
         username = ctx.get_username()
     gfn = gerrit_functions.GerritFns(username, "", ctx)
@@ -172,12 +181,12 @@ def list_build(ctx, ip_address, username, password, interactive):
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
-    click.echo('Listing builds in Jenkins.')
+    slab_logger.info('Listing builds in Jenkins.')
     server = jenkins_utils.get_server_instance(ip_address,
                                                username,
                                                password)
     for key in server.keys():
-        click.echo(key)
+        slab_logger.log(25, key)
 
 
 @cli.command('artifacts', short_help='List all artifacts in Artifactory.')
@@ -209,13 +218,12 @@ def list_artifact(ctx, ip_address, username, password, interactive):
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
-    click.echo('Listing artifacts in Artifactory.')
+    slab_logger.info('Listing artifacts in Artifactory.')
     list_url = ip_address + "/api/search/creation?from=968987355"
     requests.packages.urllib3.disable_warnings()
     res = requests.get(list_url, auth=HTTPBasicAuth(username, password))
-    click.echo(res.content)
     for val in json.loads(res.content)["results"]:
-        click.echo(val["uri"])
+        logger.log(25, val["uri"])
 
 
 @cli.command('pipes', short_help='List all pipelines in GO.')
@@ -246,14 +254,15 @@ def list_pipe(ctx, localrepo, username, password, ip_address, interactive):
     """
     Lists piplines using GO's API.
     """
+    slab_logger.info('Listing go pipelines')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        slab_logger.error("Username is %s and password is %s. "
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
 
     server_url = "http://{0}/go/api/pipelines.xml".format(ip_address)
@@ -284,10 +293,10 @@ def display_pipelines(pipelines, localrepo, servicesdirs):
                     if sdir.startswith("service-"):
                         service = sdir.split("service-", 1)[1]
                         if service == pipeline_name:
-                            click.echo(pipeline_name)
+                            slab_logger.log(25, pipeline_name)
             else:
                 tokens = pipeline_name.split('/')
-                click.echo(tokens[len(tokens) - 2])
+                slab_logger.log(25, tokens[len(tokens) - 2])
 
 
 @cli.command('ospvms', short_help='List all OpenStack Platform VMs')
@@ -296,12 +305,13 @@ def ospvms_list(ctx):
     """
     Lists Openstack Platform VMs
     """
+    slab_logger.info('Listing Opesnstack platform VMs')
     provision_path = os.path.join(ctx.path, 'provision')
     osp_vms = yaml_utils.getfull_OS_vms(provision_path, '001')
     osp_vms[1].sort()
     for host_data in osp_vms[1]:
         for host in host_data:
-            click.echo(host)
+            slab_logger.log(25, host)
 
 
 @click.option('--site', '-s', default=None,
@@ -313,24 +323,26 @@ def flavors_list(ctx, site):
     Lists all of the flavors within all sites or a specified site
     """
     if not os.path.exists(os.path.join(ctx.path, 'services', 'ccs-data')):
-        ctx.logger.error('The ccs-data repo does not appear to be installed.  ' +
-                         'Try "stack workon ccs-data"')
+        slab_logger.error('The ccs-data repo does not appear to be installed.  ' +
+                          'Try "stack workon ccs-data"')
         return 1
     if site:
+        slab_logger.info('Listing flavors for site %s' % site)
         site_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site)
         if not os.path.exists(site_path):
-            ctx.logger.error('Site %s does not exist' % site)
+            slab_logger.error('Site %s does not exist' % site)
             return 1
         site_env_path = os.path.join(site_path, 'environments')
         flavor_list = ccsdata_utils.get_flavors_from_site(site_env_path)
     else:
+        slab_logger.info('Listing flavors for all sites')
         try:
             source_file = os.path.join(ctx.path, 'cache', 'all_sites_flavors.yaml')
             with open(source_file, 'r') as stream:
                 source_data = yaml.load(stream)
         except IOError:
-            ctx.logger.error('Unable to open %s.  Run the "make_flavors_yaml.py" to ' +
-                             'create this file' % source_file)
+            slab_logger.error('Unable to open %s.  Run the "make_flavors_yaml.py" to ' +
+                              'create this file' % source_file)
             return 1
         flavor_list = []
         for site in source_data:
@@ -340,7 +352,7 @@ def flavors_list(ctx, site):
         flavor_list.sort()
 
     for flavor in flavor_list:
-        click.echo(flavor)
+        slab_logger.log(25, flavor)
 
 
 @cli.command('rpms', short_help='List rpms in pulp repository')
@@ -374,14 +386,15 @@ def list_rpms(ctx, ip_address, username, password, pulp_repo, interactive):
     """
     Lists rpms using Pulp Server API.
     """
+    slab_logger.info('Listing rpms from pulp server')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        slab_logger.error("Username is %s and password is %s. "
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     url = "/pulp/api/v2/repositories/%s/search/units/" % (pulp_repo)
     payload = '{ "criteria": { "fields": { "unit": [ "name",'\
@@ -392,12 +405,12 @@ def list_rpms(ctx, ip_address, username, password, pulp_repo, interactive):
 
     if rpms is not None and len(rpms) > 0:
         for rpm in rpms:
-            click.echo("Id      : %s" % rpm["id"])
-            click.echo("Filename: %s" % rpm["metadata"]["filename"])
-            click.echo("Name    : %s" % rpm["metadata"]["name"])
-            click.echo("Version : %s" % rpm["metadata"]["version"] + "\n")
+            slab_logger.log(25, "Id      : %s" % rpm["id"])
+            slab_logger.log(25, "Filename: %s" % rpm["metadata"]["filename"])
+            slab_logger.log(25, "Name    : %s" % rpm["metadata"]["name"])
+            slab_logger.log(25, "Version : %s" % rpm["metadata"]["version"] + "\n")
     else:
-        click.echo("No rpms found in this repository.")
+        slab_logger.error("No rpms found in this repository.")
 
 
 @cli.command('pulp-repos', short_help='List all the pulp repositories')
@@ -425,14 +438,15 @@ def list_pulp_repos(ctx, ip_address, username, password, interactive):
     """
     Lists rpms using Pulp Server API.
     """
+    slab_logger.info('Listing repos from pulp server')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        slab_logger.error("Username is %s and password is %s. "
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     url = "/pulp/api/v2/repositories/"
     val = pulp_utils.get(url, ip_address, ctx, username, password)
@@ -440,8 +454,8 @@ def list_pulp_repos(ctx, ip_address, username, password, interactive):
 
     if repos is not None and len(repos) > 0:
         for repo in repos:
-            click.echo("Repo Id      : %s" % repo["id"])
-            click.echo("Repo Name    : %s" % repo["display_name"])
-            click.echo("Repo path    : %s" % repo["_href"] + "\n")
+            slab_logger.log(25, "Repo Id      : %s" % repo["id"])
+            slab_logger.log(25, "Repo Name    : %s" % repo["display_name"])
+            slab_logger.log(25, "Repo path    : %s" % repo["_href"] + "\n")
     else:
-        click.echo("No repositories found on this pulp server.")
+        slab_logger.log(25, "No repositories found on this pulp server.")

@@ -7,8 +7,8 @@ Build a yaml file in servicelab/services/.stack/cache to improve the speed of th
 import os
 import yaml
 
+import ccsdata_utils
 from servicelab.stack import Context
-from servicelab.utils import ccsdata_utils
 
 ctx = Context()
 yaml_data = {}

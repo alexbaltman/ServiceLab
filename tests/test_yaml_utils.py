@@ -155,7 +155,6 @@ class TestYamlUtils(unittest.TestCase):
         ret_code, yaml_data = yaml_utils.open_yaml_file(yaml_file)
         self.assertEquals(3, yaml_data['hosts']['my_test_host']['cpus'])
         self.assertEquals(2048, yaml_data['hosts']['my_test_host']['memory'])
-        self.ctx.logger.info('vagrant.yaml contained the expected data for custom flavor')
 
     def test_host_del_vagrantyaml(self):
         """ Tests deleting host to vagrant yaml.
@@ -236,23 +235,18 @@ class TestYamlUtils(unittest.TestCase):
         """
         ret_code, read_data = yaml_utils.read_host_yaml('fakefile', self.temp_dir)
         self.assertEqual(ret_code, 1)
-        self.ctx.logger.info('read_host_yaml successfully tested invalid file read')
         ret_code, read_data = yaml_utils.read_host_yaml('testfile', self.temp_dir)
         self.assertEqual(read_data, self.test_data)
-        self.ctx.logger.info('read_host_yaml successfully tested hostname file read')
         ret_code, read_data = yaml_utils.read_host_yaml('testfile.yaml', self.temp_dir)
         self.assertEqual(read_data, self.test_data)
-        self.ctx.logger.info('read_host_yaml successfully rested filename file read')
 
     def test_open_yaml_file(self):
         """ Tests the opening and reading of a yaml file
         """
         ret_code, read_data = yaml_utils.open_yaml_file(os.path.join(self.temp_dir, 'fake'))
         self.assertEqual(ret_code, 1)
-        self.ctx.logger.info('open_yaml_file successfully tested invalid yaml file read')
         ret_code, read_data = yaml_utils.open_yaml_file(self.test_file)
         self.assertEqual(read_data, self.test_data)
-        self.ctx.logger.info('open_yaml_file successfully extracted expected data')
 
 
 if __name__ == '__main__':

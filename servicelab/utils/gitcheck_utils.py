@@ -1,16 +1,16 @@
 """
 Git check utilities
 """
-from __future__ import unicode_literals, absolute_import
-from __future__ import division, print_function
-
 import os
 import re
+import shlex
 import subprocess
 from subprocess import PIPE
-import shlex
 
-import click
+import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.gitcheck')
 
 
 # Global vars
@@ -29,6 +29,7 @@ class Gitcheckutils(object):
         """
         searches repositories
         """
+        slab_logger.log(15, 'Searching for git repos')
         if srch_dir is not None and srch_dir[-1:] == '/':
             srch_dir = srch_dir[:-1]
         curdir = os.path.abspath(os.getcwd()) if srch_dir is None else srch_dir
@@ -47,6 +48,7 @@ class Gitcheckutils(object):
         """
         Gets all branches to be pushed
         """
+        slab_logger.log(15, 'Determining branches to be pushed')
         topush = ""
         for remote in remotes:
             count = len(Gitcheckutils.get_local_to_push(rep, remote, branch))
@@ -63,6 +65,7 @@ class Gitcheckutils(object):
         """
         Get all branches to be pulled
         """
+        slab_logger.log(15, 'Determining branches to be pulled')
         topull = ""
         for remote in remotes:
             count = len(Gitcheckutils.get_remote_to_pull(rep, remote, branch))
@@ -79,15 +82,16 @@ class Gitcheckutils(object):
         """
         Displays all display_reviews
         """
+        slab_logger.log(15, 'Displaying all reviews')
         for remote in remotes:
             commits = Gitcheckutils.get_local_to_push(rep, remote, branch)
             if len(commits) > 0:
                 rname = "  |--%(remote)s" % locals()
-                click.echo(rname)
+                slab_logger.log(25, rname)
                 for commit in commits:
                     pcommit = "     |--[To Review] %s" % (
                         commit)
-                    click.echo(pcommit)
+                    slab_logger.log(25, pcommit)
 
         return
 
@@ -96,15 +100,16 @@ class Gitcheckutils(object):
         """
         Displays all display_pulls
         """
+        slab_logger.log(15, 'Displaying all pulls')
         for remote in remotes:
             commits = Gitcheckutils.get_remote_to_pull(rep, remote, branch)
             if len(commits) > 0:
                 rname = "  |--%(remote)s" % locals()
-                click.echo(rname)
+                slab_logger.log(25, rname)
                 for commit in commits:
                     pcommit = "     |--[To Pull] %s" % (
                         commit)
-                    click.echo(pcommit)
+                    slab_logger.log(25, pcommit)
 
         return
 
@@ -113,6 +118,7 @@ class Gitcheckutils(object):
         """
         Gets the repository name
         """
+        slab_logger.log(15, 'Determining repo name')
         # Remove trailing slash from repository/directory name
         if rep[-1:] == '/':
             rep = rep[:-1]
@@ -138,6 +144,7 @@ class Gitcheckutils(object):
         """
         Checks repository
         """
+        slab_logger.log(15, 'Checking repo')
         branch = Gitcheckutils.get_default_branch(rep)
         if re.match(self.ignoreBranch, branch):
             return False
@@ -163,9 +170,8 @@ class Gitcheckutils(object):
         else:
             strlocal = ""
 
-        click.echo(
-            "%s/%s %s%s%s" %
-            (repname, branch, strlocal, topush, topull))
+        slab_logger.log(25, "%s/%s %s%s%s"
+                        % (repname, branch, strlocal, topush, topull))
 
         if ischange > 0:
             filename = "  |--Local"
@@ -173,7 +179,7 @@ class Gitcheckutils(object):
                 filename = "     |--%s %s" % (
                     change[0],
                     change[1])
-                click.echo(filename)
+                slab_logger.log(25, filename)
         if branch != "":
             remotes = Gitcheckutils.get_remote_repositories(rep)
             Gitcheckutils.display_reviews(remotes, rep, branch)
@@ -189,6 +195,7 @@ class Gitcheckutils(object):
         """
         Gets changed files
         """
+        slab_logger.log(15, 'Determining changed files')
         files = []
         snbchange = re.compile(r'^(.{2}) (.*)')
         only_tracked_arg = ""
@@ -206,6 +213,7 @@ class Gitcheckutils(object):
         """
         checks for remote branch
         """
+        slab_logger.log(15, 'Checking for remote branch')
         result = Gitcheckutils.git_exec(rep, 'branch -r')
         return '%s/%s' % (remote, branch) in result
 
@@ -214,6 +222,7 @@ class Gitcheckutils(object):
         """
         checks if local exists for push
         """
+        slab_logger.log(15, 'Checking for branch on local repo')
         if not Gitcheckutils.has_remote_branch(rep, remote, branch):
             return []
         result = Gitcheckutils.git_exec(rep, "log %(remote)s/%(branch)s..HEAD \
@@ -226,6 +235,7 @@ class Gitcheckutils(object):
         """
         checks if remote exists for pull
         """
+        slab_logger.log(15, 'Checking for branch on remote repo')
         if not Gitcheckutils.has_remote_branch(rep, remote, branch):
             return []
         result = Gitcheckutils.git_exec(rep, "log HEAD..%(remote)s/%(branch)s \
@@ -238,6 +248,7 @@ class Gitcheckutils(object):
         """
         gets default branch
         """
+        slab_logger.log(15, 'Determining default branch')
         sbranch = re.compile(r'^\* (.*)', flags=re.MULTILINE)
         gitbranch = Gitcheckutils.git_exec(rep, "branch" % locals())
 
@@ -253,6 +264,7 @@ class Gitcheckutils(object):
         """
         gets remote repo
         """
+        slab_logger.log(15, 'Determining remote repos')
         result = Gitcheckutils.git_exec(rep, "remote" % locals())
 
         remotes = [x for x in result.split('\n') if x]
@@ -263,12 +275,13 @@ class Gitcheckutils(object):
         """
         executes git command
         """
+        slab_logger.log(15, 'Executing git command %s' % cmd)
         command_to_execute = "git %s" % (cmd)
         cmdargs = shlex.split(command_to_execute)
         prog = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE, cwd=path)
         output, errors = prog.communicate()
         if prog.returncode:
-            click.echo('Failed running %s' % command_to_execute)
+            slab_logger.error('Failed running %s' % command_to_execute)
             raise Exception(errors)
         return output.decode('utf-8')
 
@@ -277,6 +290,7 @@ class Gitcheckutils(object):
         """
         Does git check
         """
+        slab_logger.log(15, 'Checking all git repos')
         repos = Gitcheckutils.search_repositories(srch_dir)
 
         for repo in repos:
