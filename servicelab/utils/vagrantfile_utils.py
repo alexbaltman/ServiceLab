@@ -1,10 +1,12 @@
 import os
 import yaml
-import logging
 import service_utils
 
-Vagrantfile_utils_logger = logging.getLogger('click_application')
-logging.basicConfig()
+import logger_utils
+
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.vagrantfile')
 
 
 class SlabVagrantfile(object):
@@ -18,7 +20,6 @@ class SlabVagrantfile(object):
         Varies per method.  See method docstrings for details
 
     Example Usage:
-        from servicelab.utils import vagrantfile_utils
         my_class_var = vagrantfile_utils.SlabVagrantfile('/path/to/use/for/vagrant/')
         my_class_var.<method_name>(args)
     """
@@ -49,6 +50,7 @@ class SlabVagrantfile(object):
         Example Usage:
             my_class_var.init_vagrantfile()
         """
+        slab_logger.log(15, 'Creating new Vagrantfile within servicelab/.stack/')
 
         def _set_header():
             """
@@ -65,6 +67,7 @@ class SlabVagrantfile(object):
             Example Usage:
                 h1, h2, req_plugin = _set_header()
             """
+            slab_logger.log(15, 'Building header data')
             line1 = ("# -*- mode: ruby -*-\n"
                      "# vi: set ft=ruby :\n")
             line2 = "VAGRANTFILE_API_VERSION = \"2\"\n"
@@ -93,6 +96,7 @@ class SlabVagrantfile(object):
             startvms = "Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|\n"
             return startvms
 
+        slab_logger.log(15, 'Building vm data')
         line1, line2, req_plugin = _set_header()
         startvms = _beg_vm_config()
         # Note: until write_it is fixed, have to move list out from middle
@@ -112,6 +116,7 @@ class SlabVagrantfile(object):
         Example Usage:
             my_class_var.write_it(text_var_1, text_var_2, ... text_var_n)
         """
+        slab_logger.log(15, 'Writing Vagrant file')
         # Note: Doesn't close the vagrant loop w/ an 'end'. Use append_it for that.
         mystr = ''
         with open(os.path.join(self.path, "Vagrantfile"), 'w') as vfile:
@@ -138,6 +143,7 @@ class SlabVagrantfile(object):
         Example Usage:
             my_class_var.append_it(text_var_1, text_var_2, ... text_var_n)
         """
+        slab_logger.log(15, 'Appending data to Vagrantfile')
         lines = ''
         with open(os.path.join(self.path, "Vagrantfile"), 'r') as vfile:
             lines = vfile.readlines()
@@ -184,6 +190,7 @@ class SlabVagrantfile(object):
         self.host_dict = host_dict
         self.hostname = self.host_dict.keys()[0]
         ip = self.host_dict[self.hostname]['ip']
+        slab_logger.log(15, 'Adding virtual box vm %s to Vagrantfile' % self.hostname)
         try:
             setitup = ("cluster.vm.define \"" + self.hostname + "\" do |config|\n"
                        "  config.hostmanager.enabled = true\n"
@@ -198,8 +205,8 @@ class SlabVagrantfile(object):
                         setitup += ("    vb.customize [\"modifyvm\", :id, \"--{0}\", \"" +
                                     str(val) + "\"]\n").format(key)
                     except KeyError as ex:
-                        Vagrantfile_utils_logger.debug('Non-fatal - may not be set')
-                        Vagrantfile_utils_logger.debug('Failed to set vm attribute: ' + ex)
+                        slab_logger.debug('Non-fatal - may not be set')
+                        slab_logger.debug('Failed to set vm attribute: ' + ex)
             setitup += '  end\n'
             setitup += '  config.vm.hostname = "' + self.hostname + '"\n'
             try:
@@ -217,7 +224,7 @@ class SlabVagrantfile(object):
 
             # if the sudoer file is not setup then Vagrant will try to update /etc/exports
             # user will have to supply the password.
-            # to setup the sudoer file, please see ROOT PRIVILEGE REQUIREMENT in 
+            # to setup the sudoer file, please see ROOT PRIVILEGE REQUIREMENT in
             #     https://www.vagrantup.com/docs/synced-folders/nfs.html
             if nfs:
                 setitup += ('  config.vm.synced_folder "services", "/opt/ccs/services", '
@@ -231,7 +238,7 @@ class SlabVagrantfile(object):
             self.append_it(setitup)
             return 0
         except KeyError:
-            Vagrantfile_utils_logger.error('Can not add host b/c of missing Key')
+            slab_logger.error('Can not add host b/c of missing Key')
             return 1
 
     def add_openstack_vm(self, host_dict):
@@ -270,6 +277,7 @@ class SlabVagrantfile(object):
         """
         self.host_dict = host_dict
         self.hostname = self.host_dict.keys()[0]
+        slab_logger.log(15, 'Adding Openstack vm %s to Vagrantfile' % self.hostname)
         ip = self.host_dict[self.hostname]['ip']
         env_vars = self.env_vars
         self.set_host_image_flavors(self.path)
@@ -292,8 +300,7 @@ class SlabVagrantfile(object):
                         "\"\n")
 
         except KeyError:
-            Vagrantfile_utils_logger.error('Could not set host flavor or img from\
-                                            ccs-data')
+            slab_logger.error('Could not set host flavor or img from ccs-data')
         sec_groups = ''.join(env_vars['security_groups'])
         setitup += ("    os.floating_ip_pool     = \"" + env_vars['floating_ip_pool'] +
                     "\"\n"
@@ -351,6 +358,7 @@ class SlabVagrantfile(object):
         Example Usage:
             my_class_var.set_env_vars(float_net, tenant_nets, sec_groups)
         """
+        slab_logger.log(15, 'Building dictionary of environment variables')
         self.env_vars['username'] = os.environ.get('OS_USERNAME')
         self.env_vars['password'] = os.environ.get('OS_PASSWORD')
         self.env_vars['openstack_auth_url'] = os.environ.get('OS_AUTH_URL')
@@ -386,6 +394,7 @@ class SlabVagrantfile(object):
         Example Usage:
             vagrant_net = my_class_var.get_multiple_networks(networks)
         """
+        slab_logger.log(15, 'Extracting network names from provided dictionary')
         lab_net = "{name: '%s', address: "
         mgmt_net = "{name: '%s'},"
         mgmt_network = ''
@@ -422,6 +431,7 @@ class SlabVagrantfile(object):
         Example Usage:
             sec_group_names = my_class_var.get_securitygroups_namelst(sec_grps)
         """
+        slab_logger.log(15, 'Extracting security group names from provided dictionary')
         stl_security_group = "{name: '%s'},"
         vagrant_security_group = ''
         for security_group in security_groups:
@@ -447,6 +457,7 @@ class SlabVagrantfile(object):
         Example Usage:
             my_class_var.set_host_image_flavors(self.ctx.path)
         """
+        slab_logger.log(15, 'Determining the image and flavor')
         relpath_toyaml = 'services/ccs-data/sites/ccs-dev-1/environments/dev-tenant/hosts.d/'
         if os.path.exists(path):
             path = os.path.join(path, relpath_toyaml)
@@ -459,8 +470,7 @@ class SlabVagrantfile(object):
                             self.host_vars['image'] = host_data['deploy_args']['image']
                             self.host_vars['flavor'] = host_data['deploy_args']['flavor']
                     except:
-                        Vagrantfile_utils_logger.error('Could not set host flavor or img from\
-                                                        ccs-data')
+                        slab_logger.error('Could not set host flavor or img from ccs-data')
                         self.host_vars['image'] = self.default_image
                         self.host_vars['flavor'] = self.default_flavor
         if self.host_vars.get('image') is None:

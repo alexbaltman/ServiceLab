@@ -1,18 +1,16 @@
-import logging
-import sys
 import os
-import ordered_yaml
+import sys
 import yaml
 
-from servicelab.utils import tc_vm_yaml_create
+import ordered_yaml
+import logger_utils
+import tc_vm_yaml_create
+
+from servicelab import settings
 from servicelab.stack import Context
 
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
-service_utils_logger = logging.getLogger('click_application')
-logging.basicConfig()
 ctx = Context()
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.ccsdata')
 
 
 def get_environment_yaml_file(path, site, env):
@@ -33,6 +31,7 @@ def get_environment_yaml_file(path, site, env):
         /Users/kunanda/Git/servicelab/servicelab/.stack/services/ccs-data/sites/
         ccs-dev-1/environments/servicelab
     """
+    slab_logger.debug('Building path for %s environment.yaml file' % env)
     return os.path.join(path,
                         "services", "ccs-data",
                         "sites", site,
@@ -56,6 +55,7 @@ def get_env_settings_for_site(path, site, env):
         >>> print get_env_settings_for_site("/Users/nan/Git/servicelab/servicelab/.stack"
                                         "ccs-dev-1", "servicelab")
     """
+    slab_logger.debug('Extracting data from %s environment.yaml file' % env)
     fnm = os.path.join(path,
                        "services", "ccs-data",
                        "sites", site,
@@ -86,6 +86,7 @@ def get_env_for_site_path(path, site, env):
         /Users/aaltman/Git/servicelab/servicelab/.stack/services/ccs-data/sites/
         ccs-dev-1/environments/servicelab
     """
+    slab_logger.debug('Building path to %s directory' % env)
     return os.path.join(path, "services", "ccs-data", "sites", site,
                         "environments", env)
 
@@ -105,18 +106,21 @@ def list_envs_or_sites(path):
     Example Usage:
         >>> print list_envs_or_sites("/Users/aaltman/Git/servicelab/servicelab/.stack")
     """
+    slab_logger.log(15, 'Gathering site names from ccs-data')
     # TODO: JIC we want to list services in the future.
     services = []
     our_sites = {}
     os.listdir(path)
     # TODO: Add error handling and possibly return code
+    slab_logger.debug('Checking for ccs-data repo')
     ccsdata_reporoot = os.path.join(path, "services", "ccs-data")
     if not os.path.isdir(ccsdata_reporoot):
-        ctx.logger.error('The ccs-data repo could not be found.  '
-                         'Please try "stack workon ccs-data"')
+        slab_logger.error('The ccs-data repo could not be found.  '
+                          'Please try "stack workon ccs-data"')
         return(1, our_sites)
     ccsdata_sitedir = os.path.join(ccsdata_reporoot, "sites")
     our_sites = {x: None for x in os.listdir(ccsdata_sitedir)}
+    slab_logger.debug('Ensuring found sites are valid sites and not environments')
     for key in our_sites:
         # Note: os.walk provides dirpath, dirnames, and files,
         #       but next()[1] provides us just dirnames for an
@@ -161,6 +165,7 @@ def get_site_from_env(env):
     Example Usage:
         >>>
     """
+    slab_logger.debug('Determining site from environment %s' % env)
     ret_code, our_sites = (list_envs_or_sites(ctx.path))
     if ret_code > 0:
         return(1, 'invalid')
@@ -168,8 +173,8 @@ def get_site_from_env(env):
         for x in our_sites[k]:
             if x == env:
                 return(0, k)
-    ctx.logger.error('%s is an invalid env. Please select one from stack list envs'
-                     % env_name)
+    slab_logger.error('%s is an invalid env. Please select one from stack list envs'
+                      % env)
     return(1, 'invalid')
 
 
@@ -193,6 +198,7 @@ def get_flavors_from_site(site_env_path):
      '4cpu.8ram.20-512sas',
      etc....]
     """
+    slab_logger.debug('Extracting flavors from %s' % site_env_path)
     flavors = []
     site_data = get_host_data_from_site(site_env_path)
     for env in site_data:
@@ -238,6 +244,7 @@ def get_host_data_from_site(site_env_path):
                                   'server': 'sdlc-mirror.cisco.com',
                                   'type': 'virtual'},
     """
+    slab_logger.debug('Extracting all host yaml file data from %s' % site_env_path)
     site_data = {}
     for env in os.listdir(site_env_path):
         site_data[env] = {}

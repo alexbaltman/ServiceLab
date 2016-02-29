@@ -13,6 +13,10 @@ import requests
 
 from requests.auth import HTTPBasicAuth
 from servicelab.stack import pass_context
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.artifact')
 
 
 @click.group('artifact', short_help='Work with artifacts from artifactory with this command'
@@ -51,13 +55,13 @@ def display_artifact_status(ctx,
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        slab_logger.error("Username is %s and password is %s. "
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     requests.packages.urllib3.disable_warnings()
     res = requests.get(url, auth=HTTPBasicAuth(username, password))
-    click.echo(res.content)
+    slab_logger.log(25, res.content)
 
 
 @cli.command('download', short_help='Download an artifact from Artifactory.')
@@ -95,21 +99,20 @@ def download_artifact(ctx,
     download_uri = json.loads(res.content)["downloadUri"]
 
     file_name = download_uri.split('/')[-1]
-    click.echo("Starting download of {0} to {1}. It might "
-               "take a few minutes.".format(download_uri,
-                                            destination))
+    slab_logger.info("Starting download of {0} to {1}. It might "
+                     "take a few minutes.".format(download_uri, destination))
     with open(os.path.join(destination, file_name), 'wb') as handle:
         response = requests.get(download_uri,
                                 stream=True,
                                 auth=HTTPBasicAuth(username, password))
 
         if not response.ok:
-            click.echo("Error occured during downloading")
+            slab_logger.error("Error occured during downloading")
             return
 
         handle.write(response.content)
 
-    click.echo("Download Complete")
+    slab_logger.info("Download Complete")
 
 
 @cli.command('upload', short_help='Upload an artifact to Artifactory.')
@@ -143,10 +146,10 @@ def upload_artifact(ctx,
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
-    click.echo("Starting upload of {0} to {1}".format(filepath, url))
+        slab_logger.error("Username is %s and password is %s. "
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
+    slab_logger.info("Starting upload of {0} to {1}".format(filepath, url))
     subprocess.call(['curl',
                      '-X',
                      'PUT',
@@ -155,3 +158,4 @@ def upload_artifact(ctx,
                      url,
                      '-u',
                      "{0}:{1}".format(username, password)])
+    slab_logger.info('Completed upload')

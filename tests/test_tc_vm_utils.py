@@ -4,6 +4,7 @@ import yaml
 import shutil
 import unittest
 import ipaddress
+
 from servicelab.stack import Context
 from servicelab.utils import tc_vm_yaml_create
 
@@ -95,7 +96,6 @@ class TestVMYamlCreate(unittest.TestCase):
                                     self.secgroups, self.ip2)
         self.assertTrue(os.path.isfile(self.filename1))
         self.assertTrue(os.path.isfile(self.filename2))
-        self.ctx.logger.debug('Expected files were found')
         with open(self.filename1, 'r') as yaml_file:
             yaml_data = yaml.load(yaml_file)
             ipaddr = str(self.subnet.network_address + 25)
@@ -103,7 +103,6 @@ class TestVMYamlCreate(unittest.TestCase):
         with open(self.filename2, 'r') as yaml_file:
             yaml_data = yaml.load(yaml_file)
         self.assertTrue(yaml_data['interfaces']['eth0']['ip_address'] == self.ip2)
-        self.ctx.logger.debug('Expected IPs were found')
 
     def tearDown(self):
         shutil.rmtree(self.ccsdatapath)

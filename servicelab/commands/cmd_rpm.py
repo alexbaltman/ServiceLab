@@ -4,15 +4,19 @@ Stack rpm commands to
 2.  Displays a rpm stats.
 3.  Upload the rpm.
 """
+import sys
 import json
 import time
-import sys
 
 import click
 import requests
 
 from servicelab.stack import pass_context
 from servicelab.utils import pulp_utils
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.rpm')
 
 
 @click.group('rpm', short_help='RPM to work with.',
@@ -61,22 +65,23 @@ def display_rpm_status(ctx,
     """
     Displays rpm stats.
     """
+    slab_logger.info('Displaying rpm status')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        slab_logger.error("Username is %s and password is %s. "
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     url = "/pulp/api/v2/repositories/%s/search/units/" % (pulp_repo)
     payload = '{ "criteria": { "filters" : { "unit" : { "name" : "%s"}},'\
               ' "fields": { "unit": [ "name", "version" ] }, "type_ids":'\
               ' [ "rpm" ] } }' % (rpm)
     val = pulp_utils.post(url, ip_address, ctx, username, password, payload)
-    click.echo('Listing rpm stats for rpm : %s' % (rpm))
-    click.echo(json.dumps(json.loads(val), indent=4, sort_keys=True))
+    slab_logger.log(25, 'Listing rpm stats for rpm : %s' % (rpm))
+    slab_logger.log(25, json.dumps(json.loads(val), indent=4, sort_keys=True))
 
 
 @cli.command('download', short_help='Download the rpm from pulp repository')
@@ -114,14 +119,15 @@ def download_rpm(ctx, username,
     """
     Download the artifact.
     """
+    slab_logger.info('Downloading rpm from pulp repo')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        slab_logger.error("Username is %s and password is %s. "
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
     url = "/pulp/api/v2/distributors/search/"
     payload = '{"criteria":{"filters":{"repo_id":{"$eq": "%s"}}}}' % (pulp_repo)
@@ -144,21 +150,21 @@ def download_rpm(ctx, username,
                                                     ['relative_url'],
                                                     rpm_json[0]['metadata']
                                                     ['filename'])
-            click.echo("Starting download from {0}".format(download_url))
+            slab_logger.log(25, "Starting download from {0}".format(download_url))
             req = requests.get(download_url, verify=False)
             with open(rpm_json[0]['metadata']['filename'], 'wb') as rpm_file:
                 for chunk in req.iter_content(chunk_size=1024):
                     if chunk:
                         rpm_file.write(chunk)
-                        click.echo(".", nl=False)
-            click.echo("\nDownload complete.")
+                        slab_logger.log(25, ".", nl=False)
+            slab_logger.log(25, "\nDownload complete.")
             return
         else:
-            click.echo(
+            slab_logger.error(
                 "Rpm %s could not be download since it was"
                 " not found in repo : %s" % (rpm, pulp_repo))
     else:
-        ctx.logger.error(
+        slab_logger.error(
             "Repo with id %s does not exist. Unable to download the rpm." %
             (pulp_repo))
 
@@ -201,20 +207,21 @@ def upload_rpm(ctx, ip_address,
     """
     Upload the rpm.
     """
+    slab_logger.info('Uploading rpm to pulp repo')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     if not password or not username:
-        click.echo("Username is %s and password is %s. "
-                   "Please, set the correct value for both and retry." %
-                   (username, password))
+        slab_logger.error("Username is %s and password is %s. "
+                          "Please, set the correct value for both and retry." %
+                          (username, password))
         sys.exit(1)
-    click.echo("Starting upload of {0}".format(filepath))
+    slab_logger.log(25, "Starting upload of {0}".format(filepath))
     url = "/pulp/api/v2/content/uploads/"
     val = pulp_utils.post(url, ip_address, ctx, username, password, "")
     res_json = json.loads(val)
-    click.echo("Got upload id : %s " % (res_json['upload_id']))
+    slab_logger.log(25, "Got upload id : %s " % (res_json['upload_id']))
     rpm_file = open(filepath, 'rb')
     offset = 0
     while True:
@@ -222,10 +229,10 @@ def upload_rpm(ctx, ip_address,
         if chunk:
             put_url = "%s%s/%s/" % (url, res_json['upload_id'], offset)
             offset = offset + 100000
-            click.echo(".", nl=False)
+            slab_logger.log(25, ".", nl=False)
             val = pulp_utils.put(put_url, ip_address,
                                  ctx, username, password, chunk)
-            click.echo(".", nl=False)
+            slab_logger.log(25, ".", nl=False)
         else:
             break
     rpm_file.close()
@@ -234,20 +241,17 @@ def upload_rpm(ctx, ip_address,
               '{"checksum_type": null}}' % (res_json['upload_id'])
     post_url = '/pulp/api/v2/repositories/%s/actions'\
                '/import_upload/' % (pulp_repo)
-    click.echo(
-        "\nImporting rpm to server for upload id: %s " %
-        (res_json['upload_id']))
+    slab_logger.log(25, "\nImporting rpm to server for upload id: %s "
+                    % (res_json['upload_id']))
     time.sleep(2)
     val = pulp_utils.post(post_url, ip_address, ctx, username,
                           password, payload)
     payload = '{"override_config": {},  "id" : "yum_distributor"}'
     post_url = "/pulp/api/v2/repositories/%s/actions/publish/" % (pulp_repo)
-    click.echo(
-        "Publishing rpm to server for upload id: %s " %
-        (res_json['upload_id']))
+    slab_logger.log(25, "Publishing rpm to server for upload id: %s "
+                    % (res_json['upload_id']))
     val = pulp_utils.post(post_url, ip_address, ctx, username,
                           password, payload)
-    click.echo(
-        "Upload process completed for rpm {0}."
-        "\nGot response from server : ".format(filepath))
-    click.echo(val)
+    slab_logger.log(25, "Upload process completed for rpm {0}."
+                    "\nGot response from server : ".format(filepath))
+    slab_logger.log(25, val)

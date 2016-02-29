@@ -9,14 +9,11 @@ import platform
 import subprocess32 as subprocess
 from reconfigure.configs import ExportsConfig
 
-import logging
-import click
+import yaml_utils
+import logger_utils
+from servicelab import settings
 
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
-SERVICE_UTILS_LOGGER = logging.getLogger('click_application')
-logging.basicConfig()
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.service')
 
 
 def sync_service(path, branch, username, service_name):
@@ -49,11 +46,11 @@ def sync_service(path, branch, username, service_name):
         Service has been sync'ed
         True
     """
-
+    slab_logger.log(15, 'Synchronizing %s in servicelab/.stack/services' % service_name)
     # Note: Branch defaults to master in the click application
     check_for_git_output, myinfo = _check_for_git()
     if not check_for_git_output == 0:
-        SERVICE_UTILS_LOGGER.error("Could not find git executable.")
+        slab_logger.error("Could not find git executable.")
         return False
     else:
         # TODO: refactor this back in -->or os.listdir(os.path.join(path,
@@ -61,23 +58,23 @@ def sync_service(path, branch, username, service_name):
         #       we'll want to rm the dir if it's there but empty b/c this
         #       isn't handling that.
         if os.path.isdir(os.path.join(path, "services", service_name)):
-            SERVICE_UTILS_LOGGER.debug("Sync'ing service.")
-            SERVICE_UTILS_LOGGER.debug("Fast Forward Pull.")
+            slab_logger.debug("Sync'ing service.")
+            slab_logger.debug("Fast Forward Pull.")
             returncode, myinfo = _git_pull_ff(path, branch, service_name)
             if returncode != 0:
-                SERVICE_UTILS_LOGGER.error(myinfo)
+                slab_logger.error(myinfo)
                 return False
             else:
-                SERVICE_UTILS_LOGGER.debug("Service has been sync'ed.")
+                slab_logger.debug("Service has been sync'ed.")
                 return True
         else:
-            SERVICE_UTILS_LOGGER.debug("Trying clone.")
+            slab_logger.debug("Trying clone.")
             returncode, myinfo = _git_clone(path, branch, username, service_name)
             if returncode != 0:
-                SERVICE_UTILS_LOGGER.error(myinfo)
+                slab_logger.error(myinfo)
                 return False
             else:
-                SERVICE_UTILS_LOGGER.debug("Clone successful.")
+                slab_logger.debug("Clone successful.")
                 return True
 
 
@@ -102,14 +99,14 @@ def build_data(path):
         (0,"")
 
     """
-    from servicelab.utils import yaml_utils
+    slab_logger.log(15, 'Building ccs-dev-1 site in ccs-data')
     if yaml_utils.decrypt_set(path) != 0:
         return(1, "unable to decrypt the pulp password")
 
     data_reponame = "ccs-data"
-    SERVICE_UTILS_LOGGER.debug("Building the data.")
+    slab_logger.debug("Building the data.")
     returncode, myinfo = run_this('./lightfuse.rb -c hiera-bom-unenc.yaml '
-                                  '--site ccs-dev-1 && cd ..',
+                                  '--site ccs-dev-1 && cd .',
                                   cwd=os.path.join(path, "services",
                                                    data_reponame))
     return(returncode, myinfo)
@@ -128,7 +125,7 @@ def copy_certs(frompath, topath):
     Example Usage:
         returncode = service_utils.copy_certs(ctx.reporoot_path(),puppet_path)
     """
-
+    slab_logger.log(15, 'Copying certs to ccs puppet module')
     certdir = os.path.join(topath, "modules", "ccs", "files", "certs", "dev-csi-a")
     if not os.path.exists(certdir):
         os.mkdir(certdir)
@@ -166,6 +163,7 @@ def _git_clone(path, branch, username, service_name):
         (0, "")
 
     """
+    slab_logger.log(15, 'Cloning %s into servicelab/.stack/services' % service_name)
     # Note: Branch defaults to master in the click application
     # DEBUG: print "Executing subprocess for git clone"
     # DEBUG: print 'git clone -b %s ssh://%s@cis-gerrit.cisco.com:29418/%s
@@ -179,17 +177,17 @@ def _git_clone(path, branch, username, service_name):
                                   "%s/services/%s" % (branch, username,
                                                       service_name, path,
                                                       service_name))
-    # check if failure because of unresolved references
-    pstr = "fatal: pack has [0-9]+ unresolved deltas\nfatal: index-pack failed"
-    ptrn = re.compile(pstr)
-    if ptrn.search(myinfo):
-        # we are going to ignore any unresolved references as we are doing only
-        # shallow copy with depth 1
-        SERVICE_UTILS_LOGGER.info("Ignoring unresolved references as "
-                                  "slab does a shallow clone of the "
-                                  "service repo")
-        returncode = 0
-        myinfo = ""
+    if returncode != 0:
+        # check if failure because of unresolved references
+        pstr = "fatal: pack has [0-9]+ unresolved deltas\nfatal: index-pack failed"
+        ptrn = re.compile(pstr)
+        if ptrn.search(myinfo):
+            # we are going to ignore any unresolved references as we are doing only
+            # shallow copy with depth 1
+            SERVICE_UTILS_LOGGER.info("Ignoring unresolved references as "
+                                      "slab does a shallow clone of the "
+                                      "service repo")
+            returncode = 0
     return(returncode, myinfo)
 
 
@@ -218,13 +216,14 @@ def _git_pull_ff(path, branch, service_name):
         (0, "")
 
     """
+    slab_logger.log(15, 'Fast forward only pull of %s branch %s' % (service_name, branch))
     # Note: Branch defaults to master in the click application
     service_path = os.path.join(path, "services", service_name)
 
     # Before doing git checkout, check if the remote ref exists
     # if it does not then take some steps to get it and run checks
     try:
-        click.echo("Checking for remote references in %s " % (service_path))
+        slab_logger.log(25, "Checking for remote references in %s " % (service_path))
         command_to_run = "git show-ref %s" % (branch)
         output = subprocess.Popen(command_to_run, shell=True,
                                   stdin=subprocess.PIPE,
@@ -233,10 +232,9 @@ def _git_pull_ff(path, branch, service_name):
                                   cwd=service_path)
         ref_info = output.communicate()[0]
         if branch not in ref_info:
-            click.echo("Remote git branch not found : %s " % (branch))
-            click.echo(
-                "Setting remote origin in .git/config to :"
-                " +refs/heads/*:refs/remotes/origin/*")
+            slab_logger.log(25, "Remote git branch not found : %s " % (branch))
+            slab_logger.log(25, "Setting remote origin in .git/config to :"
+                                " +refs/heads/*:refs/remotes/origin/*")
             command_to_run = "git config --replace-all  remote.origin.fetch"\
                 "  \"+refs/heads/*:refs/remotes/origin/*\""
             output = subprocess.Popen(command_to_run, shell=True,
@@ -245,14 +243,13 @@ def _git_pull_ff(path, branch, service_name):
                                       stderr=subprocess.STDOUT, close_fds=True,
                                       cwd=service_path)
             command_to_run = "git fetch --unshallow"
-            click.echo(
-                "Fetching all remote branches. It might take a few minutes. %s " %
-                (service_path))
+            slab_logger.log(25, "Fetching all remote branches. "
+                            "It might take a few minutes. %s " % (service_path))
             subprocess.call('git fetch --unshallow', cwd=service_path, shell=True)
-            click.echo("Done Fetching all remote branches.")
-            click.echo("Updating remotes. ")
+            slab_logger.log(25, "Done Fetching all remote branches.")
+            slab_logger.log(25, "Updating remotes. ")
             call(["git", "remote", "update"], cwd=service_path)
-            click.echo("Done update remotes. ")
+            slab_logger.log(25, "Done update remotes. ")
             command_to_run = "git show-ref %s" % (branch)
             output = subprocess.Popen(command_to_run, shell=True,
                                       stdin=subprocess.PIPE,
@@ -261,7 +258,7 @@ def _git_pull_ff(path, branch, service_name):
                                       cwd=service_path)
             ref_info = output.communicate()[0]
             if branch not in ref_info:
-                click.echo("Remote branch %s not found." % (branch))
+                slab_logger.log(25, "Remote branch %s not found." % (branch))
                 command_to_run = "git show-ref"
                 output = subprocess.Popen(
                     command_to_run,
@@ -272,8 +269,8 @@ def _git_pull_ff(path, branch, service_name):
                     close_fds=True,
                     cwd=service_path)
                 ref_info = output.communicate()[0]
-                click.echo("Following branches found : %s " % ref_info)
-                click.echo("Branch not found. Please, check branch name. Exiting.")
+                slab_logger.log(25, "Following branches found : %s " % ref_info)
+                slab_logger.log(25, "Branch not found. Please, check branch name. Exiting.")
     except OSError, ex:
         SERVICE_UTILS_LOGGER.error(ex)
         return (1, str(ex))
@@ -305,6 +302,7 @@ def _submodule_pull_ff(path, branch):
                                      .stack", "master")
         (0, "")
     """
+    slab_logger.log(15, 'Fast forward pull of all ccs-data submodules')
     # Note: Branch defaults to master in the click application
     # TODO: Do more error checking here --> after debugging, definitely
     # TODO: checkout a branch ifexists in origin only--> not replacing git
@@ -328,6 +326,7 @@ def _check_for_git():
         >>> print _check_for_git()
         (0, "")
     """
+    slab_logger.log(15, 'Checking if git is installed')
     # Note: Using type git here to establish if posix system has a binary
     #       called git instead of which git b/c which often doesn't return
     #       proper 0 or 1 exit status' and type does. Which blah on many
@@ -351,6 +350,7 @@ def _check_for_libpup():
         >>> print _check_for_libpup()
         (0, "")
     """
+    slab_logger.log(15, 'Checking for librarian-puppet')
     # Note: Using 'type' here to establish if posix system has a binary
     #       called librarian-puppet instead of 'which' b/c which often doesn't return
     #       proper 0 or 1 exit status' and type does. Which blah on many
@@ -387,6 +387,7 @@ def setup_vagrant_sshkeys(path):
                                   "master", "ccs-data")
         (0, "")
     """
+    slab_logger.log(15, 'Checking for Vagrant ssh keys in the .stack directory')
     if not os.path.isfile(os.path.join(path, "id_rsa")):
         returncode, myinfo = run_this('ssh-keygen -q -t rsa -N "" -f %s/id_rsa' % (path))
         return (returncode, myinfo)
@@ -414,13 +415,14 @@ def link(path, service_name, branch, username):
         >>> print link("/Users/aaltman/Git/servicelab/servicelab/.stack", "ccs-data",
                        "master", "aaltman"")
     """
+    slab_logger.log(15, 'Setting the current service to %s' % service_name)
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
             currentf = open(os.path.join(path, "current"), 'r')
             currentf.seek(0)
             service_name = currentf.readline()
         else:
-            SERVICE_UTILS_LOGGER.error("Current file doesn't exist\
+            slab_logger.error("Current file doesn't exist\
                                         and service set to current\
                                         . Please enter a service to\
                                         work on.")
@@ -437,18 +439,18 @@ def link(path, service_name, branch, username):
             os.symlink(os.path.join(path, "services", service_name),
                        os.path.join(path, "current_service"))
         else:
-            SERVICE_UTILS_LOGGER.debug("Could not find source for symlink.\
+            slab_logger.debug("Could not find source for symlink.\
                                        Attempting re-clone of source.")
             sync_service(path, branch, username, service_name)
             if os.path.isdir(os.path.join(path, "services", service_name)):
                 os.symlink(os.path.join(path, "services", service_name),
                            os.path.join(path, "current_service"))
             else:
-                SERVICE_UTILS_LOGGER.error("Failed to find source for symlink: " +
-                                           os.path.join(path, "services", service_name))
+                slab_logger.error("Failed to find source for symlink: " +
+                                  os.path.join(path, "services", service_name))
                 return 1
     else:
-        SERVICE_UTILS_LOGGER.debug("Link already exists.")
+        slab_logger.debug("Link already exists.")
 
     hostf = open(os.path.join(path, "hosts"), 'w+')
     hostf.seek(0)
@@ -474,6 +476,7 @@ def clean(path):
     Example Usage:
         >>> print clean("/Users/aaltman/Git/servicelab/servicelab/.stack")
     """
+    slab_logger.log(15, 'Cleaning up services and services symlinks')
     run_this('vagrant destroy -f')
     os.remove(os.path.join(path, "current"))
     if os.path.islink(os.path.join(path, "current_service")):
@@ -500,16 +503,15 @@ def check_service(path, service_name):
         >>> check_service("/Users/aaltman/Git/servicelab/servicelab/.stack", "ccs-data")
         0
     """
+    slab_logger.log(15, 'Checking gerrit for %s' % service_name)
     if service_name == "current":
         if os.path.isfile(os.path.join(path, "current")):
             cfile = open(os.path.join(path, "current"), 'r')
             cfile.seek(0)
             service_name = cfile.readline()
         else:
-            SERVICE_UTILS_LOGGER.error("Current file doesn't exist\
-                                        and service set to current\
-                                        . Please enter a service to\
-                                        work on.")
+            slab_logger.error("Current file doesn't exist and service set to current\
+                                        . Please enter a service to work on.")
             return 1
 
     if os.path.exists(os.path.join(path, "cache")):
@@ -532,7 +534,7 @@ def check_service(path, service_name):
                     return 0
 
             # Note: We didn't succeed in finding a match.
-            SERVICE_UTILS_LOGGER.error("Could not find repo in ccs-gerrit.")
+            slab_logger.error("Could not find repo in ccs-gerrit.")
             return 1
     else:
         os.makedirs(os.path.join(path, "cache"))
@@ -553,7 +555,7 @@ def check_service(path, service_name):
                 return 0
 
         # Note: We didn't succeed in finding a match.
-        SERVICE_UTILS_LOGGER.error("Could not find repo in ccs-gerrit.")
+        slab_logger.error("Could not find repo in ccs-gerrit.")
         return 1
 
 
@@ -576,6 +578,7 @@ def run_this(command_to_run, cwd=os.getcwd()):
         echo a
         a
     """
+    slab_logger.debug('Running shell command "%s"' % command_to_run)
     try:
         output = subprocess.Popen(command_to_run, shell=True,
                                   stdin=subprocess.PIPE,
@@ -587,7 +590,7 @@ def run_this(command_to_run, cwd=os.getcwd()):
         myinfo.strip()
         return(output.returncode, myinfo)
     except OSError, ex:
-        SERVICE_UTILS_LOGGER.error(ex)
+        slab_logger.error(ex)
         return (1, str(ex))
 
 
@@ -604,6 +607,7 @@ def installed(service, path):
         in the service dircetory
 
     """
+    slab_logger.log(15, 'Checks if %s is installed in the stack' % service)
     # check if the current is set to correct service
     try:
         with open(os.path.join(path, "current"), 'r') as currentf:
@@ -619,15 +623,15 @@ def installed(service, path):
         if not os.path.samefile(input_path, current_path):
             return False
     except Exception as ex:
-        SERVICE_UTILS_LOGGER.error(ex)
+        slab_logger.error(ex)
         return False
     return True
 
 
 def export_for_nfs(rootpassword, path, ip):
     """
-    This function is currently not in use. It is vagrant responsibilty to update the /etc/exports
-    file.
+    This function is currently not in use. It is vagrant responsibilty to
+    update the /etc/exports file.
     """
     def __darwin_check_option(existing_opt):
         flag = False

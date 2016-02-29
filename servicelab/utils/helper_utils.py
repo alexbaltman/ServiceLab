@@ -1,19 +1,14 @@
 import os
 import re
 import shutil
-import logging
 import fnmatch
 import getpass
 
-import click
+import yaml_utils
+import logger_utils
+from servicelab import settings
 
-import servicelab.utils.yaml_utils
-
-# create logger
-# TODO: For now warning and error print. Got to figure out how
-#       to import the one in stack.py properly.
-helper_utils_logger = logging.getLogger('click_application')
-logging.basicConfig()
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.helper')
 
 
 def find_all_yaml_recurs(full_path):
@@ -43,6 +38,7 @@ def find_all_yaml_recurs(full_path):
 
         A very large list is typically expected when dealing with ccs-data.
     """
+    slab_logger.log(15, 'Finding all yaml files within %s' % full_path)
     matches = []
     if os.path.exists(full_path):
         for dirpath, dirnames, filenames in os.walk(full_path):
@@ -52,8 +48,7 @@ def find_all_yaml_recurs(full_path):
                 matches.append(os.path.join(dirpath, filename))
         return 0, matches
     else:
-        helper_utils_logger.error("Could not find files in %s"
-                                  % (full_path))
+        slab_logger.error("Could not find files in %s" % (full_path))
         return 1, matches
 
 
@@ -75,6 +70,7 @@ def get_gitusername(path):
         >>> print get_gitusername(path)
         (0, aaltman)
     """
+    slab_logger.log(15, 'Extracting username from gerrit clone command')
     matches = None
     username = ""
 
@@ -90,7 +86,9 @@ def get_gitusername(path):
                 username = matches.group(1)
                 if not username:
                     return 1, username
+                slab_logger.debug('Gerrit username is %s' % username)
                 return 0, username
+    slab_logger.debug('Unable to determine username')
     return 1, username
 
 
@@ -130,13 +128,16 @@ def get_current_service(path):
         >>> print get_current_service(path)
         (0, service-redhouse-tenant)
     """
+    slab_logger.log(15, 'Determining current service from last "stack workon" command')
     if os.path.isfile(os.path.join(path, "current")):
             current_file = os.path.join(path, "current")
             f = open(current_file, 'r')
             # TODO: verify that current is set to something sane.
             current = f.readline()
             if current != "":
+                slab_logger.debug('Current service is %s' % current)
                 return 0, current
+    slab_logger.debug('Unable to determine current service')
     return 1, ""
 
 
@@ -157,8 +158,10 @@ def get_path_to_utils(path):
         >>> print path_to_utils(path)
             '/Users/aaltman/Git/servicelab/servicelab/utils'
     """
+    slab_logger.log(15, 'Determining path to servicelab/servicelab/utils')
     split_path = os.path.split(path)
     path_to_utils = os.path.join(split_path[0], "utils")
+    slab_logger.debug('Utils path is %s' % path_to_utils)
     return path_to_utils
 
 
@@ -178,10 +181,12 @@ def name_vm(name, path):
         >>> helper_utils.name_vm('rhel7', path)
         rhel7-001
     """
+    slab_logger.log(15, 'Determining next available hostname for %s' % name)
     for i in xrange(1, 100):
         hostname = name + "-" + "%03d" % (i)
-        returncode = servicelab.utils.yaml_utils.host_exists_vagrantyaml(hostname, path)
+        returncode = yaml_utils.host_exists_vagrantyaml(hostname, path)
         if returncode == 1:
+            slab_logger.debug('Hostname set to %s' % hostname)
             return hostname
 
 
@@ -201,18 +206,18 @@ def destroy_files(paths_to_files):
         0
     """
     for mypath in paths_to_files:
-        helper_utils_logger.debug("Destroying {0}".format(mypath))
+        slab_logger.log(15, "Destroying {0}".format(mypath))
         if os.path.exists(mypath):
             try:
                 os.remove(mypath)
-                click.echo("File destroyed successfully: {0}".format(mypath))
+                slab_logger.debug("File destroyed successfully: {0}".format(mypath))
             except OSError as ex:
-                click.echo("File was not destroyed: {0}".format(mypath))
-                helper_utils_logger.debug('Caught error: ')
-                helper_utils_logger.debug(ex)
+                slab_logger.debug("File was not destroyed: {0}".format(mypath))
+                slab_logger.error('Caught error: ')
+                slab_logger.error(ex)
                 return 1
         else:
-            click.echo("File does not exist : {0}".format(mypath))
+            slab_logger.debug("File does not exist : {0}".format(mypath))
     return 0
 
 
@@ -233,15 +238,15 @@ def destroy_dirs(paths):
     """
     for path in paths:
         if os.path.exists(path):
-            helper_utils_logger.debug("Destroying {0}".format(path))
+            slab_logger.log(15, "Destroying {0}".format(path))
             try:
                 shutil.rmtree(path)
-                click.echo("Directory destroyed successfully : {0}".format(path))
+                slab_logger.debug("Directory destroyed successfully : {0}".format(path))
             except OSError as ex:
-                click.echo("Directory was not destroyed : {0}".format(path))
-                helper_utils_logger.debug('Caught error: ')
-                helper_utils_logger.debug(ex)
+                slab_logger.debug("Directory was not destroyed : {0}".format(path))
+                slab_logger.error('Caught error: ')
+                slab_logger.error(ex)
                 return 1
         else:
-            click.echo("Directory does not exist : {0}".format(path))
+            slab_logger.debug("Directory does not exist : {0}".format(path))
     return 0

@@ -9,9 +9,14 @@ import click
 from servicelab.stack import pass_context
 from servicelab.utils import jenkins_utils
 from servicelab.utils import context_utils
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.build')
 
 
-@click.group('build', short_help='Work with builds in Jenkins with this command subset.',
+@click.group('build',
+             short_help='Work with builds in Jenkins with this command subset.',
              add_help_option=True)
 @click.pass_context
 def cli(_):
@@ -48,6 +53,7 @@ def display_build_status(ctx,
     """
     Displays a build status.
     """
+    slab_logger.info('Displaying build status')
     if not username:
         username = ctx.get_username()
     if not password:
@@ -56,7 +62,7 @@ def display_build_status(ctx,
                                             username,
                                             password,
                                             ip_address)
-    click.echo(status)
+    slab_logger.log(25, status)
 
 
 @cli.command('log', short_help='Display the status log of a build in Jenkins.')
@@ -81,12 +87,13 @@ def display_build_log(ctx, job_name, username, password, ip_address, interactive
     """
     Displays a build log.
     """
+    slab_logger.info('Displaying build log')
     if not username:
         username = ctx.get_username()
     if not password:
         password = ctx.get_password(interactive)
     log = jenkins_utils.get_build_log(job_name, username, password, ip_address)
-    click.echo(log)
+    slab_logger.log(25, log)
 
 
 @cli.command('run', short_help='Trigger a build in Jenkins.')
@@ -111,6 +118,7 @@ def run_build(ctx, job_name, username, password, ip_address, interactive):
     """
     Displays a build status.
     """
+    slab_logger.info('Displaying build status')
     if not username:
         username = ctx.get_username()
     if not password:

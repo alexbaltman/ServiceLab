@@ -7,6 +7,8 @@ import ipaddress
 from click.testing import CliRunner
 from servicelab.stack import Context
 from servicelab.commands import cmd_up
+from servicelab.commands import cmd_workon
+from servicelab.utils import service_utils
 from servicelab.utils import vagrant_utils
 
 
@@ -45,6 +47,9 @@ class TestStackUp(unittest.TestCase):
         if os.path.isdir(self.dotvagrant_dir):
             self.dotvagrant_bak = os.path.join(self.ctx.path, '.vagrant_bak')
             os.rename(self.dotvagrant_dir, self.dotvagrant_bak)
+        if not os.path.isdir(os.path.join(self.ctx.path, 'services', 'ccs-data')):
+            service_utils.sync_service(self.ctx.path, 'master', self.ctx.username,
+                                       'ccs-data')
         env_path = os.path.join(self.ctx.path, 'services', 'ccs-data', 'sites', self.site,
                                 'environments', self.tenant)
         self.hosts_path = os.path.join(env_path, 'hosts.d')
@@ -112,43 +117,46 @@ class TestStackUp(unittest.TestCase):
                            False - VirtualBox hypervisor
 
         Returns:
-            Nothing.  Runs tests based on the environment setup and updates logs directly
+            Nothing.  Runs tests based on the environment setup
 
         Example Usage:
             self.cmd_up_runner(['--rhel7'], 'rhel7-001', False)
         """
-        try:
-            runner = CliRunner()
-            host_yaml = hostname + '.yaml'
-            result = runner.invoke(cmd_up.cli, args)
-            vm_yaml_file = os.path.join(self.hosts_path, host_yaml)
-            self.assertTrue(os.path.isfile(vm_yaml_file))
-            self.ctx.logger.info('%s was found in dev-tenant-1/hosts.d' % host_yaml)
-            with open(vm_yaml_file, 'r') as yaml_file:
-                vm_yaml_data = yaml.load(yaml_file)
-            self.assertEqual(vm_yaml_data['groups'][1], group)
-            self.ctx.logger.info('%s VM group is %s as expected' % (hostname, group))
-            with open(self.vagrant_yaml, 'r') as vagrant_f:
-                vagrant_data = yaml.load(vagrant_f)
-            self.assertEqual(vm_yaml_data['interfaces']['eth0']['ip_address'],
-                             vagrant_data['hosts'][hostname]['ip'],
-                             '192.168.100.15')
-            self.ctx.logger.info('%s and vagrant.yaml have the expected IP' % host_yaml)
-            if remote:
-                hypervisor = "OpenStack"
-            else:
-                hypervisor = "VirtualBox"
-            ispoweron, isremote = vagrant_utils.vm_isrunning(hostname, self.ctx.path)
-            if ispoweron > 1:
-                self.ctx.logger.info('Unable to contact %s for VM status' % hypervisor)
-            elif ispoweron == 1:
-                self.ctx.logger.info('VM is offline in %s' % hypervisor)
-            else:
-                self.assertEqual(ispoweron, 0)
-                self.assertEqual(isremote, remote)
-                self.ctx.logger.info('VM is running on %s' % hypervisor)
-        except:
-            self.ctx.logger.debug('An unexpected error occured while processing command')
+        if not group == 'rhel7':
+            repo_name = str('service-' + group)
+            if not os.path.isdir(os.path.join(self.ctx.path, 'services', repo_name)):
+                service_utils.sync_service(
+                    self.ctx.path,
+                    'master',
+                    self.ctx.username,
+                    repo_name)
+        runner = CliRunner()
+        host_yaml = hostname + '.yaml'
+        result = runner.invoke(cmd_up.cli, args)
+        if result > 0:
+            return
+        vm_yaml_file = os.path.join(self.hosts_path, host_yaml)
+        self.assertTrue(os.path.isfile(vm_yaml_file))
+        with open(vm_yaml_file, 'r') as yaml_file:
+            vm_yaml_data = yaml.load(yaml_file)
+        self.assertEqual(vm_yaml_data['groups'][1], group)
+        with open(self.vagrant_yaml, 'r') as vagrant_f:
+            vagrant_data = yaml.load(vagrant_f)
+        self.assertEqual(vm_yaml_data['interfaces']['eth0']['ip_address'],
+                         vagrant_data['hosts'][hostname]['ip'],
+                         '192.168.100.15')
+        if remote:
+            hypervisor = "OpenStack"
+        else:
+            hypervisor = "VirtualBox"
+        ispoweron, isremote = vagrant_utils.vm_isrunning(hostname, self.ctx.path)
+        if ispoweron > 1:
+            print('Unable to contact %s for VM status' % hypervisor)
+        elif ispoweron == 1:
+            print('VM is offline in %s' % hypervisor)
+        else:
+            self.assertEqual(ispoweron, 0)
+            self.assertEqual(isremote, remote)
 
     def destroy_vm(self, hostname):
         """
@@ -171,7 +179,7 @@ class TestStackUp(unittest.TestCase):
         # 1 - VM is offline
         # 2 - Vagrant command error, usually cannot find vm or contact hypervisor
         # 3 - Other errors
-        if ispoweron <= 1:
+        if ispoweron == 0:
             my_vm_connection.v.destroy(vm_name=hostname)
 
     def test_local_rhel7(self):

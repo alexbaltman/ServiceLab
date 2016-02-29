@@ -6,17 +6,15 @@ import time
 import copy
 import json
 import xml.etree.ElementTree as ET
-
-import logging
-import click
 import requests
+
+import logger_utils
+
 from requests.auth import HTTPBasicAuth
 from bs4 import BeautifulSoup
+from servicelab import settings
 
-
-# create logger
-GOCD_UTILS_LOGGER = logging.getLogger('click_application')
-logging.basicConfig()
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.gocd')
 
 
 def get_config(config_xmlurl, auth=None):
@@ -27,7 +25,7 @@ def get_config(config_xmlurl, auth=None):
         config_xmlurl
         auth
     """
-    click.echo("Retrieving go config")
+    slab_logger.log(15, "Retrieving go config")
     if auth:
         req = requests.get(config_xmlurl, auth=auth)
     else:
@@ -36,10 +34,10 @@ def get_config(config_xmlurl, auth=None):
         try:
             root = ET.fromstring(req.text)
         except requests.ConnectionError as ex:
-            click.echo("Failure parsing xml from request" + ex)
+            slab_logger.error("Failure parsing xml from request" + ex)
             sys.exit(1)
     else:
-        click.echo("Request failed")
+        slab_logger.error("Request failed")
         sys.exit(1)
 
     return (req.headers['x-cruise-config-md5'], root)
@@ -55,7 +53,7 @@ def push_config(config_xmlurl, md5, xmlfile, auth=None):
         xmlfile
         auth
     """
-    click.echo("Uploading go config")
+    slab_logger.log(15, "Uploading go config")
     payload = {
         'md5': md5,
         'xmlFile': xmlfile
@@ -67,7 +65,7 @@ def push_config(config_xmlurl, md5, xmlfile, auth=None):
     else:
         req = requests.post(config_xmlurl, data=payload)
     if req.status_code != 200:
-        click.echo(req.status_code, req.text)
+        slab_logger.error(req.status_code, req.text)
         sys.exit(1)
     time.sleep(1)
 
@@ -79,6 +77,7 @@ def get_current_pipeline_counter(pipeline_name, ip_address, auth=None):
     Attributes:
         pipeline_name
     """
+    slab_logger.log(15, 'Determining current pipeline counter')
     url = "http://%s/go/api/pipelines/%s/history/0" % (
         ip_address, pipeline_name)
 
@@ -87,7 +86,7 @@ def get_current_pipeline_counter(pipeline_name, ip_address, auth=None):
     else:
         req = requests.get(url)
     if req.status_code != 200:
-        click.echo(req.status_code, req.text)
+        slab_logger.error(req.status_code, req.text)
         return -1, None
     pipeline_history = json.loads(req.text)
     if pipeline_history['pipelines'] and len(
@@ -105,11 +104,12 @@ def process_all_stages(pipeline_name, pipeline_counter, ip_address, auth=None):
     Attributes:
         pipeline_name
     """
+    slab_logger.log(15, 'Processing pipeline stages')
     wait_for_pipeline(pipeline_name, ip_address, auth)
     return_code, pipeline_instance = get_pipeline_instance(
         pipeline_name, pipeline_counter, ip_address, auth)
     if return_code != 0:
-        click.echo("Error occurred. Exiting")
+        slab_logger.error("Error occurred. Exiting")
         return
 
     i = 0
@@ -119,24 +119,22 @@ def process_all_stages(pipeline_name, pipeline_counter, ip_address, auth=None):
                 pipeline_name, pipeline_counter, ip_address, auth)
             matching_stage = current_pipeline_instance['stages'][i]
             if return_code != 0:
-                click.echo("Error occurred. Exiting")
+                slab_logger.error("Error occurred. Exiting")
                 return
 
             if 'result' in matching_stage:
-                click.echo(
-                    "Stage : %s  has %s " %
-                    (matching_stage['name'],
-                     matching_stage['result']))
+                slab_logger.log(25, "Stage : %s  has %s "
+                                % (matching_stage['name'], matching_stage['result']))
                 if matching_stage['result'] == "Failed":
-                    click.echo("Exiting.")
+                    slab_logger.error("Exiting.")
                     return
             else:
-                click.echo("Scheduling Stage : %s " % (stage['name']))
+                slab_logger.log(25, "Scheduling Stage : %s " % (stage['name']))
                 url = "http://%s/go/run/%s/%s/%s" % (
                     ip_address, pipeline_name, pipeline_counter, stage['name'])
                 req = requests.post(url, auth=auth, data="")
                 if req.status_code != 200:
-                    click.echo(req.status_code, req.text)
+                    slab_logger.error(req.status_code, req.text)
                     return -1, None
                 time.sleep(10)
                 wait_for_stage(
@@ -148,10 +146,8 @@ def process_all_stages(pipeline_name, pipeline_counter, ip_address, auth=None):
                 return_code, current_pipeline_instance = get_pipeline_instance(
                     pipeline_name, pipeline_counter, ip_address, auth)
                 matching_stage = current_pipeline_instance['stages'][i]
-                click.echo(
-                    "Stage : %s  has %s " %
-                    (matching_stage['name'],
-                     matching_stage['result']))
+                slab_logger.log(25, "Stage : %s  has %s "
+                                % (matching_stage['name'], matching_stage['result']))
 
             i += 1
 
@@ -164,6 +160,7 @@ def get_pipeline_instance(
     """
     Gets a pipeline instance
     """
+    slab_logger.log(15, 'Determining pipeline instance')
     url = "http://%s/go/api/pipelines/%s/instance/%s" % (
         ip_address, pipeline_name, pipeline_counter)
     if auth:
@@ -171,7 +168,7 @@ def get_pipeline_instance(
     else:
         req = requests.get(url)
     if req.status_code != 200:
-        click.echo(req.status_code, req.text)
+        slab_logger.error(req.status_code, req.text)
         return -1, None
     pipeline_instance = json.loads(req.text)
     return 0, pipeline_instance
@@ -181,6 +178,7 @@ def wait_for_pipeline(pipeline_name, ip_address, auth=None):
     """
     Wait for pipeline.
     """
+    slab_logger.log(15, 'Waiting for pipeline %s' % pipeline_name)
     server_url = "http://{0}/go/api/pipelines/{1}/status".format(
         ip_address, pipeline_name)
     schedulable = False
@@ -193,7 +191,7 @@ def wait_for_pipeline(pipeline_name, ip_address, auth=None):
         else:
             return
         if not status['schedulable']:
-            click.echo("Pipeline is running. Waiting for it to finish.")
+            slab_logger.warning("Pipeline is running. Waiting for it to finish.")
             time.sleep(10)
 
 
@@ -206,6 +204,7 @@ def wait_for_stage(
     """
     Wait for stage.
     """
+    slab_logger.log(15, 'Waiting for stage %s' % stage_name)
     server_url = "http://{0}/go/api/stages/{1}/{2}/instance/{3}/1".format(
         ip_address, pipeline_name, stage_name, pipeline_counter)
     stopped = False
@@ -216,7 +215,7 @@ def wait_for_stage(
         if stage['result'] != "Unknown":
             stopped = True
         else:
-            click.echo(
+            slab_logger.warning(
                 "Stage %s is running. Waiting for it to finish." %
                 (stage['name']))
             time.sleep(10)
@@ -234,21 +233,22 @@ def create_pipeline(root, name, new_name):
         >>> print create_pipeline(root,
         name, new_name)
     """
+    slab_logger.log(15, 'Creating new pipeline %s' % new_name)
     pipeline = root.find('.//pipeline[@name="%s"]' % name)
     pipeline_parent = root.find('.//pipeline[@name="%s"]/..' % name)
 
     new_pipeline = root.find('.//pipeline[@name="%s"]' % new_name)
     if new_pipeline is not None:
-        click.echo("The pipeline name : %s provided already exists. Please "
-                   "provide a different pipeline name. " % new_name)
+        slab_logger.error("The pipeline name : %s provided already exists. Please "
+                          "provide a different pipeline name. " % new_name)
         sys.exit(1)
 
     if pipeline is None:
-        click.echo("The original pipeline does not exist: %s" % name)
+        slab_logger.error("The original pipeline does not exist: %s" % name)
         sys.exit(1)
 
     new_pipeline = copy.deepcopy(pipeline)
-    click.echo("Setting pipeline name: %s" % new_name)
+    slab_logger.log(25, "Setting pipeline name: %s" % new_name)
     new_pipeline.set('name', new_name)
     pipeline_parent.append(new_pipeline)
 
@@ -259,6 +259,7 @@ def validate_pipe_ip_cb(ctx, param, value):
     """
     If ip is none then provide the default ip for gocd.
     """
+    slab_logger.log(15, 'Determining IP address for gocd server')
     if not value:
         value = ctx.obj.get_gocd_info()['ip']
     return value
@@ -268,6 +269,7 @@ def get_pipe_info(pipeline_name, username, password, ip_address):
     """
     Get pipe info string
     """
+    slab_logger.log(15, 'Determining pipeline information string')
     requests.packages.urllib3.disable_warnings()
     try:
         url = "http://{0}/go/api/pipelines/{1}/status".format(ip_address,
@@ -275,7 +277,7 @@ def get_pipe_info(pipeline_name, username, password, ip_address):
         res = requests.get(url, auth=HTTPBasicAuth(username, password))
         soup = BeautifulSoup(res.content, "html.parser")
     except requests.ConnectionError as ex:
-        GOCD_UTILS_LOGGER.error(ex)
+        slab_logger.error(ex)
         raise Exception("Cannot connect to Go CD Server : %s " % ex)
 
     return soup

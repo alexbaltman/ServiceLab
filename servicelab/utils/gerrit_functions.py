@@ -2,19 +2,18 @@
 gerrit functions
 """
 import os
+import click
 import datetime
 
-import click
-import logging
+import logger_utils
+import service_utils
 
 from gerrit import filters
 from gerrit import reviews
 
-from servicelab.stack import Context
-from servicelab.utils import service_utils
+from servicelab import settings
 
-LOGGER = logging.getLogger('click_application')
-logging.basicConfig()
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.gerrit')
 
 
 class Format(object):
@@ -48,6 +47,7 @@ class Format(object):
         Args:
             sec           -- number of seconds
         """
+        slab_logger.debug('Determining current date / time')
         dat = datetime.datetime.fromtimestamp(sec)
         return dat.strftime("%c")
 
@@ -69,6 +69,7 @@ class Format(object):
                                     Format.fail  - makes the text red
             pstr              -- Input text string
         """
+        slab_logger.debug('Formatting message')
         prompt_format = "{}"
         if width:
             prompt_format = "{:%d}" % (width)
@@ -129,6 +130,7 @@ class GerritFns(object):
 
     def getkey(self):
         """ get the ssh key-credential of the user."""
+        slab_logger.debug('Extracting ssh key for %s' % self.user)
         key = os.path.expanduser(os.path.join("~" + self.user,
                                               ".ssh",
                                               "id_rsa"))
@@ -151,7 +153,7 @@ class GerritFns(object):
             Raises:
                GerritFnException        -- If Unable to find the gerrit review number.
          """
-
+        slab_logger.debug('Changing review for gerrit review %i' % number)
         project = filters.OrFilter()
         project.add_items('project', [self.prjname])
         other = filters.Items()
@@ -188,6 +190,7 @@ class GerritFns(object):
             Raises:
                GerritFnException        -- If Unable to find the gerrit review number.
          """
+        slab_logger.debug('Changing the state of gerrit review to %i' % number)
         project = filters.OrFilter()
         project.add_items('project', [self.prjname])
         other = filters.Items()
@@ -219,7 +222,7 @@ class GerritFns(object):
             Raises:
                GerritFnException        -- If Unable to find the gerrit review number.
         """
-
+        slab_logger.debug('Pulling gerrit review %i for code review' % number)
         project = filters.OrFilter()
         project.add_items('project', [self.prjname])
         other = filters.Items()
@@ -254,12 +257,13 @@ class GerritFns(object):
             # now run the command and get output
             ret_code, ret_str = service_utils.run_this(cmd)
             if not ret_code:
-                click.echo(ret_str)
+                slab_logger.log(25, ret_str)
             else:
                 raise GerritFnException(ret_str)
 
     def repo_list(self):
         """ Generate list of all repos on gerrit server."""
+        slab_logger.debug('Generating list of all repos on gerrit')
         key = self.getkey()
         cmd = "ssh -i {} -p {} {}@{} gerrit ls-projects".format(key,
                                                                 self.port,
@@ -274,7 +278,7 @@ class GerritFns(object):
 
     def print_list(self):
         """ Prints the generated  list of all repos on gerrit server."""
-        click.echo("\n".join(self.repo_list()))
+        slab_logger.log(25, "\n".join(self.repo_list()))
 
     def print_gerrit(self, pformat="", number=None, owner="", reviewer="", status=""):
         """ Print the complete review information for a review numeber and given owner
@@ -290,6 +294,7 @@ class GerritFns(object):
                 reviewer              -- The reviewer.
                 status                -- Any valid gerrit status.
         """
+        slab_logger.debug('Extracting details of gerrit review(s)')
         other = filters.Items()
         if number:
             other.add_items('change', number)
@@ -330,70 +335,72 @@ class GerritFns(object):
             Args:
                 review             -- The review number
         """
+        slab_logger.debug('Displaying summary review for gerrit review')
         pstl = Format.bld
-        click.echo(Format.message(32, 0, pstl, "For Number " + review["number"]))
-        click.echo(Format.message(32, 0, pstl, "Id") + review['id'])
-        click.echo(Format.message(32, 0, pstl, "Current Patch Set Revision") +
-                   review["currentPatchSet"]["revision"])
-        click.echo(Format.message(32, 0, pstl, "Commit Message"))
-        click.echo(review["commitMessage"])
+        slab_logger.log(25, Format.message(32, 0, pstl, "For Number " + review["number"]))
+        slab_logger.log(25, Format.message(32, 0, pstl, "Id") + review['id'])
+        slab_logger.log(25, Format.message(32, 0, pstl, "Current Patch Set Revision") +
+                        review["currentPatchSet"]["revision"])
+        slab_logger.log(25, Format.message(32, 0, pstl, "Commit Message"))
+        slab_logger.log(25, review["commitMessage"])
 
     @classmethod
     def detail(cls, review):
         """ Print the complete review information for a given review."""
+        slab_logger.debug('Displaying full information for gerrit review')
         pstl = Format.bld
-        click.echo(Format.message(24, 0, pstl, "Branch")+review['branch'])
-        click.echo(Format.message(24, 0, pstl, "Created On") +
-                   Format.time(review["createdOn"]))
-        click.echo(Format.message(24, 0, pstl, "Subject")+review["subject"])
+        slab_logger.log(25, Format.message(24, 0, pstl, "Branch")+review['branch'])
+        slab_logger.log(25, Format.message(24, 0, pstl, "Created On") +
+                        Format.time(review["createdOn"]))
+        slab_logger.log(25, Format.message(24, 0, pstl, "Subject")+review["subject"])
 
         stat = Format.bld
         if review["status"] == "MERGED":
             stat = Format.green | stat
         elif review["status"] == "OPEN":
             stat = Format.blue | stat
-        click.echo(Format.message(24, 0, pstl, "Status") +
-                   Format.message(0, 0, stat, review['status']))
+        slab_logger.log(25, Format.message(24, 0, pstl, "Status") +
+                        Format.message(0, 0, stat, review['status']))
 
-        click.echo(Format.message(24, 0, pstl, "Id") + review['id'])
-        click.echo(Format.message(24, 0, pstl, "Number") + review['number'])
-        click.echo(Format.message(24, 0, pstl, "Open") + str(review['open']))
-        click.echo(Format.message(24, 0, pstl, "Sort Key") + review["sortKey"])
-        click.echo(Format.message(24, 0, pstl, "Url") + review["url"])
-        click.echo(Format.message(24, 0, pstl, "Commit Message"))
-        click.echo(review["commitMessage"])
-        click.echo(Format.message(24, 0, pstl | Format.uline, "Current PatchSet"))
+        slab_logger.log(25, Format.message(24, 0, pstl, "Id") + review['id'])
+        slab_logger.log(25, Format.message(24, 0, pstl, "Number") + review['number'])
+        slab_logger.log(25, Format.message(24, 0, pstl, "Open") + str(review['open']))
+        slab_logger.log(25, Format.message(24, 0, pstl, "Sort Key") + review["sortKey"])
+        slab_logger.log(25, Format.message(24, 0, pstl, "Url") + review["url"])
+        slab_logger.log(25, Format.message(24, 0, pstl, "Commit Message"))
+        slab_logger.log(25, review["commitMessage"])
+        slab_logger.log(25, Format.message(24, 0, pstl | Format.uline, "Current PatchSet"))
 
         pset = review["currentPatchSet"]
-        click.echo(Format.message(24, 2, pstl, "Author") + pset["author"]["name"])
-        click.echo(Format.message(24, 2, pstl, "Created On") +
-                   Format.time(pset["createdOn"]))
-        click.echo(Format.message(24, 2, pstl, "Is Draft") +
-                   str(pset["isDraft"]))
-        click.echo(Format.message(24, 2, pstl, "Number") + pset["number"])
-        click.echo(Format.message(24, 2, Format.bld | Format.uline, "Parents"))
+        slab_logger.log(25, Format.message(24, 2, pstl, "Author") + pset["author"]["name"])
+        slab_logger.log(25, Format.message(24, 2, pstl, "Created On") +
+                        Format.time(pset["createdOn"]))
+        slab_logger.log(25, Format.message(24, 2, pstl, "Is Draft") +
+                        str(pset["isDraft"]))
+        slab_logger.log(25, Format.message(24, 2, pstl, "Number") + pset["number"])
+        slab_logger.log(25, Format.message(24, 2, Format.bld | Format.uline, "Parents"))
         for parent in pset["parents"]:
-            click.echo("    {}".format(parent))
-        click.echo(Format.message(24, 2, pstl, "Reference")+pset["ref"])
-        click.echo(Format.message(24, 2, pstl, "Revision")+pset["revision"])
-        click.echo(Format.message(24, 2, pstl, "Size Insertions") +
-                   str(pset["sizeInsertions"]))
-        click.echo(Format.message(24, 2, pstl, "Size Deleteions") +
-                   str(pset["sizeDeletions"]))
+            slab_logger.log(25, "    {}".format(parent))
+        slab_logger.log(25, Format.message(24, 2, pstl, "Reference")+pset["ref"])
+        slab_logger.log(25, Format.message(24, 2, pstl, "Revision")+pset["revision"])
+        slab_logger.log(25, Format.message(24, 2, pstl, "Size Insertions") +
+                        str(pset["sizeInsertions"]))
+        slab_logger.log(25, Format.message(24, 2, pstl, "Size Deleteions") +
+                        str(pset["sizeDeletions"]))
         if "approvals" in pset.keys():
-            click.echo(Format.message(24, 2, pstl, "Approvals"))
+            slab_logger.log(25, Format.message(24, 2, pstl, "Approvals"))
             for aprvl in pset["approvals"]:
-                click.echo(Format.message(24, 4, pstl, "*Name") +
-                           aprvl["by"]["name"])
-                click.echo(Format.message(24, 4, pstl, " Type") +
-                           aprvl["type"])
-                click.echo(Format.message(24, 4, pstl, " Granted On") +
-                           Format.time(aprvl["grantedOn"]))
-                click.echo(Format.message(24, 4, pstl, " Value") + aprvl["value"])
+                slab_logger.log(25, Format.message(24, 4, pstl, "*Name") +
+                                aprvl["by"]["name"])
+                slab_logger.log(25, Format.message(24, 4, pstl, " Type") +
+                                aprvl["type"])
+                slab_logger.log(25, Format.message(24, 4, pstl, " Granted On") +
+                                Format.time(aprvl["grantedOn"]))
+                slab_logger.log(25, Format.message(24, 4, pstl, " Value") + aprvl["value"])
                 if 'description' in aprvl.keys():
-                    click.echo(Format.message(24, 4, pstl,
-                                              " Description") + aprvl["description"])
-        click.echo("\n")
+                    slab_logger.log(25, Format.message(24, 4, pstl, " Description") +
+                                    aprvl["description"])
+        slab_logger.log(25, "\n")
 
 
 # driver check for this
@@ -403,31 +410,31 @@ if __name__ == '__main__':
     GCTX = Context()
     GCTX.debug = False
     GRT = GerritFns("kunanda", "servicelab", GCTX)
-    click.echo("GET SUMMARY OF ALL OUTGOING REVIEWS For Owner " + "kunanda")
+    slab_logger.log(25, "GET SUMMARY OF ALL OUTGOING REVIEWS For Owner " + "kunanda")
     GRT.print_gerrit("summary", None, "kunanda", "", "open")
     sys.stdin.read(1)
 
-    click.echo("\n\n\n\n")
-    click.echo("GET SUMMARY OF INCOMING REVIEWS For Owner " + "kunanda")
+    slab_logger.log(25, "\n\n\n\n")
+    slab_logger.log(25, "GET SUMMARY OF INCOMING REVIEWS For Owner " + "kunanda")
     GRT.print_gerrit("summary", None, "", "kunanda", "open")
     sys.stdin.read(1)
 
-    click.echo("\n\n\n\n")
-    click.echo("GET " + str(23182) + " REVIEW DETAIL ")
+    slab_logger.log(25, "\n\n\n\n")
+    slab_logger.log(25, "GET " + str(23182) + " REVIEW DETAIL ")
     GRT.print_gerrit("detail", 23182, "", "", "")
     sys.stdin.read(1)
 
-    click.echo("\n\n\n\n")
-    click.echo("GET CODE REVIEW " + str(23182))
+    slab_logger.log(25, "\n\n\n\n")
+    slab_logger.log(25, "GET CODE REVIEW " + str(23182))
     GRT.code_review(23182)
     sys.stdin.read(1)
 
-    click.echo("\n\n\n\n")
-    click.echo("CODE REVIEW  +1 On " + str(23182))
+    slab_logger.log(25, "\n\n\n\n")
+    slab_logger.log(25, "CODE REVIEW  +1 On " + str(23182))
     GRT.change_review(23182, 1, 0, "Doing 1 on this")
     sys.stdin.read(1)
 
-    click.echo("\n\n\n\n")
-    click.echo("GET CODE REVIEW " + str(23182))
+    slab_logger.log(25, "\n\n\n\n")
+    slab_logger.log(25, "GET CODE REVIEW " + str(23182))
     GRT.print_gerrit("detail", 23182)
 #   GRT.code_state(22929, "delete")

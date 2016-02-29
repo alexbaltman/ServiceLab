@@ -3,11 +3,14 @@ The module contains the status subcommand implemenation.
 """
 import os
 import sys
-
 import click
 
 from servicelab.stack import pass_context
 from servicelab.utils import status_utils
+from servicelab.utils import logger_utils
+from servicelab import settings
+
+slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.status')
 
 
 @click.group('status', short_help='Shows the status of '
@@ -26,6 +29,7 @@ def cmd_repo_status(ctx):
     """
     Shows the details of git repos.
     """
+    slab_logger.log(25, 'Displaying git repos details')
     status_utils.show_repo_status(ctx.path)
 
 
@@ -35,6 +39,7 @@ def cmd_vm_status(ctx):
     """
     Shows the vm status
     """
+    slab_logger.log(15, 'Displaying status of Servicelab VMs')
     display_vm_status(ctx)
 
 
@@ -48,12 +53,12 @@ def display_vm_status(ctx):
         "exist : %s . Please, run : stack workon <project name>"\
         " to fix the issue." % (vagrant_file_path)
     if not os.path.isfile(vagrant_file_path):
-        click.echo(error_message)
+        slab_logger.error(error_message)
         sys.exit(1)
     else:
         returncode, _ = status_utils.show_vm_status(ctx.path)
         if returncode == 2:
-            click.echo(error_message)
+            slab_logger.error(error_message)
             sys.exit(1)
 
 
@@ -63,5 +68,7 @@ def show_all_status(ctx):
     """
     Shows the Vm status.
     """
+    slab_logger.log(25, 'Displaying status of git repos')
     status_utils.show_repo_status(ctx.path)
+    slab_logger.log(25, 'Displaying status of Servicelab VMs')
     display_vm_status(ctx)
