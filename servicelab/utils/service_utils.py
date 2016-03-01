@@ -79,7 +79,7 @@ def sync_service(path, branch, username, service_name):
 
 
 def build_data(path):
-    """Build ccs-data for site ccs-dev-1.
+    """Build ccs-data for site ccs-dev-1 and move built hosts into .stack/
 
     Build the data via lightfuse.rb, the BOM generation script.
 
@@ -109,6 +109,23 @@ def build_data(path):
                                   '--site ccs-dev-1 && cd .',
                                   cwd=os.path.join(path, "services",
                                                    data_reponame))
+    if returncode == 0:
+        try:
+            # src, dest
+            shutil.copyfile(os.path.join(path,
+                                         'services',
+                                         data_reponame,
+                                         'out',
+                                         'ccs-dev-1',
+                                         'dev-tenant',
+                                         'etc',
+                                         'ccs',
+                                         'data',
+                                         'hosts'),
+                            os.path.join(path,
+                                         'hosts'))
+        except IOError as err:
+            return(1, err)
     return(returncode, myinfo)
 
 
@@ -451,10 +468,7 @@ def link(path, service_name, branch, username):
                 return 1
     else:
         slab_logger.debug("Link already exists.")
-
-    hostf = open(os.path.join(path, "hosts"), 'w+')
-    hostf.seek(0)
-    hostf.write("[%s]\nvm-001\nvm-002\nvm-003\n" % (service_name))
+        return 0
 
 
 def clean(path):
