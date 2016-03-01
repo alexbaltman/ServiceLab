@@ -127,7 +127,7 @@ class TestGoCdUtils(unittest.TestCase):
                                 self.GOCD_PASS,
                                 '-ip',
                                 self.GOCD_SERVER])
-        if len(result.output):
+        if len(result.output) and 'Connection refused' not in result.output:
             self.assertTrue(self.GOCD_ENV_GOCD_OVERRIDE in
                             result.output.strip())
         time.sleep(45)

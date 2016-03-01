@@ -8,6 +8,7 @@ import click
 from servicelab.utils import service_utils
 from servicelab.utils import vagrant_utils
 from servicelab.stack import pass_context
+from servicelab.utils import logger_utils
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.cmd.redeploy')
