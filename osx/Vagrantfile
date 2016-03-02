@@ -77,11 +77,11 @@ sudo yum -y install wget
 wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.rpm -O vagrant_1.7.2_x86_64.rpm
 sudo yum -y localinstall vagrant_1.7.2_x86_64.rpm
 sudo yum -y install java-1.7.0-openjdk
-sudo yum -y install gcc
+sudo yum -y install gcc sshpass
 wget https://www.kernel.org/pub/software/scm/git/git-2.0.0.tar.gz
 tar -xzvf git-2.0.0.tar.gz
 sudo yum install -y libcurl-devel zlib-devel
-sudo yum install -y autoconf
+sudo yum install -y autoconf 
 sudo yum install -y perl-ExtUtils-MakeMaker
 cd git-2.0.0
 sudo make configure

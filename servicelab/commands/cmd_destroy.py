@@ -7,15 +7,27 @@ overlap w/ openstack cli tools.
 import os
 import sys
 import click
+from subprocess import CalledProcessError
 
 from servicelab.utils import logger_utils
 from servicelab.stack import pass_context
 from servicelab.utils import vagrant_utils
 from servicelab.utils import helper_utils
 from servicelab.utils import openstack_utils
+from servicelab.utils import service_utils
+from servicelab.utils import yaml_utils
+from servicelab.utils import vagrantfile_utils as Vf_utils
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.destroy')
+
+VAGRANTFILE_DELETE_MESSAGE = "Deleting the VM"
+INVENTORY_DELETE_MESSAGE = "Deleting the VM from vagrant.yaml inventory"
+REBUILDING_CCSDATA_MESSAGE = "Rebuilding ccs-data"
+INFRA_PORT_DETECT_MESSAGE = "Port found for infra node"
+UPDATING_HOSTS_YAML_MESSAGE = "Updating of hosts.yaml on infra node complete"
+VM_DOESNT_EXIST_MESSAGE = "Error occurred destroying VM. "\
+                          "Most probably the VM doesnt exist."
 
 
 @click.group('destroy',
@@ -45,12 +57,49 @@ def destroy_vm(ctx, force, vm_name):
     2. Delete from Vagrantfile (?)
     3. Remove from dev-tenant in ccs-data (?)
     """
-    slab_logger.info("Destroying {0}".format(vm_name))
     # What if it's an ospvm from stack list ospvms --> redhouse vms.
     # TODO: IN that case need to attach to different path.
-    myvag_env = vagrant_utils.Connect_to_vagrant(vm_name=vm_name,
-                                                 path=ctx.path)
-    myvag_env.v.destroy(vm_name)
+    print("Destroying {0}".format(vm_name))
+    try:
+        myvag_env = vagrant_utils.Connect_to_vagrant(vm_name=vm_name,
+                                                     path=ctx.path)
+        myvag_env.v.destroy(vm_name)
+    except CalledProcessError:
+        slab_logger.info(VM_DOESNT_EXIST_MESSAGE)
+
+    myvfile = Vf_utils.SlabVagrantfile(path=ctx.path)
+    print("{0} {1} from Vagrantfile".format(VAGRANTFILE_DELETE_MESSAGE, vm_name))
+    if not myvfile.delete_virtualbox_vm(vm_name):
+        print("VM {0} not found in Vagrantfile".format(vm_name))
+    print("{0} {1}".format(INVENTORY_DELETE_MESSAGE, vm_name))
+    yaml_utils.host_del_vagrantyaml(ctx.path, "vagrant.yaml", vm_name)
+    vm_yaml_file = "%s/services/ccs-data/sites/ccs-dev-1/environments/"\
+                   "dev-tenant/hosts.d/%s.yaml" % (ctx.path, vm_name)
+    print("Deleting the VM YAML file : %s" % (vm_yaml_file))
+    if os.path.exists(vm_yaml_file):
+        os.remove(vm_yaml_file)
+    else:
+        print("VM YAML file not found. Proceeeding.")
+    print(REBUILDING_CCSDATA_MESSAGE)
+    service_utils.build_data(ctx.path)
+    print("Updating hosts.yaml on infra node.")
+    print("Detecting infra node port.")
+    return_code, port_no = vagrant_utils.get_ssh_port_for_vm("infra-001", ctx.path)
+    if return_code != 0:
+        print("Unable to find port no. of infra node, cannot update"
+              "hosts.yaml on infra node")
+        return
+    else:
+        print("%s %s " % (INFRA_PORT_DETECT_MESSAGE, port_no))
+        yaml_file = "./services/ccs-data/out/ccs-dev-1/dev/etc/ccs/data/hosts.yaml"
+        vm_yaml_file = "/etc/ccs/data/environments/dev-tenant/hosts.yaml"
+        yaml_file_path = os.path.join(ctx.path, yaml_file)
+        return_code, ret_info = vagrant_utils.copy_file_to_vm(yaml_file_path, port_no,
+                                                              vm_yaml_file, ctx.path)
+        if return_code != 0:
+            print("Could not succesfully update hosts.yaml on infra node.")
+        else:
+            print(UPDATING_HOSTS_YAML_MESSAGE)
 
 
 @click.option('-f', '--force', is_flag=True, help='Do not prompt me to destroy'

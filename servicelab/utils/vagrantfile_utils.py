@@ -1,6 +1,5 @@
 import os
 import yaml
-import service_utils
 
 import logger_utils
 
@@ -163,10 +162,55 @@ class SlabVagrantfile(object):
             vfile.write('end')
             vfile.write('\n')
 
+    def delete_virtualbox_vm(self, vm_name):
+        """
+        Delete data in the class.path Vagrantfile
+
+        Args:
+            vm name
+
+        Returns:
+            Nothing, instead the class.path Vagrantfile is deleted with the vm_name
+
+        Example Usage:
+            my_class_var.delete_it(vm_name)
+        """
+        return self.delete_it(vm_name)
+
+    def delete_it(self, vm_name):
+        """
+        Deletes data from the Vagrantfile
+
+        Args:
+            vm_name
+
+        Returns:
+            True if vm is found and deleted
+
+        Example Usage:
+            my_class_var.delete_it(vm_name)
+        """
+        lines = ''
+        with open(os.path.join(self.path, "Vagrantfile"), 'r') as f:
+            lines = f.readlines()
+
+        vm_name_config_section = False
+        found_vm = False
+        with open(os.path.join(self.path, "Vagrantfile"), 'w') as f:
+            for line in lines:
+                if vm_name in line:
+                    vm_name_config_section = True
+                    found_vm = True
+                if not vm_name_config_section and vm_name not in line:
+                    f.write(line)
+                if vm_name_config_section and "end\n" == line:
+                    vm_name_config_section = False
+
+        return found_vm
+
     def add_virtualbox_vm(self, host_dict, path="", nfs=False):
         """
         Adds a virtual box to Vagrantfile
-
         Args:
             host_dict {dict}: Nested dict built from yaml_utils.gethost_byname
                 {'hostname': {'box': 'http://cis-kickstart.cisco.com/ccs-rhel-7.box',

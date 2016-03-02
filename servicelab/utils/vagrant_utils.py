@@ -426,3 +426,41 @@ def check_vm_is_available(path):
                 slab_logger.debug("VM {} is available".format(vm))
                 return True
     return False
+
+
+def get_ssh_port_for_vm(vm_name, path):
+    """
+    Gets ssh port for vm
+
+    Args:
+        vm_name
+        path to Vagrantfile
+
+    Returns:
+        return_code, command output
+
+    Example Usage:
+        my_class_var.get_ssh_port_for_vm(vm_name, path)
+    """
+    cmd = "vagrant ssh-config --host %s | grep Port |  awk '{print $2}'" % (vm_name)
+    return_code, port_no = service_utils.run_this(cmd, path)
+    return return_code, port_no.rstrip()
+
+
+def copy_file_to_vm(file_path, port_no, vm_path, path):
+    """
+    Gets ssh port for vm
+
+    Args:
+        vm_name
+        path to Vagrantfile
+
+    Returns:
+        return_code, command output
+
+    Example Usage:
+        my_class_var.get_ssh_port_for_vm(vm_name, path)
+    """
+    cmd_string = "sshpass -p 'vagrant' scp -P %s  %s root@127.0.0.1:%s"
+    cmd = cmd_string % (port_no, file_path, vm_path)
+    return service_utils.run_this(cmd, path)
