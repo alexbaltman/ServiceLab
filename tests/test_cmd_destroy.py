@@ -26,6 +26,8 @@ class TestCmdDestroy(unittest.TestCase):
         self.ctx = Context()
 
     @classmethod
+    @unittest.skipUnless(sys.platform == "darwin",
+                         "Mac only stack up -s is not working in jenkins")
     def setUpClass(cls):
         set_git_cmd = "git config --global user.email"\
                       " \"ragkatti@cisco.com\"; "\

@@ -2,11 +2,11 @@ import logging
 import os
 import yaml
 
+from prettytable import PrettyTable
+
 import yaml_utils
 import ccsdata_utils
 import logger_utils
-
-from prettytable import PrettyTable
 from servicelab import settings
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.ccsbuildtools')
@@ -235,9 +235,9 @@ def get_input_requirements_for_ccsbuildtools():
     build a site. All values are set to None, except for the ip ranges, which are given
     default values.
     """
-    return {'bom': None,
-            'ucs_inventory': None,
-            'ucs_password': None,
+    return {'bom': 4.2,
+            'ucs_inventory': './cimc_inventory.yaml',
+            'ucs_password': "example_password",
             'ip_ranges': {'vlan2': '10.202.64.0/25',
                           'vlan4': '10.202.64.128/28',
                           'vlan65': '10.202.76.128/27',
@@ -246,29 +246,45 @@ def get_input_requirements_for_ccsbuildtools():
                           'vlan83': '10.202.78.0/24',
                           'vlan84': '10.202.79.0/24',
                           'vlan67': '10.202.65.0/25',
-                          'vlan906': '10.203.228.0/22'
+                          'vlan906': '10.203.228.0/22',
                           },
-            'service_cloud': {'site_name': None,
-                              'az': None,
-                              'domain': None,
+            'service_cloud': {'site_name': 'iad10-svc-1',
+                              'az': 'csm',
+                              'domain': 'cloud.cisco.com',
                               'controller_count': 3,
-                              'cloud_nodes': {'num_nova2': None,
-                                              'num_nova3': None,
-                                              'num_ceph': None,
+                              'cloud_nodes': {'num_nova2': 5,
+                                              'num_nova3': 10,
+                                              'num_ceph': 1,
                                               }
                               },
-            'tenant_cloud': {'site_name': None,
-                             'az': None,
-                             'domain': None,
+            'tenant_cloud': {'site_name': 'us-virginia-1',
+                             'az': 'csx-a',
+                             'domain': 'cloud.cisco.com',
                              'controller_count': 3,
-                             'cloud_nodes': {'num_nova1': None,
-                                             'num_nova2': None,
-                                             'num_nova3': None,
-                                             'num_ceph': None,
-                                             'num_net': None,
-                                             'num_haproxy': None
+                             'cloud_nodes': {'num_nova1': 306,
+                                             'num_nova2': 124,
+                                             'num_nova3': 44,
+                                             'num_ceph': 51,
+                                             'num_net': 4,
+                                             'num_haproxy': 2,
                                              }
-                             }
+                             },
+            'windows_infra': {'site_name': 'us-virginia-1',
+                              'hostname_prefix': 'iad-p1',
+                              'forest': 'cisinfra.local',
+                              'domain': 'mgmt.cisinfra.local',
+                              'cloud_nodes': {'num_primaryforestdc': 0,
+                                              'num_primarydomaindc': 0,
+                                              'num_forestdc': 2,
+                                              'num_dc': 2,
+                                              'num_kms': 2,
+                                              'num_scdp': 2,
+                                              'num_scomgw': 1,
+                                              'num_svc': 1,
+                                              'num_jump': 1,
+                                              'num_sw': 1,
+                                              }
+                              }
             }
 
 
