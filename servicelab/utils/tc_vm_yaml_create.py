@@ -141,6 +141,7 @@ def find_ip(env_path, vlan):
        vlan {obj}: ipaddress object of vlan subnet data
 
     Returns:
+       returncode {int}: 0 for success, 1 for failure
        ip {str}: First unused / unassigned IP from vlan
 
     Example Usage:

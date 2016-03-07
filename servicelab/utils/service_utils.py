@@ -445,10 +445,10 @@ def link(path, service_name, branch, username):
                                         work on.")
             return 1
 
-    with open(os.path.join(path, "current"), 'w+') as service_file:
-        service_file.seek(0)
-        service_file.write(service_name)
-        service_file.truncate()
+    returncode = set_current_service(path, service_name)
+    if not returncode == 0:
+        slab_logger.error('Unable to write to "current" file')
+        return 1
 
     if not os.path.islink(os.path.join(path, "current_service")):
         # Note: What to link is first arg, where to link is second aka src dest
@@ -627,14 +627,14 @@ def installed(service, path):
         with open(os.path.join(path, "current"), 'r') as currentf:
             service_name = currentf.readline()
         if service_name != service:
-            return False
+            returncode = set_current_service(path, service)
+            if not returncode == 0:
+                return False
 
         input_path = os.path.realpath(os.path.join(path, "services", service))
         current_path = os.path.join(path, "current_service")
         if not (os.path.isdir(input_path) or
                 os.path.isdir(current_path)):
-            return False
-        if not os.path.samefile(input_path, current_path):
             return False
     except Exception as ex:
         slab_logger.error(ex)
@@ -765,4 +765,26 @@ def export_for_nfs(rootpassword, path, ip):
 
         # add the mount
         return __update()
+
+
+def set_current_service(path, service_name):
+    """
+    Set the current service in the .stack/current file
+
+    Arguments:
+        path (str): Path to .stack directory
+        service_name (str): Name of the service
+
+    Returns:
+        0 for success
+        1 for failure
+    """
+    slab_logger.log(15, 'Setting the current service to %s' % service_name)
+    try:
+        with open(os.path.join(path, "current"), 'w+') as service_file:
+            service_file.seek(0)
+            service_file.write(service_name)
+            service_file.truncate()
+    except IOError:
+        return 1
     return 0

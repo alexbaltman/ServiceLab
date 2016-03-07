@@ -27,7 +27,7 @@ slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.workon')
 @pass_context
 def cli(ctx, branch, data_branch, username, service_name):
     """
-    Creates a service user wants to work on.
+    Clones the service user wants to work on.
     """
     slab_logger.info('Cloning service %s' % service_name)
     current = ""
@@ -43,12 +43,12 @@ def cli(ctx, branch, data_branch, username, service_name):
             slab_logger.error("No service set on command line nor the "
                               "current(literally) file.")
             sys.exit(1)
-        elif current == any([None, ""]) and (service_name != "current"):
-            returncode = service_utils.check_service(ctx.path, service_name)
-            if returncode > 0:
-                slab_logger.error("Service repo does not exist")
-                sys.exit(1)
 
+        returncode = service_utils.check_service(ctx.path, service_name)
+        if returncode > 0:
+            slab_logger.error("Service repo does not exist")
+            sys.exit(1)
+        elif current == any([None, ""]) and (service_name != "current"):
             service_utils.sync_service(ctx.path, branch, username, service_name)
             service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
@@ -56,11 +56,6 @@ def cli(ctx, branch, data_branch, username, service_name):
                                        "ccs-data")
         # Note: variable current and string current
         elif service_name != current and service_name != "current":
-            returncode = service_utils.check_service(ctx.path, service_name)
-            if returncode > 0:
-                slab_logger.error("Service repo does not exist")
-                sys.exit(1)
-
             service_utils.clean(ctx.path)
             service_utils.sync_service(ctx.path, branch, username, service_name)
             service_utils.link(ctx.path, service_name, branch, username)
@@ -69,11 +64,6 @@ def cli(ctx, branch, data_branch, username, service_name):
                                        "ccs-data")
         else:
             # Note: notice we're passing the variable current not service_name.
-            returncode = service_utils.check_service(ctx.path, service_name)
-            if returncode > 0:
-                slab_logger.error("Service repo does not exist")
-                sys.exit(1)
-
             service_utils.sync_service(ctx.path, branch, username, current)
             service_utils.link(ctx.path, service_name, branch, username)
             service_utils.setup_vagrant_sshkeys(ctx.path)
