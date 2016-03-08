@@ -207,6 +207,9 @@ class ComplexCLI(click.MultiCommand):
 
 
 def write_settings_file(verbosity):
+    """
+    Update the servicelab/settings.py file to reflect the selected verbosity level
+    """
     settings_file = os.path.join(os.path.dirname(__file__), 'settings.py')
     myfile = open(settings_file, 'w')
     file_data = ('# Global variables file\n\nverbosity = %i'
@@ -216,6 +219,12 @@ def write_settings_file(verbosity):
 
 
 def verbosity_option(f):
+    """
+    This function is needed to set the verbosity level before the stack subcommand is called
+
+    The orginal code is from https://github.com/mitsuhiko/click/issues/108 and modified to
+    handle our custom levels of verbosity
+    """
     def callback(ctx, param, value):
         verbosity = 25
         if value:
@@ -237,12 +246,7 @@ def verbosity_option(f):
                         callback=callback)(f)
 
 
-def common_options(f):
-    f = verbosity_option(f)
-    return f
-
-
-@common_options
+@verbosity_option
 @click.command(cls=ComplexCLI, context_settings=CONTEXT_SETTINGS)
 @click.option('--username', '-u', help="user")
 @click.option('--password', '-p', help="password")
