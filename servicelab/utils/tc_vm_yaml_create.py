@@ -6,10 +6,13 @@ import yaml
 import socket
 import ipaddress
 
+import service_utils
 import logger_utils
 from servicelab import settings
+from servicelab.stack import Context
 
 slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.utils.tc_vm_yaml_create')
+ctx = Context()
 
 
 def open_yaml(filename):
@@ -155,8 +158,10 @@ def find_ip(env_path, vlan):
 
     # check if path exists if not exist
     if not os.path.exists(env_path):
-        slab_logger.error('The ccs-data repo was not found.  Try "stack workon ccs-data"')
-        return(1, '')
+        slab_logger.info('The ccs-data repo was not found.  Cloning it now.')
+        returncode = service_utils.sync_service(ctx.path, 'master', ctx.username, 'ccs-data')
+        if not returncode:
+            return(1, '')
     # Find all the envs within the site
     for env in os.listdir(env_path):
         hosts_path = os.path.join(env_path, env, 'hosts.d')
@@ -188,6 +193,7 @@ def find_ip(env_path, vlan):
             socket.gethostbyaddr(str(ip))
         # socket.herror means there was no DNS reservation found
         except socket.herror:
+            slab_logger.debug('Using IP %s' % str(ip))
             return(0, str(ip))
     return(1, '')
 

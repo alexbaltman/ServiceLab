@@ -468,8 +468,7 @@ def host_add_vagrantyaml(path, file_name, hostname, site, cpus=2, memory=2,
                     returncode, ip, mac_colon, mac_nocolon = next_macip_for_devsite(path,
                                                                                     site)
                     if returncode > 0:
-                        slab_logger.error("Couldn't write file\
-                                                because no ip provided.")
+                        slab_logger.error("Could not write file because no ip provided.")
                         return 1
                 if doc is not None and doc['hosts']:
                     for d in doc:
