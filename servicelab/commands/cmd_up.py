@@ -94,7 +94,7 @@ slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.up')
 def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, data_branch,
         service_branch, username, interactive, existing_vm, env, flavor, image,
         nfs):
-    import pdb; pdb.set_trace()
+
     flavor = str(flavor)
     image = str(image)
     service_groups = []
