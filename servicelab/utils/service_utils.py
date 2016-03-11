@@ -247,6 +247,8 @@ def _git_pull_ff(path, branch, service_name):
     returncode, output = run_this('git show-ref %s' % (branch), cwd=service_path)
     if not returncode == 0:
         return(returncode, output)
+        slab_logger.error('"git show-ref %s" returned an error for %s\ncmd output: %s'
+                          % (branch, service_name, output))
     if branch not in output:
         slab_logger.log(25, "Remote git branch not found : %s " % (branch))
         slab_logger.log(25, "Setting remote origin in .git/config to :"
