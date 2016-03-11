@@ -94,7 +94,7 @@ slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.up')
 def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, data_branch,
         service_branch, username, interactive, existing_vm, env, flavor, image,
         nfs):
-
+    import pdb; pdb.set_trace()
     flavor = str(flavor)
     image = str(image)
     service_groups = []
@@ -184,7 +184,6 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
 
     # Setup data and inventory
     if not target and not mini and not full:
-        slab_logger.info('Building data for %s.' % hostname)
         match = re.search('^(\d+)cpu\.(\d+)ram', flavor)
         if match:
             cpus = int(match.group(1))
@@ -197,7 +196,8 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             yaml_utils.write_dev_hostyaml_out(ctx.path, hostname, flavor=flavor, image=image,
                                               groups=service_groups)
 
-        if service or existing_vm:
+        slab_logger.info('Building data for %s.' % hostname)
+        if service or existing_vm or rhel7:
             retc, myinfo = service_utils.build_data(ctx.path)
             if retc > 0:
                 slab_logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
