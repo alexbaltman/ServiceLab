@@ -276,7 +276,7 @@ class SlabVagrantfile(object):
             else:
                 setitup += ('  config.vm.synced_folder "services", "/opt/ccs/services"')
                 if self.remote:
-                    setitup += ' type: "rsync" '
+                    setitup += ', type: "rsync" '
                 setitup += "\n"
 
             self.append_it(setitup)
@@ -367,7 +367,7 @@ class SlabVagrantfile(object):
 
         # we are rsyncing onl in case of remote
         if self.remote:
-            setitup += ' type: "rsync" '
+            setitup += ', type: "rsync" '
         setitup += "\n"
 
         self.append_it(setitup)
