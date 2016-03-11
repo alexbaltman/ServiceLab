@@ -201,6 +201,7 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             retc, myinfo = service_utils.build_data(ctx.path)
             if retc > 0:
                 slab_logger.error('Error building ccs-data ccs-dev-1: ' + myinfo)
+                sys.exit(1)
 
         # Prep class Objects
         myvfile = Vf_utils.SlabVagrantfile(path=ctx.path, remote=remote)
