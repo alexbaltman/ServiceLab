@@ -1,5 +1,5 @@
 source "https://rubygems.org"
 
 gem 'fpm'
-gem 'librarian-puppet-simple'
+gem 'librarian-puppet-simple', '0.0.4'
 gem 'hiera'
