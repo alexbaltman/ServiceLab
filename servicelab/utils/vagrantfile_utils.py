@@ -95,11 +95,56 @@ class SlabVagrantfile(object):
             startvms = "Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|\n"
             return startvms
 
+        def _setup_fn():
+            """
+            Set up the function which can pass the environment variable to the VM
+
+            Returns:
+               fn_lst {str}: Returns a list of function
+            """
+            fn_lst = """
+#---------------- Setup to pass the envirionment variable -------------------
+
+def get_rcmd(rcmd, variable)
+  if ENV[variable]
+    if rcmd
+      rcmd << "\n"
+    end
+    value = ENV[variable]
+    rcmd = rcmd + "export #{variable}=#{value}"
+  end
+  return rcmd
+end
+
+def get_rcmdlst(rcmd)
+  env_var_cmd = ""
+  if rcmd
+    env_var_cmd = <<CMD
+echo "#{rcmd}" | tee -a /home/vagrant/.bash_profile
+CMD
+  end
+  return env_var_cmd
+end
+
+remote_cmd = ""
+remote_cmd = get_rcmd(remote_cmd, 'HEIGHLINER_DEPLOY_TARGET_HOSTS')
+remote_cmd = get_rcmd(remote_cmd, 'HEIGHLINER_DEPLOY_TAGS')
+remote_cmd = get_rcmd(remote_cmd, 'CCS_ENVIRONMENT')
+env_var_cmd = get_rcmdlst(remote_cmd)
+
+heighliner_script = <<SCRIPT
+#{env_var_cmd}
+SCRIPT
+#---------------- END -------------------------------------------------------
+"""
+            return fn_lst
+
         slab_logger.log(15, 'Building vm data')
         line1, line2, req_plugin = _set_header()
         startvms = _beg_vm_config()
+        fn_setup = _setup_fn()
         # Note: until write_it is fixed, have to move list out from middle
-        self.write_it(line1, line2, req_plugin, startvms)
+        self.write_it(line1, line2, req_plugin, fn_setup, startvms)
         self.set_header = True
 
     def write_it(self, *text):
@@ -259,6 +304,7 @@ class SlabVagrantfile(object):
             except KeyError:
                 setitup += '  config.vm.network :private_network, ip: "' + ip + '"\n'
             setitup += '  config.vm.provision "shell", path: "provision/infra.sh"\n'
+            setitup += '  config.vm.provision:shell, :inline => heighliner_script\n'
             setitup += '  config.vm.provision "shell", path: "provision/node.sh"\n'
             setitup += ('  config.vm.provision "file", source: ' +
                         '"provision/ssh-config",' +
@@ -278,7 +324,6 @@ class SlabVagrantfile(object):
                 if self.remote:
                     setitup += ', type: "rsync" '
                 setitup += "\n"
-
             self.append_it(setitup)
             return 0
         except KeyError:

@@ -38,8 +38,11 @@ chmod +x /usr/share/ansible_plugins/lookup_plugins/hiera.py
 sudo yum install -y python-heighliner
 
 echo "localhost ansible_connection=local" > /etc/ansible/hosts
-echo "export CCS_ENVIRONMENT=dev-tenant" >> /home/vagrant/.bashrc
-echo "export CCS_ENVIRONMENT=dev-tenant" | sudo tee -a /root/.bashrc
+if [ -z "$CCS_ENVIRONMENT" ]; then
+  echo "setting CCS_ENVIRONMENT to dev-tenant"
+  echo "export CCS_ENVIRONMENT=dev-tenant" >> /home/vagrant/.bashrc
+  echo "export CCS_ENVIRONMENT=dev-tenant" | sudo tee -a /root/.bashrc
+fi
 sudo echo "Defaults env_keep += \"CCS_ENVIRONMENT\"" | sudo tee -a /etc/sudoers
 
 
