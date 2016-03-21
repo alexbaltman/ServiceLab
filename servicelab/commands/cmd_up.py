@@ -1,6 +1,8 @@
 import os
 import re
 import sys
+
+import json
 import click
 
 from subprocess import CalledProcessError
@@ -72,7 +74,12 @@ slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.up')
               help='Choose a VM from ccs-data to boot.')
 @click.option('-e',
               '--env',
-              help='Choose an environment from ccs-data.  For use with --existing-vm option')
+              default=None,
+              help='Pass environment as the JSON format e.x {"var1" : "val1"} where '
+                   'variables can be  HEIGHLINER_DEPLOY_TARGET_HOSTS, '
+                   'HEIGHLINER_DEPLOY_TAGS, or CCS_ENVIRONMENT. Any other '
+                   'variable may not be set.',
+              required=False)
 @click.option('--flavor',
               default='2cpu.4ram.20sas',
               help='Choose the flavor for the VM to use')
@@ -94,7 +101,6 @@ slab_logger = logger_utils.setup_logger(settings.verbosity, 'stack.up')
 def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, data_branch,
         service_branch, username, interactive, existing_vm, env, flavor, image,
         nfs):
-
     flavor = str(flavor)
     image = str(image)
     service_groups = []
@@ -120,6 +126,16 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
             slab_logger.error("Failed to get the current service")
             sys.exit(1)
 
+    if env is not None:
+        env_json = json.loads(env)
+        if 'CCS_ENVIRONMENT' in env_json:
+            os.environ['CCS_ENVIRONMENT'] = env_json['CCS_ENVIRONMENT']
+        if 'HEIGHLINER_DEPLOY_TAG' in env_json:
+            os.environ['HEIGHLINER_DEPLOY_TAG'] = env_json['HEIGHLINER_DEPLOY_TAG']
+        if 'HEIGHLINER_DEPLOY_TARGET_HOSTS' in env_json:
+            val = env_json['HEIGHLINER_DEPLOY_TARGET_HOSTS']
+            os.environ['HEIGHLINER_DEPLOY_TARGET_HOSTS'] = val
+
     slab_logger.log(15, 'Determining vm hostname')
     hostname = ''
     if rhel7:
@@ -134,15 +150,17 @@ def cli(ctx, full, mini, rhel7, target, service, remote, ha, redhouse_branch, da
         hostname = target
     elif existing_vm:
         hostname = existing_vm
-        ret_code, site = ccsdata_utils.get_site_from_env(env)
+        ret_code, site = ccsdata_utils.get_site_from_env(env_json['CCS_ENVIRONMENT'])
         if ret_code > 0:
-            slab_logger.error("Could not find parent site for {}".format(env))
+            slab_logger.error("Could not find parent site for "
+                              "{}".format(env_json['CCS_ENVIRONMENT']))
             sys.exit(1)
         env_path = os.path.join(ctx.path, 'services', 'ccs-data', 'sites', site,
-                                'environments', env)
+                                'environments', env_json['CCS_ENVIRONMENT'])
         ret_code, yaml_data = yaml_utils.read_host_yaml(existing_vm, env_path)
         if ret_code > 0:
-            slab_logger.error("Could not find host in site {0} env {1}".format(site, env))
+            slab_logger.error("Could not find host in site {0}"
+                              " env {1}".format(site, env_json['CCS_ENVIRONMENT']))
             sys.exit(1)
         try:
             flavor = yaml_data['deploy_args']['flavor']

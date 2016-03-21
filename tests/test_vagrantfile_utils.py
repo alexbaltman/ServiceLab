@@ -35,14 +35,53 @@ class TestVagrantFileUtils(unittest.TestCase):
         self.vagrant_file = os.path.join(self.host_var_tempdir, 'Vagrantfile')
         self.vf_utils = vagrantfile_utils.SlabVagrantfile(self.host_var_tempdir)
         os.makedirs(self.test_yaml_dir)
-        self.vagrant_data = ("# -*- mode: ruby -*-\n# vi: set ft=ruby :\n"
-                             "VAGRANTFILE_API_VERSION = \"2\"\n"
-                             "required_plugins = %w( vagrant-hostmanager "
-                             "vagrant-openstack-provider )\n"
-                             "required_plugins.each do |plugin|\n"
-                             "  system \"vagrant plugin install #{plugin}\" unless\n"
-                             "Vagrant.has_plugin? plugin\nend\n"
-                             "Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|\n")
+        self.vagrant_data = """\
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+VAGRANTFILE_API_VERSION = "2"
+required_plugins = %w( vagrant-hostmanager vagrant-openstack-provider )
+required_plugins.each do |plugin|
+  system "vagrant plugin install #{plugin}" unless
+Vagrant.has_plugin? plugin
+end
+
+#---------------- Setup to pass the envirionment variable -------------------
+
+def get_rcmd(rcmd, variable)
+  if ENV[variable]
+    if rcmd
+      rcmd << "
+"
+    end
+    value = ENV[variable]
+    rcmd = rcmd + "export #{variable}=#{value}"
+  end
+  return rcmd
+end
+
+def get_rcmdlst(rcmd)
+  env_var_cmd = ""
+  if rcmd
+    env_var_cmd = <<CMD
+echo "#{rcmd}" | tee -a /home/vagrant/.bash_profile
+CMD
+  end
+  return env_var_cmd
+end
+
+remote_cmd = ""
+remote_cmd = get_rcmd(remote_cmd, 'HEIGHLINER_DEPLOY_TARGET_HOSTS')
+remote_cmd = get_rcmd(remote_cmd, 'HEIGHLINER_DEPLOY_TAGS')
+remote_cmd = get_rcmd(remote_cmd, 'CCS_ENVIRONMENT')
+env_var_cmd = get_rcmdlst(remote_cmd)
+
+heighliner_script = <<SCRIPT
+#{env_var_cmd}
+SCRIPT
+#---------------- END -------------------------------------------------------
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |cluster|
+"""
+
         self.vm_yaml_data = '''
             deploy_args:
                 flavor: 4cpu.8ram.20-96sas
@@ -136,6 +175,7 @@ class TestVagrantFileUtils(unittest.TestCase):
                            '  config.vm.network :private_network, ip: "192.168.100.6", '
                            'mac: "020027000006"\n'
                            '  config.vm.provision "shell", path: "provision/infra.sh"\n'
+                           '  config.vm.provision:shell, :inline => heighliner_script\n'
                            '  config.vm.provision "shell", path: "provision/node.sh"\n'
                            '  config.vm.provision "file", source: "provision/ssh-config",'
                            'destination:"/home/vagrant/.ssh/config"\n'
