@@ -447,7 +447,27 @@ def get_ssh_port_for_vm(vm_name, path):
     return return_code, port_no.rstrip()
 
 
-def copy_file_to_vm(file_path, port_no, vm_path, path):
+def get_ssh_key_path_for_vm(vm_name, path):
+    """
+    Gets ssh key for vm
+
+    Args:
+        vm_name
+        path to Vagrantfile
+
+    Returns:
+        return_code, command output (key path)
+
+    Example Usage:
+        my_class_var.get_ssh_key_path_for_vm(vm_name, path)
+    """
+    cmd = "vagrant ssh-config | grep %s | grep IdentityFile"\
+          " | awk '{print $2}'" % (vm_name)
+    return_code, key_path = service_utils.run_this(cmd, path)
+    return return_code, key_path.rstrip()
+
+
+def copy_file_to_vm(file_name, vm_name, file_path, port_no, vm_path, path, key_path):
     """
     Gets ssh port for vm
 
@@ -459,8 +479,12 @@ def copy_file_to_vm(file_path, port_no, vm_path, path):
         return_code, command output
 
     Example Usage:
-        my_class_var.get_ssh_port_for_vm(vm_name, path)
+        my_class_var.copy_file_to_vm(file_path, port_no, vm_path, path, key_path)
     """
-    cmd_string = "sshpass -p 'vagrant' scp -P %s  %s root@127.0.0.1:%s"
-    cmd = cmd_string % (port_no, file_path, vm_path)
+    cmd_string = "scp -i %s -P %s  %s vagrant@127.0.0.1:%s"
+    cmd = cmd_string % (key_path, port_no, file_path, "/tmp")
+    service_utils.run_this(cmd, path)
+
+    cmd_string = "vagrant ssh %s -c \"sudo cp /tmp/%s %s\""
+    cmd = cmd_string % (vm_name, file_name, vm_path)
     return service_utils.run_this(cmd, path)

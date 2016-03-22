@@ -14,7 +14,6 @@ sudo yum -y install vagrant
 sudo yum -y install java-1.7.0-openjdk
 sudo yum -y install httpd-tools
 sudo yum -y install procps
-sudo yum -y install sshpass
 sudo htpasswd -cbs  /tmp/passwd slab badger
 sudo yum -y install go-server
 sudo yum -y install https://ccs-artifactory.cisco.com/artifactory/simple/public-images/go-agent/go-agent/15.2.0/go-agent-15.2.0-2248.noarch.rpm

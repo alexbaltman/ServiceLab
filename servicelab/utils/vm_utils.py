@@ -56,13 +56,20 @@ def destroy_vm_by_name(ctx, force, vm_name):
                           "hosts.yaml on infra node")
         return
     else:
-        slab_logger.info("%s %s " % (INFRA_PORT_DETECT_MESSAGE, port_no))
-        yaml_file = "./services/ccs-data/out/ccs-dev-1/dev/etc/ccs/data/hosts.yaml"
-        vm_yaml_file = "/etc/ccs/data/environments/dev-tenant/hosts.yaml"
-        yaml_file_path = os.path.join(ctx.path, yaml_file)
-        return_code, _ = vagrant_utils.copy_file_to_vm(yaml_file_path, port_no,
-                                                       vm_yaml_file, ctx.path)
+        return_code, key_path = vagrant_utils.get_ssh_key_path_for_vm("infra-001", ctx.path)
         if return_code != 0:
-            slab_logger.info("Could not succesfully update hosts.yaml on infra node.")
+            slab_logger.error("Unable to find ssh key of infra node, cannot update"
+                              "hosts.yaml on infra node")
+            return
         else:
-            slab_logger.info(UPDATING_HOSTS_YAML_MESSAGE)
+            slab_logger.info("%s %s " % (INFRA_PORT_DETECT_MESSAGE, port_no))
+            yaml_file = "./services/ccs-data/out/ccs-dev-1/dev/etc/ccs/data/hosts.yaml"
+            vm_yaml_file = "/etc/ccs/data/environments/dev-tenant/hosts.yaml"
+            yaml_file_path = os.path.join(ctx.path, yaml_file)
+            return_code, _ = vagrant_utils.copy_file_to_vm("hosts.yaml", "infra-001",
+                                                           yaml_file_path, port_no,
+                                                           vm_yaml_file, ctx.path, key_path)
+            if return_code != 0:
+                slab_logger.info("Could not succesfully update hosts.yaml on infra node.")
+            else:
+                slab_logger.info(UPDATING_HOSTS_YAML_MESSAGE)

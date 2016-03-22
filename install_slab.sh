@@ -23,13 +23,13 @@ rhel_prep(){
     fi
     # Ensure some stuff is installed for later commands to succeed
     echo "Installing a few prereqs"
-    sudo yum -y --enablerepo=epel install python-devel python-pip gcc gnupg2 #sshpass
+    sudo yum -y --enablerepo=epel install python-devel python-pip gcc gnupg2
 }
 
 ubuntu_prep() {
     # Ensure some stuff is installed for later commands to succeed
     echo "Installing a few prereqs"
-    sudo apt-get -y install python-dev python-pip build-essential #sshpass
+    sudo apt-get -y install python-dev python-pip build-essential
 }
 
 mac_prep(){
@@ -37,7 +37,6 @@ mac_prep(){
     type pip || brew_install pip
     type wget || brew_install wget
     type gpg || brew install gpg
-    #type sshpass || brew install sshpass
 }
 
 install_homebrew(){
