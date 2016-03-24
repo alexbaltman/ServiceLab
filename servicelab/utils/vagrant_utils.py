@@ -1,3 +1,6 @@
+"""
+Utility functions for vagrant related tasks.
+"""
 import os
 from subprocess import CalledProcessError
 
@@ -69,162 +72,6 @@ class Connect_to_vagrant(object):
             if plugin not in plugin_lst:
                 service_utils.run_this('vagrant plugin install {}'.format(plugin))
 
-    def add_box(self):
-        """
-        Member function which adds a virtualbox to the Vagrant environment.
-        Also creates RHEL7 image if it doesn't exist.
-
-        Args:
-            self -- self-referencing pointer
-
-        """
-        slab_logger.log(15, 'Adding virtualbox to the Vagrant environment')
-        v = self.v
-        if not os.path.exists(v.root):
-            os.makedirs(v.root)
-
-        box_list = v.box_list()
-
-        # Note: Look for the rhel7 image and create/add it if it's not there.
-        # if not ([image.name or None for image in images
-        # if image.name == default_vbox]):
-        if not ([image.name or None for image in box_list
-                 if image.name == self.default_vbox]):
-            v.box_add(
-                self.default_vbox,
-                self.default_vbox_url,
-                provider=self.provider,
-                force=True)
-
-    def create_Vagrantfile(self, path):
-        """
-        Member function which creates/overwrites a Vagrantfile. Then it uses
-        the Vagrantfile to reinitialize the class instance.
-
-        Args:
-            path                -- The path to your working .stack directory. Typically,
-                                   this looks like ./servicelab/servicelab/.stack where "."
-                                   is the path to the root of the servicelab repository.
-
-        """
-        slab_logger.log(15, 'Creating Vagrantfile in %s' % self.v.root)
-        # EXP: Check for vagrant file, otherwise init, and insert box into file
-        # RFI: Create Vagrantfile in Current_Services?
-        v = self.v
-        vagrant_file = os.path.join(v.root, "Vagrantfile")
-
-        if (os.path.isfile(vagrant_file)):
-            # Note: We're removing their file b/c we want to standardize how we're
-            #       using vagrant.
-            # TODO: we should really just back this up then remove.
-            os.remove(vagrant_file)
-        v.init(box_name=self.default_vbox)
-
-    @staticmethod
-    def backup_vagrantfile(path):
-        """
-        Member function which backs up the existing Vagrantfile.
-
-        Args:
-            path    -- The path to your working .stack directory. Typically,
-                       this looks like ./servicelab/servicelab/.stack where "."
-                       is the path to the root of the servicelab repository.
-        """
-        slab_logger.log(15, 'Making a backup of Vagrantfile in %s' % path)
-        vagrant_file = os.path.join(
-            path, "services", "current_service", "Vagrantfile")
-        # EXP: Create backup
-        if not (os.path.isfile(vagrant_file + '.bak')):
-            os.rename(vagrant_file, vagrant_file + '.bak')
-        else:
-            os.rename(vagrant_file + '.bak', vagrant_file + '.stack')
-
-    @staticmethod
-    def rename_vm_name_in_vagrantfile(vagrant_file, vm_name):
-        """
-        Member function which renames the virtual machine name. Replaces all
-        old names in the Vagrantfile with the new inputted one.
-
-        Args:
-            vagrant_file    -- Path to the existing Vagrantfile.
-            vm_name          -- new name to assign to VM
-        """
-        slab_logger.log(15, 'Renaming Vagrantfile vm to %s' % vm_name)
-        # EXP: Execute a touch of ruby to rename vm to vname
-        with open(vagrant_file, 'w') as vfile:
-            with open(vagrant_file+'.bak', 'r') as bfile:
-                for line in bfile:
-                    if (line.rfind('config.vm.box = "%s"' % (default_vbox)) != -1):
-                        line = ' %s.vm.box = "%s"' % (vm_name, default_vbox)
-                        # Note: Need the space before config.
-                        line = str(' config.vm.define "%s" do |%s|\n%s' % (vm_name,
-                                   vm_name + "vm", line))
-                        line = str(line + '\n end')
-                        vfile.write(line)
-
-    def setup_vagrant_vm(vm_name):
-        """
-        Member function which sets up the VM.
-
-        Opens up host port to vm_name, sets file name and disables known hosts.
-
-        Args:
-            vm_name  --  name to assign to VM
-        """
-        slab_logger.log(15, 'Setting up vm %s' % vm_name)
-        env.hosts = [v.user_hostname_port(vm_name='%s' % (vm_name))]
-        env.key_filename = v.keyfile(vm_name='%s' % (vm_name))
-        env.disable_known_hosts = True
-
-    # Note: Requires fabric env.hosts to be set
-    # Note: Good for yum pkg "cloud-init".
-    @staticmethod
-    @task
-    def install_pkg_on_vm(pkg):
-        """
-        Installs a package on a linux VM with yum.
-
-        Args:
-            pkg  --  name of package to be installed
-        """
-        slab_logger.log(15, 'Installing yum package %s on the VM' % pkg)
-        # Moved the cuisine import here as it was breaking verbosity for stack destroy
-        # Note: from here --> python-vagrant fabric cuisine pyvbox
-        import cuisine
-        cuisine.package_ensure_yum(pkg)
-
-    @staticmethod
-    @task
-    def configure_cloud_init():
-        """
-        Configures cloud-init.
-        """
-        slab_logger.log(15, 'Configuring cloud-init')
-        sed('/etc/cloud/cloud.cfg', 'user:', 'user: vagrant\n#')
-
-# execute(install_pkg_on_vm("cloud-init"))
-# execute(configure_cloud_init)
-
-
-def export_vm(path, vm_name):
-    """
-    Exports the virtualmachine to Virtualbox.
-
-    Args:
-        path  --  The path to your working .stack directory. Typically,
-                  this looks like ./servicelab/servicelab/.stack where "."
-                  is the path to the root of the servicelab repository.
-        vm_name  --  name of virtualmachine
-    """
-    slab_logger.log(15, 'Exporting %s to Virtualbox' % vm_name)
-    vbox = virtualbox.VirtualBox()
-    machines = [machine for machine
-                in vbox.machines
-                if machine.name.rfind('MyTest') != -1]
-    vm = machines[0]
-    run_this("VBoxManage export vm.name -o %s.ova --ovf10" % (vm_name))
-    ovf_path = os.path.join(path, vm_name + ".ova")
-
 
 def vm_isrunning(hostname, path):
     '''This function determines the state of a vm in our environment. With this
@@ -238,7 +85,7 @@ def vm_isrunning(hostname, path):
     Returns:
         Returncode (int):
             0 - if vm is ON
-            1 - if vm is OFF
+            1 - if vm is OFF, SAVED, NOT_CREATED
             2 - no vm exists
             3 - other state: suspended, aborted, etc.
         Return (boolean):
@@ -400,6 +247,19 @@ def infra_ensure_up(mynets, float_net, my_security_groups, nfs, path=None):
 
 
 def check_vm_is_available(path):
+    """
+    Checks if an active VM exists
+
+    Args:
+        path
+
+    Returns:
+        True if active VM exists
+        False if active VM does not exist
+
+    Example Usage:
+        my_class_var.check_vm_is_available(path)
+    """
     slab_logger.log(15, 'Checking vm availablity')
 
     def fn(vagrant_folder, vm_name):
@@ -426,65 +286,3 @@ def check_vm_is_available(path):
                 slab_logger.debug("VM {} is available".format(vm))
                 return True
     return False
-
-
-def get_ssh_port_for_vm(vm_name, path):
-    """
-    Gets ssh port for vm
-
-    Args:
-        vm_name
-        path to Vagrantfile
-
-    Returns:
-        return_code, command output
-
-    Example Usage:
-        my_class_var.get_ssh_port_for_vm(vm_name, path)
-    """
-    cmd = "vagrant ssh-config --host %s | grep Port |  awk '{print $2}'" % (vm_name)
-    return_code, port_no = service_utils.run_this(cmd, path)
-    return return_code, port_no.rstrip()
-
-
-def get_ssh_key_path_for_vm(vm_name, path):
-    """
-    Gets ssh key for vm
-
-    Args:
-        vm_name
-        path to Vagrantfile
-
-    Returns:
-        return_code, command output (key path)
-
-    Example Usage:
-        my_class_var.get_ssh_key_path_for_vm(vm_name, path)
-    """
-    cmd = "vagrant ssh-config | grep %s | grep IdentityFile"\
-          " | awk '{print $2}'" % (vm_name)
-    return_code, key_path = service_utils.run_this(cmd, path)
-    return return_code, key_path.rstrip()
-
-
-def copy_file_to_vm(file_name, vm_name, file_path, port_no, vm_path, path, key_path):
-    """
-    Gets ssh port for vm
-
-    Args:
-        vm_name
-        path to Vagrantfile
-
-    Returns:
-        return_code, command output
-
-    Example Usage:
-        my_class_var.copy_file_to_vm(file_path, port_no, vm_path, path, key_path)
-    """
-    cmd_string = "scp -i %s -P %s  %s vagrant@127.0.0.1:%s"
-    cmd = cmd_string % (key_path, port_no, file_path, "/tmp")
-    service_utils.run_this(cmd, path)
-
-    cmd_string = "vagrant ssh %s -c \"sudo cp /tmp/%s %s\""
-    cmd = cmd_string % (vm_name, file_name, vm_path)
-    return service_utils.run_this(cmd, path)

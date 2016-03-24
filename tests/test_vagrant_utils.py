@@ -1,9 +1,12 @@
+"""
+Tests vagrant utils
+"""
 import os
 import unittest
-import getpass
+import vagrant
+
 from tests.helpers import temporary_dir
 from servicelab.utils.vagrant_utils import Connect_to_vagrant
-import vagrant
 
 
 class TestVagrantUtils(unittest.TestCase):
@@ -54,31 +57,6 @@ class TestVagrantUtils(unittest.TestCase):
         self.assertEquals(
             self.connect_to_vagrant.default_vbox_url,
             TestVagrantUtils.DEFAULT_VBOX_URL)
-
-    def test_add_box(self):
-        """ Tests adding box.
-        """
-        self.connect_to_vagrant.add_box()
-        box_list = self.v.box_list()
-        self.assertEquals(
-            next(
-                (image.name for image in box_list
-                    if image.name == TestVagrantUtils.DEFAULT_VBOX),
-                None),
-            TestVagrantUtils.DEFAULT_VBOX)
-
-    def test_create_Vagrantfile(self):
-        """ Tests creation of Vagrantfile.
-        """
-        self.connect_to_vagrant.add_box()
-        self.connect_to_vagrant.create_Vagrantfile(self.vagrantfile_dir)
-        self.assertEquals(
-            os.path.isfile(
-                os.path.join(
-                    self.vagrantfileservices_dir,
-                    TestVagrantUtils.VAGRANT_FILE)),
-            True)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,5 @@
 """
-Utility functions for status command.
+Utility functions for vm related tasks.
 """
 import os
 from subprocess import CalledProcessError
@@ -50,13 +50,13 @@ def destroy_vm_by_name(ctx, force, vm_name):
     service_utils.build_data(ctx.path)
     slab_logger.info("Updating hosts.yaml on infra node.")
     slab_logger.info("Detecting infra node port.")
-    return_code, port_no = vagrant_utils.get_ssh_port_for_vm("infra-001", ctx.path)
+    return_code, port_no = get_ssh_port_for_vm("infra-001", ctx.path)
     if return_code != 0:
         slab_logger.error("Unable to find port no. of infra node, cannot update"
                           "hosts.yaml on infra node")
         return
     else:
-        return_code, key_path = vagrant_utils.get_ssh_key_path_for_vm("infra-001", ctx.path)
+        return_code, key_path = get_ssh_key_path_for_vm("infra-001", ctx.path)
         if return_code != 0:
             slab_logger.error("Unable to find ssh key of infra node, cannot update"
                               "hosts.yaml on infra node")
@@ -66,10 +66,72 @@ def destroy_vm_by_name(ctx, force, vm_name):
             yaml_file = "./services/ccs-data/out/ccs-dev-1/dev/etc/ccs/data/hosts.yaml"
             vm_yaml_file = "/etc/ccs/data/environments/dev-tenant/hosts.yaml"
             yaml_file_path = os.path.join(ctx.path, yaml_file)
-            return_code, _ = vagrant_utils.copy_file_to_vm("hosts.yaml", "infra-001",
+            return_code, _ = copy_file_to_vm("hosts.yaml", "infra-001",
                                                            yaml_file_path, port_no,
                                                            vm_yaml_file, ctx.path, key_path)
             if return_code != 0:
                 slab_logger.info("Could not succesfully update hosts.yaml on infra node.")
             else:
                 slab_logger.info(UPDATING_HOSTS_YAML_MESSAGE)
+
+
+def get_ssh_port_for_vm(vm_name, path):
+    """
+    Gets ssh port for vm
+
+    Args:
+        vm_name
+        path to Vagrantfile
+
+    Returns:
+        return_code, command output
+
+    Example Usage:
+        my_class_var.get_ssh_port_for_vm(vm_name, path)
+    """
+    cmd = "vagrant ssh-config --host %s | grep Port |  awk '{print $2}'" % (vm_name)
+    return_code, port_no = service_utils.run_this(cmd, path)
+    return return_code, port_no.rstrip()
+
+
+def get_ssh_key_path_for_vm(vm_name, path):
+    """
+    Gets ssh key for vm
+
+    Args:
+        vm_name
+        path to Vagrantfile
+
+    Returns:
+        return_code, command output (key path)
+
+    Example Usage:
+        my_class_var.get_ssh_key_path_for_vm(vm_name, path)
+    """
+    cmd = "vagrant ssh-config | grep %s | grep IdentityFile"\
+          " | awk '{print $2}'" % (vm_name)
+    return_code, key_path = service_utils.run_this(cmd, path)
+    return return_code, key_path.rstrip()
+
+
+def copy_file_to_vm(file_name, vm_name, file_path, port_no, vm_path, path, key_path):
+    """
+    Gets ssh port for vm
+
+    Args:
+        vm_name
+        path to Vagrantfile
+
+    Returns:
+        return_code, command output
+
+    Example Usage:
+        my_class_var.copy_file_to_vm(file_path, port_no, vm_path, path, key_path)
+    """
+    cmd_string = "scp -i %s -P %s  %s vagrant@127.0.0.1:%s"
+    cmd = cmd_string % (key_path, port_no, file_path, "/tmp")
+    service_utils.run_this(cmd, path)
+
+    cmd_string = "vagrant ssh %s -c \"sudo cp /tmp/%s %s\""
+    cmd = cmd_string % (vm_name, file_name, vm_path)
+    return service_utils.run_this(cmd, path)
