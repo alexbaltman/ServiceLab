@@ -1,89 +1,159 @@
+[rhel-7-server-extras-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-extras-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-extras-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-openstack-5.0-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-openstack-5.0-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-openstack-5.0-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-optional-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-optional-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-optional-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-rabbitmq-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-rabbitmq-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-rabbitmq-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-rhn-tools-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-rhn-tools-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-rhn-tools-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-supplementary-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-supplementary-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-supplementary-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-ha-for-rhel-7-server-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-ha-for-rhel-7-server-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-ha-for-rhel-7-server-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[percona-centos6]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/percona-centos6/
+ui_repoid_vars = releasever basearch
+name = CCS Repo percona-centos6
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[mongodb]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/mongodb/
+ui_repoid_vars = releasever basearch
+name = CCS Repo mongodb
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[osp5-hotfix]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/osp5-hotfix/
+ui_repoid_vars = releasever basearch
+name = CCS Repo osp5-hotfix
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-ansible-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-ansible-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-ansible-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-cisco-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-cisco-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-cisco-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-hybrid-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-hybrid-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-hybrid-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-kombu-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-kombu-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-kombu-rpms
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[ice-1.2.2-ceph]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/ice-1.2.2-ceph/
+ui_repoid_vars = releasever basearch
+name = CCS Repo ice-1.2.2-ceph
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[ice-1.2.2-ceph-deploy]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/ice-1.2.2-ceph-deploy/
+ui_repoid_vars = releasever basearch
+name = CCS Repo ice-1.2.2-ceph-deploy
+enabled = 1
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-openstack-6.0-rpms]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/rhel-7-server-openstack-6.0-rpms/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-openstack-6.0-rpms
+enabled = 0
+gpgcheck = 0
+sslverify = 0
+[rhel-7-server-openstack-5.0-rpms-2.3.3]
+metadata_expire = 86400
+baseurl = https://ccs-mirror.cisco.com/pulp/repos/heighliner_repo/rhel-7-server-openstack-5.0-rpms-2.3.3/
+ui_repoid_vars = releasever basearch
+name = CCS Repo rhel-7-server-openstack-5.0-rpms-2.3.3
+enabled = 1
+gpgcheck = 0
+sslverify = 0
 [ccs-secure-repo]
 metadata_expire = 86400
 baseurl = http://10.207.232.10/cobbler/repo_mirror/ccs-secure-repo/
 ui_repoid_vars = releasever basearch
-name = CCS Repo ccs-secure-repo_2.2
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+name = CCS Repo ccs-secure-repo
 enabled = 1
 gpgcheck = 0
-
-[ccs-repo]
-metadata_expire = 86400
-baseurl = http://sdlc-mirror.cisco.com/ccs-repo/
-ui_repoid_vars = basearch
-name = CCS-Repo (RPMs)
-enabled = 1
-gpgcheck = 0
-
-[rhel-ha-for-rhel-7-server-rpms]
-metadata_expire = 86400
-baseurl = http://sdlc-mirror.cisco.com/rhel-ha-for-rhel-7-server-rpms/
-ui_repoid_vars = releasever basearch
-name = Red Hat Enterprise Linux High Availability (for RHEL 7 Server) (RPMs)
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-enabled = 1
-gpgcheck = 1
-
-[rhel-7-server-rpms]
-metadata_expire = 86400
-baseurl = http://sdlc-mirror.cisco.com/rhel-7-server-rpms/
-ui_repoid_vars = releasever basearch
-name = Red Hat Enterprise Linux 7 Server (RPMs)
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-enabled = 1
-gpgcheck = 1
-
-[rhel-7-server-optional-rpms]
-metadata_expire = 86400
-baseurl = http://sdlc-mirror.cisco.com/rhel-7-server-optional-rpms/
-ui_repoid_vars = releasever basearch
-name = Red Hat Enterprise Linux 7 Server - Optional (RPMs)
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-enabled = 1
-gpgcheck = 1
-
-[rhel-7-server-extras-rpms]
-metadata_expire = 86400
-baseurl = http://sdlc-mirror.cisco.com/rhel-7-server-extras-rpms/
-ui_repoid_vars = basearch
-name = Red Hat Enterprise Linux 7 Server - Extras (RPMs)
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-enabled = 1
-gpgcheck = 1
-
-[rhel-7-server-openstack-5.0-rpms]
-metadata_expire = 86400
-baseurl = http://sdlc-mirror.cisco.com/rhel-7-server-openstack-5.0-rpms/
-ui_repoid_vars = releasever basearch
-name = Red Hat OpenStack 5.0 for RHEL 7 (RPMs)
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-enabled = 1
-gpgcheck = 1
-
-[rhel-7-server-supplementary-rpms]
-metadata_expire = 86400
-baseurl = http://sdlc-mirror.cisco.com/rhel-7-server-supplementary-rpms/
-ui_repoid_vars = releasever basearch
-name = Red Hat Enterprise Linux 7 Server - Supplementary (RPMs)
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-enabled = 1
-gpgcheck = 1
-
-[rhel-7-server-cisco-rpms]
-metadata_expire = 86400
-baseurl = http://sdlc-mirror.cisco.com/rhel-7-server-cisco-rpms/
-ui_repoid_vars = basearch
-name = Red Hat Enterprise Linux 7 Server - Cisco (RPMs)
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-enabled = 1
-gpgcheck = 0
-
-[rhel-7-server-optional-rpms]
-metadata_expire = 86400
-baseurl = http://sdlc-mirror.cisco.com/rhel-7-server-optional-rpms/
-ui_repoid_vars = basearch
-name = Red Hat Enterprise Linux 7 Server - Optional (RPMs)
-gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
-enabled = 1
-gpgcheck = 0
-
