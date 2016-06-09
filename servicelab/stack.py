@@ -201,7 +201,7 @@ class ComplexCLI(click.MultiCommand):
             mod = __import__('servicelab.commands.cmd_' + name,
                              None, None, ['cli'])
         except ImportError as ex:
-            self.slab_logger.error("import failure on %s" % (name))
+            print("import failure on %s" % (name))
             return
         return mod.cli
 
